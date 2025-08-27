@@ -1,5 +1,5 @@
 use bevy::{
-    ecs::hierarchy::ChildOf,
+    ecs::hierarchy::{ChildOf, Children},
     pbr::{MeshMaterial3d, NotShadowCaster, NotShadowReceiver},
     prelude::{
         AlphaMode, Assets, Color, Commands, Component, Cone, Cylinder, Entity, GlobalTransform,
@@ -243,6 +243,21 @@ fn build_axis_cylinder(
             TransformGizmo::Plane,
             GizmoMesh,
         ));
+}
+
+pub fn despawn_transform_gizmo(
+    commands: &mut Commands,
+    query: &mut Query<(Entity, &TransformGizmo, &Children)>,
+) {
+    for (entity, _, _) in query.iter() {
+        commands.entity(entity).despawn();
+        log!(
+            LogType::Editor,
+            LogLevel::Info,
+            LogCategory::Entity,
+            "Despawned Transform Gizmo"
+        );
+    }
 }
 
 fn plane_translation(axis: GizmoAxis) -> Vec3 {

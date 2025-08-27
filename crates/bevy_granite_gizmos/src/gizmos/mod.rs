@@ -95,6 +95,6 @@ pub use rotate::{
     RotateGizmoParent,
 };
 pub use transform::{
-    draw_axis_line, spawn_transform_gizmo, PreviousTransformGizmo, TransformGizmo,
-    TransformGizmoParent,
+    despawn_transform_gizmo, draw_axis_line, spawn_transform_gizmo, PreviousTransformGizmo,
+    TransformGizmo, TransformGizmoParent,
 };
