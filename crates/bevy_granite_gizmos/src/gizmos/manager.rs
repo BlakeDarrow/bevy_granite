@@ -1,7 +1,7 @@
 use super::{
-    spawn_rotate_gizmo, spawn_transform_gizmo, DespawnGizmoEvent, GizmoType, LastSelectedGizmo,
-    RotateGizmo, RotateGizmoParent, SelectedGizmo, SpawnGizmoEvent, TransformGizmo,
-    TransformGizmoParent,
+    despawn_rotate_gizmo, despawn_transform_gizmo, spawn_rotate_gizmo, spawn_transform_gizmo,
+    DespawnGizmoEvent, GizmoType, LastSelectedGizmo, RotateGizmo, RotateGizmoParent, SelectedGizmo,
+    SpawnGizmoEvent, TransformGizmo, TransformGizmoParent,
 };
 use crate::selection::ActiveSelection;
 use bevy::prelude::{
@@ -42,6 +42,14 @@ pub fn gizmo_events(
                 &mut materials,
                 &mut meshes,
             );
+        }
+    }
+
+    for DespawnGizmoEvent(gizmo_type) in despawn_events.read() {
+        if matches!(gizmo_type, GizmoType::Transform) {
+            despawn_transform_gizmo(&mut commands, &mut transform_gizmo_query);
+        } else if matches!(gizmo_type, GizmoType::Rotate) {
+            despawn_rotate_gizmo(&mut commands, &mut rotate_gizmo_query);
         }
     }
 }
