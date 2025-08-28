@@ -1,7 +1,8 @@
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::platform::collections::HashMap;
 use bevy::prelude::{Entity, Name, Query, Res, ResMut, With};
-use bevy_granite_core::{AvailableEditableMaterials, IdentityData, SpawnSource};
+use bevy_granite_core::shared::user_input;
+use bevy_granite_core::{AvailableEditableMaterials, IdentityData, SpawnSource, UserInput};
 use bevy_granite_gizmos::{ActiveSelection, Selected};
 
 use super::{ActiveObjectDetails, SelectionInfo};
@@ -14,6 +15,7 @@ pub fn update_debug_tab_ui_system(
     selection_query: Query<Entity, With<Selected>>,
     active_selection_query: Query<Entity, With<ActiveSelection>>,
     available_materials: Res<AvailableEditableMaterials>,
+    user_input: Res<UserInput>,
     editor_state: Res<EditorState>,
     entity_query: Query<&Name>,
     identity_query: Query<&IdentityData>,
@@ -48,6 +50,9 @@ pub fn update_debug_tab_ui_system(
                 } else {
                     ActiveObjectDetails::default()
                 };
+
+            let user_input = user_input.clone();
+            data.user_input = user_input;
 
             let selected_entities: Vec<Entity> = selection_query.iter().collect();
             let selection = if selected_entities.is_empty() {

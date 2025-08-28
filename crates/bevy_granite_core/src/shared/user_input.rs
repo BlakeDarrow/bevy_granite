@@ -6,13 +6,13 @@ pub struct CursorWindowPos {
     pub position: Vec2,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum InputTypes {
     Mouse(MouseButton),
     Button(KeyCode),
 }
 
-#[derive(Default, Resource, Clone)]
+#[derive(PartialEq, Default, Resource, Clone, Debug)]
 pub struct UserInput {
     pub current_button_inputs: Vec<InputTypes>,
     pub mouse_pos: Vec2,
@@ -41,7 +41,7 @@ pub struct UserInput {
     pub key_space: UserButtonState,
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(PartialEq, Default, Clone, Copy, Debug)]
 pub struct UserButtonState {
     pub just_pressed: bool,
     pub pressed: bool,

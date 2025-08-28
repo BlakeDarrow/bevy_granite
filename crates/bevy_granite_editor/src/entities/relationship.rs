@@ -71,13 +71,20 @@ pub fn parent_system(
                     .entity(selected_entity)
                     .set_parent_in_place(active_entity);
             }
+            log!(
+                LogType::Editor,
+                LogLevel::OK,
+                LogCategory::Entity,
+                "New parent applied to selection"
+            );
+        } else {
+            log!(
+                LogType::Editor,
+                LogLevel::Warning,
+                LogCategory::Entity,
+                "No active entity to set as parent!"
+            );
         }
-        log!(
-            LogType::Editor,
-            LogLevel::OK,
-            LogCategory::Entity,
-            "New parent applied to selection"
-        );
     }
 }
 
