@@ -104,11 +104,12 @@ pub fn serialize_entities(world_state: WorldState, path: Option<String>) {
         let mut file = {
             // Create parent directories first
             if let Some(parent) = Path::new(&path).parent() {
-                fs::create_dir_all(parent)
-                    .unwrap_or_else(|_| panic!("Failed to create directories for path: {}", path));
+                fs::create_dir_all(parent).unwrap_or_else(|e| {
+                    panic!("Failed to create directories for path{}: {e}", path)
+                });
             }
 
-            File::create(&path).unwrap_or_else(|_| panic!("Failed to create file: {}", path))
+            File::create(&path).unwrap_or_else(|e| panic!("Failed to create file{}: {e}", path))
         };
 
         file.write_all(serialized_data.as_bytes())
