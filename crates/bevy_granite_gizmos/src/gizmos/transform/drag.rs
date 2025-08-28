@@ -190,8 +190,22 @@ pub fn drag_transform_gizmo(
             let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
             let delta_y = snap_gizmo(hit.y, gizmo_snap.transform_value) - current_world_pos.y;
             let delta_z = snap_gizmo(hit.z, gizmo_snap.transform_value) - current_world_pos.z;
-            target_transform.translation.y += delta_y;
-            target_transform.translation.z += delta_z;
+
+            if let Ok(parent) = parents.get(*target) {
+                if let Ok(parent_global) = global_transforms.get(parent.parent()) {
+                    let parent_rotation_inv = parent_global.to_scale_rotation_translation().1.inverse();
+                    let world_delta = Vec3::new(0.0, delta_y, delta_z);
+                    let parent_local_delta = parent_rotation_inv * world_delta;
+                    target_transform.translation += parent_local_delta;
+                } else {
+                    target_transform.translation.y += delta_y;
+                    target_transform.translation.z += delta_z;
+                }
+            } else {
+                // No parent
+                target_transform.translation.y += delta_y;
+                target_transform.translation.z += delta_z;
+            }
         }
         (GizmoAxis::Y, TransformGizmo::Plane) => {
             let Some(click_distance) = click_ray.intersect_plane(
@@ -203,8 +217,22 @@ pub fn drag_transform_gizmo(
             let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
             let delta_x = snap_gizmo(hit.x, gizmo_snap.transform_value) - current_world_pos.x;
             let delta_z = snap_gizmo(hit.z, gizmo_snap.transform_value) - current_world_pos.z;
-            target_transform.translation.x += delta_x;
-            target_transform.translation.z += delta_z;
+
+            if let Ok(parent) = parents.get(*target) {
+                if let Ok(parent_global) = global_transforms.get(parent.parent()) {
+                    let parent_rotation_inv = parent_global.to_scale_rotation_translation().1.inverse();
+                    let world_delta = Vec3::new(delta_x, 0.0, delta_z);
+                    let parent_local_delta = parent_rotation_inv * world_delta;
+                    target_transform.translation += parent_local_delta;
+                } else {
+                    target_transform.translation.x += delta_x;
+                    target_transform.translation.z += delta_z;
+                }
+            } else {
+                // No parent
+                target_transform.translation.x += delta_x;
+                target_transform.translation.z += delta_z;
+            }
         }
         (GizmoAxis::Z, TransformGizmo::Plane) => {
             let Some(click_distance) = click_ray.intersect_plane(
@@ -216,8 +244,22 @@ pub fn drag_transform_gizmo(
             let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
             let delta_x = snap_gizmo(hit.x, gizmo_snap.transform_value) - current_world_pos.x;
             let delta_y = snap_gizmo(hit.y, gizmo_snap.transform_value) - current_world_pos.y;
-            target_transform.translation.x += delta_x;
-            target_transform.translation.y += delta_y;
+
+            if let Ok(parent) = parents.get(*target) {
+                if let Ok(parent_global) = global_transforms.get(parent.parent()) {
+                    let parent_rotation_inv = parent_global.to_scale_rotation_translation().1.inverse();
+                    let world_delta = Vec3::new(delta_x, delta_y, 0.0);
+                    let parent_local_delta = parent_rotation_inv * world_delta;
+                    target_transform.translation += parent_local_delta;
+                } else {
+                    target_transform.translation.x += delta_x;
+                    target_transform.translation.y += delta_y;
+                }
+            } else {
+                // No parent
+                target_transform.translation.x += delta_x;
+                target_transform.translation.y += delta_y;
+            }
         }
         (GizmoAxis::All, _) => {
             let camera_right = camera_transform.rotation() * Vec3::X;
@@ -231,7 +273,18 @@ pub fn drag_transform_gizmo(
                 snap_gizmo(world_delta.z, gizmo_snap.transform_value),
             );
 
-            target_transform.translation += snapped_delta;
+            if let Ok(parent) = parents.get(*target) {
+                if let Ok(parent_global) = global_transforms.get(parent.parent()) {
+                    let parent_rotation_inv = parent_global.to_scale_rotation_translation().1.inverse();
+                    let parent_local_delta = parent_rotation_inv * snapped_delta;
+                    target_transform.translation += parent_local_delta;
+                } else {
+                    target_transform.translation += snapped_delta;
+                }
+            } else {
+                // No parent
+                target_transform.translation += snapped_delta;
+            }
         }
     }
     if user_input.ctrl_left.any {
