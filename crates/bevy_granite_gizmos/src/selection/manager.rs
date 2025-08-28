@@ -8,7 +8,7 @@ use bevy::{
     ecs::{query::QueryEntityError, system::Commands},
     picking::events::{Click, Pointer},
 };
-use bevy_granite_core::EditorIgnore;
+use bevy_granite_core::{shared::user_input, EditorIgnore, UserInput};
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -133,7 +133,7 @@ pub fn handle_picking_selection(
     mut on_click: Trigger<Pointer<Click>>,
     mut commands: Commands,
     ignored: Query<&EditorIgnore>,
-    input: Res<ButtonInput<KeyCode>>,
+    user_input: Res<UserInput>,
 ) {
     if on_click.button != bevy::picking::pointer::PointerButton::Primary {
         return;
@@ -150,12 +150,12 @@ pub fn handle_picking_selection(
         }
         Err(_) => {}
     }
-    if on_click.target().index() == 0 {
+    if on_click.target().index() == 0 || user_input.mouse_over_egui {
         log!(
             LogType::Editor,
             LogLevel::Info,
             LogCategory::Input,
-            "Clicked on window?, ignoring"
+            "Clicked on window or egui, ignoring"
         );
         return;
     }
@@ -164,6 +164,6 @@ pub fn handle_picking_selection(
 
     commands.trigger(EntityEvent::Select {
         target: entity,
-        additive: input.pressed(KeyCode::ShiftLeft),
+        additive: user_input.shift_left.any,
     });
 }
