@@ -188,7 +188,7 @@ pub fn draw_axis_lines(
     gizmo_data: Query<(&GizmoAxis, &GizmoOf, &TransformGizmo), With<TransformGizmo>>,
     mut bevy_gizmo: ResMut<Assets<GizmoAsset>>,
     mut commands: Commands,
-    origin: Query<&Transform>,
+    origin: Query<&GlobalTransform>,
 ) {
     let Ok((axis, root, transform)) = gizmo_data.get(event.target) else {
         return;
@@ -210,21 +210,21 @@ pub fn draw_axis_lines(
     match transform {
         TransformGizmo::Axis => {
             asset.line(
-                origin.translation + axis.to_vec3() * 1000.,
-                origin.translation + axis.to_vec3() * -1000.,
+                origin.translation() + axis.to_vec3() * 1000.,
+                origin.translation() + axis.to_vec3() * -1000.,
                 axis.color(),
             );
         }
         TransformGizmo::Plane => {
             let (a, b) = axis.plane();
             asset.line(
-                origin.translation + a.to_vec3() * 1000.,
-                origin.translation + a.to_vec3() * -1000.,
+                origin.translation() + a.to_vec3() * 1000.,
+                origin.translation() + a.to_vec3() * -1000.,
                 a.color(),
             );
             asset.line(
-                origin.translation + b.to_vec3() * 1000.,
-                origin.translation + b.to_vec3() * -1000.,
+                origin.translation() + b.to_vec3() * 1000.,
+                origin.translation() + b.to_vec3() * -1000.,
                 b.color(),
             );
         }
