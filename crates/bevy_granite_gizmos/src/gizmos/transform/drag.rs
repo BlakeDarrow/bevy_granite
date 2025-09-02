@@ -305,10 +305,8 @@ pub fn drag_transform_gizmo(
 pub fn dragstart_transform_gizmo(
     event: Trigger<Pointer<DragStart>>,
     targets: Query<&GizmoOf>,
-    parents: Query<&ChildOf>,
     gizmo_data: Query<(&GizmoAxis, &TransformGizmo)>,
     user_input: Res<UserInput>,
-    mut commands: Commands,
     mut dispatch: EventWriter<RequestDuplicateEntityEvent>,
 ) {
     if user_input.mouse_middle.any || !user_input.shift_left.pressed {
