@@ -4,7 +4,7 @@ use crate::{
     selection::Selected,
 };
 use bevy::{
-    asset::{Assets, Handle},
+    asset::Assets,
     ecs::{
         entity::Entity,
         query::With,
@@ -245,7 +245,13 @@ fn copy_components_safe(
 
     // Things like rectangle brushes need unique handles, as we directly edit the vert data in editor
     if needs_unique {
-        skip_components.push(std::any::TypeId::of::<Handle<Mesh>>());
+        log!(
+            LogType::Editor,
+            LogLevel::Info,
+            LogCategory::Entity,
+            "Requesting unique handle"
+        );
+        skip_components.push(std::any::TypeId::of::<Mesh3d>());
     }
 
     for &type_id in component_type_ids {
@@ -288,7 +294,8 @@ fn copy_components_safe(
                     LogType::Editor,
                     LogLevel::Warning,
                     LogCategory::Entity,
-                    "Source entity {:?} does not exist, skipping component {:?}.",
+                    "Error: {:?} Source entity {:?} does not exist, skipping component {:?}.",
+                    e,
                     source_entity,
                     type_id
                 );
