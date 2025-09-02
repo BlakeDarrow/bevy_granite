@@ -1,5 +1,8 @@
 use super::{RequestDuplicateAllSelectionEvent, RequestDuplicateEntityEvent};
-use crate::{gizmos::GizmoChildren, selection::Selected};
+use crate::{
+    gizmos::{GizmoChildren, Gizmos},
+    selection::Selected,
+};
 use bevy::{
     asset::{Assets, Handle},
     ecs::{
@@ -237,6 +240,7 @@ fn copy_components_safe(
     let mut skip_components = vec![
         std::any::TypeId::of::<ChildOf>(),
         std::any::TypeId::of::<Children>(),
+        std::any::TypeId::of::<Gizmos>(),
     ];
 
     // Things like rectangle brushes need unique handles, as we directly edit the vert data in editor

@@ -156,7 +156,8 @@ fn build_gizmo_sphere(
             GizmoOf(root),
             ChildOf(parent),
         ))
-        .observe(super::drag::drag_transform_gizmo);
+        .observe(super::drag::drag_transform_gizmo)
+        .observe(super::drag::dragstart_transform_gizmo);
 }
 
 fn build_axis_cylinder(
@@ -211,6 +212,7 @@ fn build_axis_cylinder(
         .insert(GizmoMesh)
         .insert(ChildOf(parent))
         .observe(super::drag::drag_transform_gizmo)
+        .observe(super::drag::dragstart_transform_gizmo)
         .with_child((
             Mesh3d(cone_mesh),
             MeshMaterial3d(material.clone()),

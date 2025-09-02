@@ -2,13 +2,16 @@ use super::TransformGizmo;
 use crate::{
     gizmos::{GizmoOf, GizmoSnap},
     input::GizmoAxis,
-    GizmoCamera,
+    GizmoCamera, RequestDuplicateEntityEvent,
 };
 use bevy::{
     asset::Assets,
-    ecs::{component::Component, hierarchy::ChildOf, observer::Trigger, system::Commands},
+    ecs::{
+        component::Component, event::EventWriter, hierarchy::ChildOf, observer::Trigger,
+        system::Commands,
+    },
     gizmos::{retained::Gizmo, GizmoAsset},
-    picking::events::{Drag, Pointer, Pressed},
+    picking::events::{Drag, DragStart, Pointer, Pressed},
     prelude::{Entity, GlobalTransform, Query, Res, ResMut, Transform, Vec3, With},
 };
 use bevy_granite_core::UserInput;
@@ -193,7 +196,8 @@ pub fn drag_transform_gizmo(
 
             if let Ok(parent) = parents.get(*target) {
                 if let Ok(parent_global) = global_transforms.get(parent.parent()) {
-                    let parent_rotation_inv = parent_global.to_scale_rotation_translation().1.inverse();
+                    let parent_rotation_inv =
+                        parent_global.to_scale_rotation_translation().1.inverse();
                     let world_delta = Vec3::new(0.0, delta_y, delta_z);
                     let parent_local_delta = parent_rotation_inv * world_delta;
                     target_transform.translation += parent_local_delta;
@@ -220,7 +224,8 @@ pub fn drag_transform_gizmo(
 
             if let Ok(parent) = parents.get(*target) {
                 if let Ok(parent_global) = global_transforms.get(parent.parent()) {
-                    let parent_rotation_inv = parent_global.to_scale_rotation_translation().1.inverse();
+                    let parent_rotation_inv =
+                        parent_global.to_scale_rotation_translation().1.inverse();
                     let world_delta = Vec3::new(delta_x, 0.0, delta_z);
                     let parent_local_delta = parent_rotation_inv * world_delta;
                     target_transform.translation += parent_local_delta;
@@ -247,7 +252,8 @@ pub fn drag_transform_gizmo(
 
             if let Ok(parent) = parents.get(*target) {
                 if let Ok(parent_global) = global_transforms.get(parent.parent()) {
-                    let parent_rotation_inv = parent_global.to_scale_rotation_translation().1.inverse();
+                    let parent_rotation_inv =
+                        parent_global.to_scale_rotation_translation().1.inverse();
                     let world_delta = Vec3::new(delta_x, delta_y, 0.0);
                     let parent_local_delta = parent_rotation_inv * world_delta;
                     target_transform.translation += parent_local_delta;
@@ -275,7 +281,8 @@ pub fn drag_transform_gizmo(
 
             if let Ok(parent) = parents.get(*target) {
                 if let Ok(parent_global) = global_transforms.get(parent.parent()) {
-                    let parent_rotation_inv = parent_global.to_scale_rotation_translation().1.inverse();
+                    let parent_rotation_inv =
+                        parent_global.to_scale_rotation_translation().1.inverse();
                     let parent_local_delta = parent_rotation_inv * snapped_delta;
                     target_transform.translation += parent_local_delta;
                 } else {
@@ -293,6 +300,30 @@ pub fn drag_transform_gizmo(
             camera_transform.translation += delta;
         }
     }
+}
+
+pub fn dragstart_transform_gizmo(
+    event: Trigger<Pointer<DragStart>>,
+    targets: Query<&GizmoOf>,
+    parents: Query<&ChildOf>,
+    gizmo_data: Query<(&GizmoAxis, &TransformGizmo)>,
+    user_input: Res<UserInput>,
+    mut commands: Commands,
+    mut dispatch: EventWriter<RequestDuplicateEntityEvent>,
+) {
+    if user_input.mouse_middle.any || !user_input.shift_left.pressed {
+        return;
+    }
+    let Ok(_) = gizmo_data.get(event.target) else {
+        return;
+    };
+    let Ok(GizmoOf(target)) = targets.get(event.target) else {
+        return;
+    };
+    log!("Attempting Drag Duplicate");
+    dispatch.write(RequestDuplicateEntityEvent {
+        entity: target.clone(),
+    });
 }
 
 fn snap_gizmo(value: f32, inc: f32) -> f32 {
