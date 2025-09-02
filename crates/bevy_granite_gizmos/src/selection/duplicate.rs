@@ -13,7 +13,7 @@ use bevy::{
     prelude::{AppTypeRegistry, ChildOf, Children, EventReader, ReflectComponent, Res, World},
     render::mesh::{Mesh, Mesh3d},
 };
-use bevy_granite_core::{entities::GraniteType, HasRuntimeData, IconProxy, IdentityData};
+use bevy_granite_core::{entities::GraniteType, EditorIgnore, HasRuntimeData, IconProxy, IdentityData};
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -195,10 +195,14 @@ fn collect_entity_info(world: &World, entity: Entity) -> Option<EntityInfo> {
                 .filter(|&child| {
                     world
                         .get_entity(child)
-                        // Do NOT include GizmoParent or IconProxy in duplication
+                        // Do NOT include GizmoChildren, IconProxy, or any gizmo entities in duplication
                         .map(|entity_ref| {
                             !entity_ref.contains::<GizmoChildren>()
                                 && !entity_ref.contains::<IconProxy>()
+                                && !entity_ref
+                                    .get::<EditorIgnore>()
+                                    .map(|ignore| ignore.contains(EditorIgnore::GIZMO))
+                                    .unwrap_or(false)
                         })
                         .unwrap_or(false)
                 })
@@ -240,7 +244,6 @@ fn copy_components_safe(
     let mut skip_components = vec![
         std::any::TypeId::of::<ChildOf>(),
         std::any::TypeId::of::<Children>(),
-        std::any::TypeId::of::<Gizmos>(),
     ];
 
     // Things like rectangle brushes need unique handles, as we directly edit the vert data in editor
@@ -319,12 +322,10 @@ fn copy_components_safe(
 
         // Special handling for IdentityData to generate a new UUID
         if type_id == std::any::TypeId::of::<IdentityData>() {
-            // Get source identity data first
             if let Some(source_identity) = world.get::<IdentityData>(source_entity) {
                 let mut new_identity = source_identity.clone();
                 new_identity.uuid = Uuid::new_v4(); // Generate new UUID for the duplicate
 
-                // Now insert the new identity data
                 if let Ok(mut target_ref) = world.get_entity_mut(target_entity) {
                     target_ref.insert(new_identity);
                 }
