@@ -91,6 +91,30 @@ impl UserButtonState {
                 .retain(|i| i != &InputTypes::Button(button));
         }
     }
+
+    pub fn merge_key(
+        &mut self,
+        input: &ButtonInput<KeyCode>,
+        button: KeyCode,
+        user_input: &mut UserInput,
+    ) {
+        self.just_pressed = self.just_pressed || input.just_pressed(button);
+        self.pressed = self.pressed || input.pressed(button);
+        self.just_released = self.just_released || input.just_released(button);
+        self.any = self.just_pressed || self.pressed || self.just_released;
+
+        if self.just_pressed || self.pressed {
+            user_input
+                .current_button_inputs
+                .push(InputTypes::Button(button));
+        }
+
+        if self.just_released {
+            user_input
+                .current_button_inputs
+                .retain(|i| i != &InputTypes::Button(button));
+        }
+    }
 }
 
 pub fn capture_input_events(
@@ -144,6 +168,8 @@ pub fn capture_input_events(
     key_p.update_key(&keyboard_input, KeyCode::KeyP, &mut user_input);
     key_z.update_key(&keyboard_input, KeyCode::KeyZ, &mut user_input);
     key_delete.update_key(&keyboard_input, KeyCode::Delete, &mut user_input);
+    #[cfg(target_os = "macos")]
+    key_delete.merge_key(&keyboard_input, KeyCode::Backspace, &mut user_input);
     key_u.update_key(&keyboard_input, KeyCode::KeyU, &mut user_input);
     key_e.update_key(&keyboard_input, KeyCode::KeyE, &mut user_input);
     key_s.update_key(&keyboard_input, KeyCode::KeyS, &mut user_input);
