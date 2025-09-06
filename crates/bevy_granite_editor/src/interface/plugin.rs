@@ -20,6 +20,7 @@ use super::{
 };
 use crate::{interface::RequestRemoveParentsFromEntities, setup::is_editor_active};
 use bevy::{
+    app::Update,
     ecs::schedule::IntoScheduleConfigs,
     prelude::{App, Handle, Mesh, Plugin, StandardMaterial},
 };
@@ -66,7 +67,7 @@ impl Plugin for InterfacePlugin {
             // Schedule systems
             //
             .add_systems(
-                EguiPrimaryContextPass,
+                Update,
                 (
                     //
                     // Handle UI requests to update entities
@@ -81,15 +82,9 @@ impl Plugin for InterfacePlugin {
                     update_material_handle_system,
                     handle_material_deletion_system,
                     //
-                    // Entity cache for UI
-                    //
-                    update_entity_cache_system,
-                    //
                     // Layout and Popups
                     //
-                    dock_ui_system,
                     handle_popup_requests_system,
-                    show_active_popups_system,
                     //
                     // Interface tabs UI
                     //
@@ -102,6 +97,10 @@ impl Plugin for InterfacePlugin {
                 )
                     .chain()
                     .run_if(is_editor_active),
+            )
+            .add_systems(
+                EguiPrimaryContextPass,
+                (show_active_popups_system, dock_ui_system).run_if(is_editor_active),
             );
     }
 }
