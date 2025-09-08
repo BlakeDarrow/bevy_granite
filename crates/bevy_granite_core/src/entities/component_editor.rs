@@ -1,8 +1,9 @@
 use bevy::{
     prelude::*,
-    reflect::{FromType, ReflectDeserialize, TypeRegistration},
+    reflect::{serde::TypedReflectDeserializer, FromType, ReflectDeserialize, TypeRegistration},
 };
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
+use serde::de::DeserializeSeed;
 use std::{any::Any, borrow::Cow, collections::HashMap};
 
 // All structs defined by #[granite_component]
@@ -244,6 +245,7 @@ impl ComponentEditor {
 
                             if let Ok(mut deserializer) = ron::de::Deserializer::from_str(clean_ron)
                             {
+                                // Try ReflectDeserialize first, then fall back to reflection-based deserialization
                                 if let Some(reflect_deserialize) =
                                     registration.data::<ReflectDeserialize>()
                                 {
@@ -285,10 +287,98 @@ impl ComponentEditor {
                                             );
                                         }
                                     }
+                                } else {
+                                    // Try using reflection-based deserialization for types like Tonemapping
+                                    if let Ok(mut full_deserializer) =
+                                        ron::de::Deserializer::from_str(clean_ron)
+                                    {
+                                        // Try to deserialize using bevy's reflection system with a typed deserializer
+                                        let type_registry_read = type_registry.read();
+
+                                        // Use TypedReflectDeserializer for the specific type
+                                        let typed_deserializer =
+                                            bevy::reflect::serde::TypedReflectDeserializer::new(
+                                                registration,
+                                                &type_registry_read,
+                                            );
+
+                                        if let Ok(reflected_value) =
+                                            typed_deserializer.deserialize(&mut full_deserializer)
+                                        {
+                                            if let Some(reflect_component) =
+                                                registration.data::<ReflectComponent>()
+                                            {
+                                                let mut entity_mut = world.entity_mut(entity);
+                                                if entity_mut
+                                                    .contains_type_id(reflect_component.type_id())
+                                                {
+                                                    reflect_component
+                                                        .apply(&mut entity_mut, &*reflected_value);
+                                                } else {
+                                                    reflect_component.insert(
+                                                        &mut entity_mut,
+                                                        &*reflected_value,
+                                                        &type_registry_read,
+                                                    );
+                                                }
+                                            }
+                                        } else {
+                                            log!(
+                                                LogType::Game,
+                                                LogLevel::Error,
+                                                LogCategory::System,
+                                                "Failed to deserialize component {} via typed reflection with data: '{}'",
+                                                component_name,
+                                                clean_ron
+                                            );
+                                        }
+                                    } else {
+                                        log!(
+                                            LogType::Game,
+                                            LogLevel::Error,
+                                            LogCategory::System,
+                                            "Failed to create deserializer for component {} with data: '{}'",
+                                            component_name,
+                                            clean_ron
+                                        );
+                                    }
                                 }
+                            } else {
+                                log!(
+                                    LogType::Game,
+                                    LogLevel::Error,
+                                    LogCategory::System,
+                                    "Failed to create deserializer for component: {}",
+                                    component_name
+                                );
                             }
+                        } else {
+                            log!(
+                                LogType::Game,
+                                LogLevel::Error,
+                                LogCategory::System,
+                                "Could not find search pattern '{}' in serialized data for component: {}",
+                                search_pattern,
+                                component_name
+                            );
                         }
+                    } else {
+                        log!(
+                            LogType::Game,
+                            LogLevel::Error,
+                            LogCategory::System,
+                            "Component value not found in parsed data for: {}",
+                            component_name
+                        );
                     }
+                } else {
+                    log!(
+                        LogType::Game,
+                        LogLevel::Error,
+                        LogCategory::System,
+                        "Failed to parse component data for: {}",
+                        component_name
+                    );
                 }
             } else {
                 log!(
