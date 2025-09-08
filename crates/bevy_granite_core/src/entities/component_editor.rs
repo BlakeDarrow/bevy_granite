@@ -214,7 +214,7 @@ impl ComponentEditor {
         serialized_components
     }
 
-    /// Insert components from saved file 
+    /// Insert components from serialized data with proper error handling
     pub fn load_components_from_scene_data(
         &self,
         world: &mut World,
@@ -222,12 +222,39 @@ impl ComponentEditor {
         serialized_components: HashMap<String, String>,
         type_registry: AppTypeRegistry,
     ) {
+        let mut success_count = 0;
+        let mut error_count = 0;
+
         for (component_name, serialized_data) in serialized_components {
-            self.process_single_component(world, entity, &component_name, &serialized_data, &type_registry);
+            match self.process_single_component(world, entity, &component_name, &serialized_data, &type_registry) {
+                Ok(()) => {
+                    success_count += 1;
+                }
+                Err(e) => {
+                    error_count += 1;
+                    log!(
+                        LogType::Game,
+                        LogLevel::Error,
+                        LogCategory::System,
+                        "Failed to load component {}: {}",
+                        component_name,
+                        e
+                    );
+                }
+            }
         }
+
+        log!(
+            LogType::Game,
+            LogLevel::Info,
+            LogCategory::Entity,
+            "Component loading complete: {} successful, {} failed",
+            success_count,
+            error_count
+        );
     }
 
-    /// Process a single component
+    /// Process a single component with comprehensive error handling
     fn process_single_component(
         &self,
         world: &mut World,
@@ -235,47 +262,122 @@ impl ComponentEditor {
         component_name: &str,
         serialized_data: &str,
         type_registry: &AppTypeRegistry,
-    ) {
-        let type_registry_read = type_registry.read();
-        let Some(registration) = type_registry_read.get_with_type_path(component_name) else {
-            log!(
-                LogType::Game,
-                LogLevel::Error,
-                LogCategory::System,
-                "No registration found for component: {}",
-                component_name
-            );
-            return;
+    ) -> Result<(), String> {
+        let registration = {
+            let type_registry_read = type_registry.read();
+            type_registry_read.get_with_type_path(component_name)
+                .ok_or_else(|| format!("No registration found for component: {}", component_name))?
+                .clone()
         };
+        let clean_ron = self.extract_component_data(component_name, serialized_data)
+            .ok_or_else(|| format!("Failed to extract component data for: {}", component_name))?;
 
-        let Some(clean) = self.extract_component_data(component_name, serialized_data) else {
-            return;
-        };
-
-        self.deserialize_and_insert_component(world, entity, component_name, &clean, &registration, type_registry);
+        self.deserialize_and_insert_component(world, entity, component_name, &clean_ron, &registration, type_registry)
     }
 
-    /// Extract the data for a component 
+    /// Extract the data for a component using proper RON parsing
     fn extract_component_data(&self, component_name: &str, serialized_data: &str) -> Option<String> {
         let parsed = ron::from_str::<HashMap<String, ron::Value>>(serialized_data).ok()?;
-        
-        if !parsed.contains_key(component_name) {
-            log!(
-                LogType::Game,
-                LogLevel::Error,
-                LogCategory::System,
-                "Component value not found in parsed data for: {}",
-                component_name
-            );
-            return None;
-        }
+        let component_value = parsed.get(component_name)?;
+        log!(
+            LogType::Game,
+            LogLevel::Info,
+            LogCategory::System,
+            "Parsed component value: {:?}",
+            component_value
+        );
 
-        let search_pattern = format!("\"{}\":", component_name);
-        let start = serialized_data.find(&search_pattern)?;
-        let after_colon = start + search_pattern.len();
-        let ron_part = &serialized_data[after_colon..serialized_data.len() - 1]; // Remove trailing }
-        
-        Some(ron_part.trim().to_string())
+        let result = match component_value {
+            // For string values return without quotes
+            ron::Value::String(s) => {
+                log!(
+                    LogType::Game,
+                    LogLevel::Info,
+                    LogCategory::System,
+                    "Returning string value: '{}'",
+                    s
+                );
+                Some(s.clone())
+            },
+            // For unit values we need to extract the original identifier
+            ron::Value::Unit => {
+                log!(
+                    LogType::Game,
+                    LogLevel::Info,
+                    LogCategory::System,
+                    "Found unit value - extracting identifier from original data"
+                );
+                
+                // For Unit values, we need to extract the original identifier from the serialized data
+                // Look for the pattern: "component_name":IDENTIFIER
+                let search_pattern = format!("\"{}\":", component_name);
+                if let Some(start) = serialized_data.find(&search_pattern) {
+                    let after_colon = start + search_pattern.len();
+                    let remaining = &serialized_data[after_colon..];
+                    
+                    // Find the identifier (everything until } or end)
+                    let identifier = remaining.trim_start()
+                        .split('}')
+                        .next()
+                        .unwrap_or("")
+                        .trim();
+                    
+                    log!(
+                        LogType::Game,
+                        LogLevel::Info,
+                        LogCategory::System,
+                        "Extracted identifier: '{}'",
+                        identifier
+                    );
+                    
+                    if !identifier.is_empty() {
+                        Some(identifier.to_string())
+                    } else {
+                        // For unit structs like () 
+                        Some("()".to_string())
+                    }
+                } else {
+                    None
+                }
+            },
+            // For other types, serialize normally
+            other => {
+                let serialized = ron::to_string(other);
+                log!(
+                    LogType::Game,
+                    LogLevel::Info,
+                    LogCategory::System,
+                    "Serializing other type: {:?} -> {:?}",
+                    other,
+                    serialized
+                );
+                match serialized {
+                    Ok(component_ron) => Some(component_ron),
+                    Err(e) => {
+                        log!(
+                            LogType::Game,
+                            LogLevel::Error,
+                            LogCategory::System,
+                            "Failed to serialize component value for {}: {:?}",
+                            component_name,
+                            e
+                        );
+                        None
+                    }
+                }
+            }
+        };
+
+        log!(
+            LogType::Game,
+            LogLevel::Info,
+            LogCategory::System,
+            "Final extracted data for '{}': {:?}",
+            component_name,
+            result
+        );
+
+        result
     }
 
     /// Try to deserialize using multiple strategies
@@ -287,27 +389,20 @@ impl ComponentEditor {
         clean_ron: &str,
         registration: &TypeRegistration,
         type_registry: &AppTypeRegistry,
-    ) {
+    ) -> Result<(), String> {
         let Ok(mut deserializer) = ron::de::Deserializer::from_str(clean_ron) else {
-            log!(
-                LogType::Game,
-                LogLevel::Error,
-                LogCategory::System,
-                "Failed to create deserializer for component: {}",
-                component_name
-            );
-            return;
+            return Err(format!("Failed to create deserializer for component: {}", component_name));
         };
 
         // Strategy 1: Try ReflectDeserialize (for components with serde support)
         if let Some(reflect_deserialize) = registration.data::<ReflectDeserialize>() {
-            if self.try_reflect_deserialize(world, entity, component_name, &mut deserializer, reflect_deserialize, registration, type_registry) {
-                return;
+            if let Ok(()) = self.try_reflect_deserialize(world, entity, component_name, &mut deserializer, reflect_deserialize, registration, type_registry) {
+                return Ok(());
             }
         }
 
         // Strategy 2: Fallback to TypedReflectDeserializer (for Bevy components with reflection only)
-        self.try_typed_reflection_deserialize(world, entity, component_name, clean_ron, registration, type_registry);
+        self.try_typed_reflection_deserialize(world, entity, component_name, clean_ron, registration, type_registry)
     }
 
     /// Try deserializing using ReflectDeserialize
@@ -320,22 +415,14 @@ impl ComponentEditor {
         reflect_deserialize: &ReflectDeserialize,
         registration: &TypeRegistration,
         type_registry: &AppTypeRegistry,
-    ) -> bool {
+    ) -> Result<(), String> {
         match reflect_deserialize.deserialize(deserializer) {
             Ok(component_data) => {
-                self.insert_reflected_component(world, entity, component_name, &*component_data, registration, type_registry);
-                true
+                self.insert_reflected_component(world, entity, component_name, &*component_data, registration, type_registry)?;
+                Ok(())
             }
             Err(e) => {
-                log!(
-                    LogType::Game,
-                    LogLevel::Error,
-                    LogCategory::System,
-                    "Failed to deserialize component {}: {:?}",
-                    component_name,
-                    e
-                );
-                false
+                Err(format!("Failed to deserialize component {}: {:?}", component_name, e))
             }
         }
     }
@@ -349,16 +436,9 @@ impl ComponentEditor {
         clean_ron: &str,
         registration: &TypeRegistration,
         type_registry: &AppTypeRegistry,
-    ) {
+    ) -> Result<(), String> {
         let Ok(mut full_deserializer) = ron::de::Deserializer::from_str(clean_ron) else {
-            log!(
-                LogType::Game,
-                LogLevel::Error,
-                LogCategory::System,
-                "Failed to create deserializer for typed reflection: {}",
-                component_name
-            );
-            return;
+            return Err(format!("Failed to create deserializer for typed reflection: {}", component_name));
         };
 
         let type_registry_read = type_registry.read();
@@ -366,7 +446,7 @@ impl ComponentEditor {
 
         match typed_deserializer.deserialize(&mut full_deserializer) {
             Ok(reflected_value) => {
-                self.insert_reflected_component(world, entity, component_name, &*reflected_value, registration, type_registry);
+                self.insert_reflected_component(world, entity, component_name, &*reflected_value, registration, type_registry)?;
                 log!(
                     LogType::Game,
                     LogLevel::Info,
@@ -374,16 +454,10 @@ impl ComponentEditor {
                     "Inserted via typed reflection: {}",
                     component_name
                 );
+                Ok(())
             }
-            Err(_) => {
-                log!(
-                    LogType::Game,
-                    LogLevel::Error,
-                    LogCategory::System,
-                    "Failed to deserialize component {} via typed reflection with data: '{}'",
-                    component_name,
-                    clean_ron
-                );
+            Err(e) => {
+                Err(format!("Failed to deserialize component {} via typed reflection: {:?}", component_name, e))
             }
         }
     }
@@ -397,16 +471,9 @@ impl ComponentEditor {
         component_data: &dyn bevy::reflect::PartialReflect,
         registration: &TypeRegistration,
         type_registry: &AppTypeRegistry,
-    ) {
+    ) -> Result<(), String> {
         let Some(reflect_component) = registration.data::<ReflectComponent>() else {
-            log!(
-                LogType::Game,
-                LogLevel::Error,
-                LogCategory::System,
-                "No ReflectComponent found for: {}",
-                component_name
-            );
-            return;
+            return Err(format!("No ReflectComponent found for: {}", component_name));
         };
 
         let mut entity_mut = world.entity_mut(entity);
@@ -423,6 +490,7 @@ impl ComponentEditor {
             "Inserted: {}",
             component_name
         );
+        Ok(())
     }
 
     /// Add new component to entity
