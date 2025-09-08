@@ -1,6 +1,6 @@
 use bevy::{
     prelude::*,
-    reflect::{serde::TypedReflectDeserializer, FromType, ReflectDeserialize, TypeRegistration},
+    reflect::{FromType, ReflectDeserialize, TypeRegistration},
 };
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 use serde::de::DeserializeSeed;
@@ -214,7 +214,7 @@ impl ComponentEditor {
         serialized_components
     }
 
-    /// Insert components from serialized
+    /// Insert components from saved file 
     pub fn load_components_from_scene_data(
         &self,
         world: &mut World,
@@ -223,173 +223,206 @@ impl ComponentEditor {
         type_registry: AppTypeRegistry,
     ) {
         for (component_name, serialized_data) in serialized_components {
+            self.process_single_component(world, entity, &component_name, &serialized_data, &type_registry);
+        }
+    }
+
+    /// Process a single component
+    fn process_single_component(
+        &self,
+        world: &mut World,
+        entity: Entity,
+        component_name: &str,
+        serialized_data: &str,
+        type_registry: &AppTypeRegistry,
+    ) {
+        let type_registry_read = type_registry.read();
+        let Some(registration) = type_registry_read.get_with_type_path(component_name) else {
             log!(
                 LogType::Game,
-                LogLevel::Info,
+                LogLevel::Error,
                 LogCategory::System,
-                "Processing component: {} with data: {}",
-                component_name,
-                serialized_data
+                "No registration found for component: {}",
+                component_name
             );
+            return;
+        };
 
-            if let Some(registration) = type_registry.read().get_with_type_path(&component_name) {
-                // Parse the wrapper to extract just the component data part
-                if let Ok(parsed) = ron::from_str::<HashMap<String, ron::Value>>(&serialized_data) {
-                    if let Some(_component_value) = parsed.get(&component_name) {
-                        // Find the component name in quotes and extract what comes after the colon
-                        let search_pattern = format!("\"{}\":", component_name);
-                        if let Some(start) = serialized_data.find(&search_pattern) {
-                            let after_colon = start + search_pattern.len();
-                            let ron_part = &serialized_data[after_colon..serialized_data.len() - 1]; // Remove trailing }
-                            let clean_ron = ron_part.trim();
+        let Some(clean) = self.extract_component_data(component_name, serialized_data) else {
+            return;
+        };
 
-                            if let Ok(mut deserializer) = ron::de::Deserializer::from_str(clean_ron)
-                            {
-                                // Try ReflectDeserialize first, then fall back to reflection-based deserialization
-                                if let Some(reflect_deserialize) =
-                                    registration.data::<ReflectDeserialize>()
-                                {
-                                    match reflect_deserialize.deserialize(&mut deserializer) {
-                                        Ok(component_data) => {
-                                            if let Some(reflect_component) =
-                                                registration.data::<ReflectComponent>()
-                                            {
-                                                let mut entity_mut = world.entity_mut(entity);
-                                                if entity_mut
-                                                    .contains_type_id(reflect_component.type_id())
-                                                {
-                                                    reflect_component
-                                                        .apply(&mut entity_mut, &*component_data);
-                                                } else {
-                                                    reflect_component.insert(
-                                                        &mut entity_mut,
-                                                        &*component_data,
-                                                        &type_registry.read(),
-                                                    );
-                                                }
-                                                log!(
-                                                    LogType::Game,
-                                                    LogLevel::Info,
-                                                    LogCategory::Entity,
-                                                    "Inserted: {}",
-                                                    component_name
-                                                );
-                                            }
-                                        }
-                                        Err(e) => {
-                                            log!(
-                                                LogType::Game,
-                                                LogLevel::Error,
-                                                LogCategory::System,
-                                                "Failed to deserialize component {}: {:?}",
-                                                component_name,
-                                                e
-                                            );
-                                        }
-                                    }
-                                } else {
-                                    // Try using reflection-based deserialization for types like Tonemapping
-                                    if let Ok(mut full_deserializer) =
-                                        ron::de::Deserializer::from_str(clean_ron)
-                                    {
-                                        // Try to deserialize using bevy's reflection system with a typed deserializer
-                                        let type_registry_read = type_registry.read();
+        self.deserialize_and_insert_component(world, entity, component_name, &clean, &registration, type_registry);
+    }
 
-                                        // Use TypedReflectDeserializer for the specific type
-                                        let typed_deserializer =
-                                            bevy::reflect::serde::TypedReflectDeserializer::new(
-                                                registration,
-                                                &type_registry_read,
-                                            );
+    /// Extract the data for a component 
+    fn extract_component_data(&self, component_name: &str, serialized_data: &str) -> Option<String> {
+        let parsed = ron::from_str::<HashMap<String, ron::Value>>(serialized_data).ok()?;
+        
+        if !parsed.contains_key(component_name) {
+            log!(
+                LogType::Game,
+                LogLevel::Error,
+                LogCategory::System,
+                "Component value not found in parsed data for: {}",
+                component_name
+            );
+            return None;
+        }
 
-                                        if let Ok(reflected_value) =
-                                            typed_deserializer.deserialize(&mut full_deserializer)
-                                        {
-                                            if let Some(reflect_component) =
-                                                registration.data::<ReflectComponent>()
-                                            {
-                                                let mut entity_mut = world.entity_mut(entity);
-                                                if entity_mut
-                                                    .contains_type_id(reflect_component.type_id())
-                                                {
-                                                    reflect_component
-                                                        .apply(&mut entity_mut, &*reflected_value);
-                                                } else {
-                                                    reflect_component.insert(
-                                                        &mut entity_mut,
-                                                        &*reflected_value,
-                                                        &type_registry_read,
-                                                    );
-                                                }
-                                            }
-                                        } else {
-                                            log!(
-                                                LogType::Game,
-                                                LogLevel::Error,
-                                                LogCategory::System,
-                                                "Failed to deserialize component {} via typed reflection with data: '{}'",
-                                                component_name,
-                                                clean_ron
-                                            );
-                                        }
-                                    } else {
-                                        log!(
-                                            LogType::Game,
-                                            LogLevel::Error,
-                                            LogCategory::System,
-                                            "Failed to create deserializer for component {} with data: '{}'",
-                                            component_name,
-                                            clean_ron
-                                        );
-                                    }
-                                }
-                            } else {
-                                log!(
-                                    LogType::Game,
-                                    LogLevel::Error,
-                                    LogCategory::System,
-                                    "Failed to create deserializer for component: {}",
-                                    component_name
-                                );
-                            }
-                        } else {
-                            log!(
-                                LogType::Game,
-                                LogLevel::Error,
-                                LogCategory::System,
-                                "Could not find search pattern '{}' in serialized data for component: {}",
-                                search_pattern,
-                                component_name
-                            );
-                        }
-                    } else {
-                        log!(
-                            LogType::Game,
-                            LogLevel::Error,
-                            LogCategory::System,
-                            "Component value not found in parsed data for: {}",
-                            component_name
-                        );
-                    }
-                } else {
-                    log!(
-                        LogType::Game,
-                        LogLevel::Error,
-                        LogCategory::System,
-                        "Failed to parse component data for: {}",
-                        component_name
-                    );
-                }
-            } else {
+        let search_pattern = format!("\"{}\":", component_name);
+        let start = serialized_data.find(&search_pattern)?;
+        let after_colon = start + search_pattern.len();
+        let ron_part = &serialized_data[after_colon..serialized_data.len() - 1]; // Remove trailing }
+        
+        Some(ron_part.trim().to_string())
+    }
+
+    /// Try to deserialize using multiple strategies
+    fn deserialize_and_insert_component(
+        &self,
+        world: &mut World,
+        entity: Entity,
+        component_name: &str,
+        clean_ron: &str,
+        registration: &TypeRegistration,
+        type_registry: &AppTypeRegistry,
+    ) {
+        let Ok(mut deserializer) = ron::de::Deserializer::from_str(clean_ron) else {
+            log!(
+                LogType::Game,
+                LogLevel::Error,
+                LogCategory::System,
+                "Failed to create deserializer for component: {}",
+                component_name
+            );
+            return;
+        };
+
+        // Strategy 1: Try ReflectDeserialize (for components with serde support)
+        if let Some(reflect_deserialize) = registration.data::<ReflectDeserialize>() {
+            if self.try_reflect_deserialize(world, entity, component_name, &mut deserializer, reflect_deserialize, registration, type_registry) {
+                return;
+            }
+        }
+
+        // Strategy 2: Fallback to TypedReflectDeserializer (for Bevy components with reflection only)
+        self.try_typed_reflection_deserialize(world, entity, component_name, clean_ron, registration, type_registry);
+    }
+
+    /// Try deserializing using ReflectDeserialize
+    fn try_reflect_deserialize(
+        &self,
+        world: &mut World,
+        entity: Entity,
+        component_name: &str,
+        deserializer: &mut ron::de::Deserializer,
+        reflect_deserialize: &ReflectDeserialize,
+        registration: &TypeRegistration,
+        type_registry: &AppTypeRegistry,
+    ) -> bool {
+        match reflect_deserialize.deserialize(deserializer) {
+            Ok(component_data) => {
+                self.insert_reflected_component(world, entity, component_name, &*component_data, registration, type_registry);
+                true
+            }
+            Err(e) => {
                 log!(
                     LogType::Game,
                     LogLevel::Error,
                     LogCategory::System,
-                    "No registration found for component: {}",
+                    "Failed to deserialize component {}: {:?}",
+                    component_name,
+                    e
+                );
+                false
+            }
+        }
+    }
+
+    /// Try deserializing using TypedReflectDeserializer
+    fn try_typed_reflection_deserialize(
+        &self,
+        world: &mut World,
+        entity: Entity,
+        component_name: &str,
+        clean_ron: &str,
+        registration: &TypeRegistration,
+        type_registry: &AppTypeRegistry,
+    ) {
+        let Ok(mut full_deserializer) = ron::de::Deserializer::from_str(clean_ron) else {
+            log!(
+                LogType::Game,
+                LogLevel::Error,
+                LogCategory::System,
+                "Failed to create deserializer for typed reflection: {}",
+                component_name
+            );
+            return;
+        };
+
+        let type_registry_read = type_registry.read();
+        let typed_deserializer = bevy::reflect::serde::TypedReflectDeserializer::new(registration, &type_registry_read);
+
+        match typed_deserializer.deserialize(&mut full_deserializer) {
+            Ok(reflected_value) => {
+                self.insert_reflected_component(world, entity, component_name, &*reflected_value, registration, type_registry);
+                log!(
+                    LogType::Game,
+                    LogLevel::Info,
+                    LogCategory::Entity,
+                    "Inserted via typed reflection: {}",
                     component_name
                 );
             }
+            Err(_) => {
+                log!(
+                    LogType::Game,
+                    LogLevel::Error,
+                    LogCategory::System,
+                    "Failed to deserialize component {} via typed reflection with data: '{}'",
+                    component_name,
+                    clean_ron
+                );
+            }
         }
+    }
+
+    /// Insert a reflected component into an entity
+    fn insert_reflected_component(
+        &self,
+        world: &mut World,
+        entity: Entity,
+        component_name: &str,
+        component_data: &dyn bevy::reflect::PartialReflect,
+        registration: &TypeRegistration,
+        type_registry: &AppTypeRegistry,
+    ) {
+        let Some(reflect_component) = registration.data::<ReflectComponent>() else {
+            log!(
+                LogType::Game,
+                LogLevel::Error,
+                LogCategory::System,
+                "No ReflectComponent found for: {}",
+                component_name
+            );
+            return;
+        };
+
+        let mut entity_mut = world.entity_mut(entity);
+        if entity_mut.contains_type_id(reflect_component.type_id()) {
+            reflect_component.apply(&mut entity_mut, component_data);
+        } else {
+            reflect_component.insert(&mut entity_mut, component_data, &type_registry.read());
+        }
+
+        log!(
+            LogType::Game,
+            LogLevel::Info,
+            LogCategory::Entity,
+            "Inserted: {}",
+            component_name
+        );
     }
 
     /// Add new component to entity
