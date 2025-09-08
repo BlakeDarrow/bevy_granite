@@ -8,7 +8,7 @@ use bevy::{
     ecs::{query::QueryEntityError, system::Commands},
     picking::events::{Click, Pointer},
 };
-use bevy_granite_core::{shared::user_input, EditorIgnore, UserInput};
+use bevy_granite_core::{EditorIgnore, IconProxy, UserInput};
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -133,6 +133,7 @@ pub fn handle_picking_selection(
     mut on_click: Trigger<Pointer<Click>>,
     mut commands: Commands,
     ignored: Query<&EditorIgnore>,
+    icon_proxy_query: Query<&IconProxy>,
     user_input: Res<UserInput>,
 ) {
     if on_click.button != bevy::picking::pointer::PointerButton::Primary {
@@ -160,7 +161,19 @@ pub fn handle_picking_selection(
         return;
     }
     on_click.propagate(false);
-    let entity = on_click.target();
+    let mut entity = on_click.target();
+
+    // redirect to icon target
+    if let Ok(icon_proxy) = icon_proxy_query.get(entity) {
+        log!(
+            LogType::Editor,
+            LogLevel::Info,
+            LogCategory::Input,
+            "Icon proxy clicked, redirecting to target entity {}",
+            icon_proxy.target_entity.index()
+        );
+        entity = icon_proxy.target_entity;
+    }
 
     commands.trigger(EntityEvent::Select {
         target: entity,

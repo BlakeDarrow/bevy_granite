@@ -120,7 +120,6 @@ pub fn handle_init_rotate_drag(
         (
             Entity,
             Option<&GizmoMesh>,
-            Option<&IconProxy>,
             &Name,
             &PickingInteraction,
         ),
@@ -141,7 +140,6 @@ pub fn handle_init_rotate_drag(
         let (entity, hit_type) = raycast_at_cursor(interactions);
 
         if hit_type == HitType::None
-            || hit_type == HitType::Icon
             || hit_type == HitType::Mesh
             || entity.is_none()
         {

@@ -152,17 +152,11 @@ pub enum HitType {
 
 pub fn raycast_at_cursor(
     query: Query<
-        (
-            Entity,
-            Option<&GizmoMesh>,
-            Option<&IconProxy>,
-            &Name,
-            &PickingInteraction,
-        ),
+        (Entity, Option<&GizmoMesh>, &Name, &PickingInteraction),
         Changed<PickingInteraction>,
     >,
 ) -> (Option<Entity>, HitType) {
-    for (entity, gizmo, icon, name, interaction) in query.iter() {
+    for (entity, gizmo, name, interaction) in query.iter() {
         if *interaction == PickingInteraction::Pressed {
             if gizmo.is_some() {
                 log!(
@@ -173,15 +167,6 @@ pub fn raycast_at_cursor(
                     name
                 );
                 return (Some(entity), HitType::Gizmo);
-            } else if icon.is_some() {
-                log!(
-                    LogType::Editor,
-                    LogLevel::Info,
-                    LogCategory::Input,
-                    "Icon ray hit: {}",
-                    name
-                );
-                return (Some(entity), HitType::Icon);
             } else {
                 log!(
                     LogType::Editor,
