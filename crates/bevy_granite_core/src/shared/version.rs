@@ -1,6 +1,6 @@
+use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
+use serde::Deserialize;
 use std::cmp::Ordering;
-use serde::{Deserialize};
-use bevy_granite_logging::{log, LogType, LogLevel, LogCategory};
 
 pub const VERSIONS_TOML: &str = include_str!("../../config/versions.toml");
 
@@ -13,6 +13,7 @@ struct FileVersionConfig {
 struct SceneFormatConfig {
     current_version: String,
     minimum_supported_version: String,
+    next_version: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,11 +48,14 @@ impl Version {
             return Err("Version must have exactly 3 numbers (major.minor.patch)".to_string());
         }
 
-        let major = version_numbers[0].parse::<u32>()
+        let major = version_numbers[0]
+            .parse::<u32>()
             .map_err(|_| "Invalid major version number")?;
-        let minor = version_numbers[1].parse::<u32>()
+        let minor = version_numbers[1]
+            .parse::<u32>()
             .map_err(|_| "Invalid minor version number")?;
-        let patch = version_numbers[2].parse::<u32>()
+        let patch = version_numbers[2]
+            .parse::<u32>()
             .map_err(|_| "Invalid patch version number")?;
 
         Ok(Version {
@@ -66,7 +70,6 @@ impl Version {
     fn is_pre_release(&self) -> bool {
         self.pre_release.is_some()
     }
-
 }
 
 impl PartialOrd for Version {
@@ -78,7 +81,11 @@ impl PartialOrd for Version {
 impl Ord for Version {
     fn cmp(&self, other: &Self) -> Ordering {
         // Compare major.minor.patch first
-        match (self.major.cmp(&other.major), self.minor.cmp(&other.minor), self.patch.cmp(&other.patch)) {
+        match (
+            self.major.cmp(&other.major),
+            self.minor.cmp(&other.minor),
+            self.patch.cmp(&other.patch),
+        ) {
             (Ordering::Equal, Ordering::Equal, Ordering::Equal) => {
                 // Core versions are equal, now compare pre-release
                 match (&self.pre_release, &other.pre_release) {
@@ -165,7 +172,11 @@ pub fn is_scene_version_compatible(version: &str) -> bool {
     // Check if version is at least the minimum supported
     if version >= min_version {
         if version < current_version {
-            let version_type = if version.is_pre_release() { "pre-release" } else { "stable" };
+            let version_type = if version.is_pre_release() {
+                "pre-release"
+            } else {
+                "stable"
+            };
             log!(
                 LogType::Game,
                 LogLevel::Info,
@@ -178,7 +189,11 @@ pub fn is_scene_version_compatible(version: &str) -> bool {
             );
         } else {
             // version > current_version
-            let version_type = if version.is_pre_release() { "pre-release" } else { "stable" };
+            let version_type = if version.is_pre_release() {
+                "pre-release"
+            } else {
+                "stable"
+            };
             log!(
                 LogType::Game,
                 LogLevel::Warning,
@@ -193,7 +208,11 @@ pub fn is_scene_version_compatible(version: &str) -> bool {
     }
 
     // Version is below minimum supported
-    let version_type = if version.is_pre_release() { "pre-release" } else { "stable" };
+    let version_type = if version.is_pre_release() {
+        "pre-release"
+    } else {
+        "stable"
+    };
     log!(
         LogType::Game,
         LogLevel::Error,
@@ -211,7 +230,14 @@ pub fn is_scene_version_compatible(version: &str) -> bool {
 pub fn get_current_scene_version() -> String {
     match toml::from_str::<FileVersionConfig>(VERSIONS_TOML) {
         Ok(config) => config.scene_format.current_version,
-        Err(_) => "1.0.0".to_string()
+        Err(_) => "1.0.0".to_string(),
+    }
+}
+// For Scene Metadata
+pub fn get_beta_scene_version() -> String {
+    match toml::from_str::<FileVersionConfig>(VERSIONS_TOML) {
+        Ok(config) => config.scene_format.next_version,
+        Err(_) => "1.0.0".to_string(),
     }
 }
 
@@ -219,10 +245,9 @@ pub fn get_current_scene_version() -> String {
 pub fn get_minimum_scene_version() -> String {
     match toml::from_str::<FileVersionConfig>(VERSIONS_TOML) {
         Ok(min) => min.scene_format.minimum_supported_version,
-        Err(_) => "1.0.0".to_string()
+        Err(_) => "1.0.0".to_string(),
     }
 }
-
 
 impl std::fmt::Display for Version {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -236,4 +261,3 @@ impl std::fmt::Display for Version {
         Ok(())
     }
 }
-

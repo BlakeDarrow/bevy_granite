@@ -1,14 +1,14 @@
 use std::borrow::Cow;
 
 use bevy::{
-    ecs::component::Component,
-    ecs::resource::Resource,
+    app::App,
+    ecs::{component::Component, resource::Resource},
     prelude::{
         Quat, ReflectComponent, ReflectDefault, ReflectDeserialize, ReflectFromReflect,
         ReflectSerialize, Vec3,
     },
-    reflect::Reflect,
-    transform::components::Transform,
+    reflect::{FromType, Reflect, TypeData},
+    transform::components::{GlobalTransform, Transform},
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -162,7 +162,7 @@ impl Default for PromptData {
 pub use component_editor::{
     is_bridge_component_check, BridgeTag, ComponentEditor, ExposedToEditor, ReflectedComponent,
 };
-pub use deserialize::{deserialize_entities, GraniteEditorSerdeEntity};
+pub use deserialize::GraniteEditorSerdeEntity;
 pub use editable::{
     Camera3D, DirLight, Empty, GraniteTypes, PointLightData, RectBrush, VolumetricFog, OBJ,
 };
@@ -180,10 +180,40 @@ bitflags::bitflags! {
     /// A marker component that an entity should be ignored by the editor
     /// This will be more powerful then not having Bridge
     /// As this is explicitly added to an entity
-    #[derive(bevy::ecs::component::Component, Default)]
+    #[derive(bevy::ecs::component::Component, Default, Clone, Copy)]
     pub struct EditorIgnore: usize {
         const GIZMO = 1;
         const PICKING = 2;
         const SERIALIZE = 3;
+        const VERBOSE = 4;
     }
+}
+
+macro_rules! impl_from_type_for_editor_ignore {
+    ($($t:ty),*) => {
+        $(
+            impl FromType<$t> for EditorIgnore {
+                fn from_type() -> Self {
+                    EditorIgnore::SERIALIZE
+                }
+            }
+        )*
+    };
+}
+
+impl_from_type_for_editor_ignore!(
+    GlobalTransform,
+    bevy::transform::components::TransformTreeChanged,
+    bevy::render::sync_world::SyncToRenderWorld,
+    bevy::render::primitives::Frustum,
+    bevy::render::view::VisibleEntities
+);
+
+pub fn add_ignore_serialize_to_bevy_types(type_registry: &mut App) {
+    type_registry.register_type_data::<GlobalTransform, EditorIgnore>();
+    type_registry
+        .register_type_data::<bevy::transform::components::TransformTreeChanged, EditorIgnore>();
+    type_registry.register_type_data::<bevy::render::sync_world::SyncToRenderWorld, EditorIgnore>();
+    type_registry.register_type_data::<bevy::render::primitives::Frustum, EditorIgnore>();
+    type_registry.register_type_data::<bevy::render::view::VisibleEntities, EditorIgnore>();
 }

@@ -1,14 +1,18 @@
 [package]
-name = "bevy_granite_expose"
+name = "bevy_granite_scene"
 version = "0.1.0"
 edition = "2024"
 description = "Expose Bevy components to the editor"
 
 [dependencies]
 bevy = { workspace = true, features = ["serialize"]}
-ron = {workspace = true}
-serde = {workspace = true}
+ron = {workspace = true} #avoid if can
+serde = {workspace = true} #maybe don't need?
+
 bevy_granite_core = { path = "../bevy_granite_core" }
+bevy_granite_logging = { path = "../bevy_granite_logging" }
+
+thiserror = "*"
 
 [dev-dependencies]
 rand = "0.9.2"

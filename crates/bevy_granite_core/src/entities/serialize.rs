@@ -1,6 +1,9 @@
 use super::{IdentityData, TransformData};
 use crate::{get_current_scene_version, world::WorldState};
-use bevy::prelude::{Quat, Vec3};
+use bevy::{
+    ecs::{system::RunSystemOnce, world::World},
+    prelude::{Quat, Vec3},
+};
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -9,10 +12,12 @@ use bevy_granite_logging::{
 use ron::ser::{to_string_pretty, PrettyConfig};
 use serde::{Deserialize, Serialize};
 use std::{
+    borrow::Cow,
     collections::HashMap,
     fs::{self, File},
-    io::Write,
+    io::{Read, Write},
     path::Path,
+    str::FromStr,
 };
 use uuid::Uuid;
 
@@ -20,6 +25,43 @@ use uuid::Uuid;
 pub struct SceneMetadata {
     pub format_version: String,
     pub entity_count: usize,
+}
+
+impl SceneMetadata {
+    pub fn extracted_version_from_file(
+        path: impl AsRef<str>,
+    ) -> bevy::prelude::Result<SupportedVersions> {
+        use std::fs::*;
+        use std::io::Seek;
+        // load the file
+        let mut file = File::open(path.as_ref())?;
+        let mut buffer = [0; 1024];
+        loop {
+            let read = file.read(&mut buffer)?;
+            // end of file / not enough data left
+            if read <= 15 {
+                return Err(std::io::Error::other("Failed to find version string").into());
+            }
+            if let Some(meta_pos) = buffer.windows(15).position(|w| w == b"format_version:") {
+                if meta_pos > 1000 {
+                    file.seek(std::io::SeekFrom::Current(-200))?;
+                    continue;
+                }
+                let start = buffer[meta_pos..].iter().position(|&c| c == b'"').ok_or(
+                    std::io::Error::other("Failed to find start of version string"),
+                )? + meta_pos
+                    + 1;
+                let end = buffer[start..].iter().position(|&c| c == b'"').ok_or(
+                    std::io::Error::other("Failed to find end of version string"),
+                )? + start;
+                let version = std::str::from_utf8(&buffer[start..end]).map_err(|e| {
+                    std::io::Error::other(format!("Failed to parse version string: {e}"))
+                })?;
+                return Ok(SupportedVersions::from_str(version)?);
+            }
+            file.seek(std::io::SeekFrom::Current(-15))?;
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -68,7 +110,7 @@ pub fn serialize_entities(world_state: WorldState, path: Option<String>) {
                         rotation,
                         scale,
                     },
-                    parent: parent_uuid, 
+                    parent: parent_uuid,
                     components: runtime_data_provider.get(entity).cloned(),
                 }
             })
@@ -141,4 +183,50 @@ fn round_vec3(v: Vec3) -> Vec3 {
 
 fn round_quat(q: Quat) -> Quat {
     Quat::from_xyzw(round3(q.x), round3(q.y), round3(q.z), round3(q.w))
+}
+
+pub enum SupportedVersions {
+    V0_1_4,
+}
+
+impl SupportedVersions {
+    pub fn deserialize_entities(&self, world: &mut World, abs_path: Cow<'static, str>) {
+        match self {
+            SupportedVersions::V0_1_4 => {
+                let path = abs_path.clone();
+                if let Err(e) = world
+                    .run_system_once_with(super::deserialize::deserialize_entities_v0_1_4, abs_path)
+                {
+                    log!(
+                        LogType::Game,
+                        LogLevel::Error,
+                        LogCategory::System,
+                        "Failed to load world: {:?}, error: {:?}",
+                        path,
+                        e
+                    );
+                } else {
+                    log!(
+                        LogType::Game,
+                        LogLevel::OK,
+                        LogCategory::System,
+                        "Loaded world: {:?}",
+                        path
+                    );
+                    world.send_event(crate::WorldLoadSuccessEvent(path.to_string()));
+                }
+            }
+        }
+    }
+}
+
+impl std::str::FromStr for SupportedVersions {
+    type Err = &'static str;
+
+    fn from_str(input: &str) -> Result<SupportedVersions, Self::Err> {
+        match input {
+            "0.1.4" => Ok(SupportedVersions::V0_1_4),
+            _ => Err("Unsupported version"),
+        }
+    }
 }

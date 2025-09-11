@@ -1,10 +1,14 @@
 use super::{ComponentEditor, EntitySaveReadyData, IdentityData, SceneData, SpawnSource};
 use crate::{
-    absolute_asset_to_rel, materials_from_folder_into_scene, shared::is_scene_version_compatible,
-    AvailableEditableMaterials, GraniteType,
+    absolute_asset_to_rel, entities::SceneMetadata, materials_from_folder_into_scene,
+    shared::is_scene_version_compatible, AvailableEditableMaterials, GraniteType,
 };
 use bevy::{
-    ecs::{entity::Entity, system::ResMut, world::World},
+    ecs::{
+        entity::Entity,
+        system::{In, ResMut},
+        world::World,
+    },
     pbr::StandardMaterial,
     prelude::{AppTypeRegistry, AssetServer, Assets, Commands, Component, Reflect, Res},
     render::mesh::Mesh,
@@ -29,23 +33,27 @@ pub struct GraniteEditorSerdeEntity;
 // Insert all components with access to mut World after all entities are spawned
 
 /// Build materials and entities into the scene from the world path
-pub fn deserialize_entities(
-    asset_server: &Res<AssetServer>,
-    commands: &mut Commands,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
-    available_materials: &mut ResMut<AvailableEditableMaterials>,
+pub fn deserialize_entities_v0_1_4(
+    In(abs_path): In<Cow<'static, str>>, //absolute
+    asset_server: Res<AssetServer>,
+    mut commands: Commands,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut available_materials: ResMut<AvailableEditableMaterials>,
     mut meshes: ResMut<Assets<Mesh>>,
-    abs_path: impl Into<Cow<'static, str>>, //absolute
 ) {
-    let abs_path: Cow<'static, str> = abs_path.into();
     // Build materials from the folder and load them into the scene
-    materials_from_folder_into_scene("materials", materials, available_materials, asset_server);
+    materials_from_folder_into_scene(
+        "materials",
+        &mut materials,
+        &mut available_materials,
+        &asset_server,
+    );
 
     // Gather file contents into a Vec<EntitySaveReadyData>
     let deserialized_data = gather_file_contents(
-        asset_server,
-        materials,
-        available_materials,
+        &asset_server,
+        &mut materials,
+        &mut available_materials,
         abs_path.as_ref(),
     );
 
@@ -57,10 +65,10 @@ pub fn deserialize_entities(
     // Deserialized data is Vec<EntitySaveReadyData>
     for save_data in &deserialized_data {
         let (entity, final_identity) = spawn_entity_from_class_type(
-            asset_server,
-            commands,
-            materials,
-            available_materials,
+            &asset_server,
+            &mut commands,
+            &mut materials,
+            &mut available_materials,
             &mut meshes,
             save_data,
         );

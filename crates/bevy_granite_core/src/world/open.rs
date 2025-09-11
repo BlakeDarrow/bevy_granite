@@ -1,5 +1,5 @@
+use crate::assets::AvailableEditableMaterials;
 use crate::events::{RequestLoadEvent, WorldLoadSuccessEvent};
-use crate::{assets::AvailableEditableMaterials, entities::deserialize_entities};
 use bevy::{asset::io::file::FileAssetReader, prelude::*};
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
@@ -35,23 +35,20 @@ pub fn open_world_reader(
             abs_path = path.to_string();
         }
 
-        deserialize_entities(
-            &asset_server,
-            &mut commands,
-            &mut materials,
-            &mut available_materials,
-            meshes,
-            abs_path,
-        );
+        let Ok(version) =
+            crate::entities::serialize::SceneMetadata::extracted_version_from_file(&abs_path)
+        else {
+            log!(
+                LogType::Game,
+                LogLevel::Error,
+                LogCategory::System,
+                "Failed to extract version from scene file: {:?}",
+                path
+            );
+            return;
+        };
 
-        log!(
-            LogType::Game,
-            LogLevel::OK,
-            LogCategory::System,
-            "Loaded world: {:?}",
-            path
-        );
-
-        world_load_success_writer.write(WorldLoadSuccessEvent(path.to_string()));
+        commands
+            .queue(move |world: &mut World| version.deserialize_entities(world, abs_path.into()));
     }
 }

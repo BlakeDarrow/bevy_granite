@@ -3,3 +3,5 @@
 current_version = "0.1.4" 
 # Minimum support for scene data file
 minimum_supported_version = "0.1.4"
+# Latest version we know how to write, but have not yet released
+next_version = "0.2.0"

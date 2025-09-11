@@ -1,6 +1,9 @@
+use std::ops::DerefMut;
+
 use super::{
-    despawn_entities_system, despawn_entities_by_source_system, generate_tangents_system, BridgeTag, ComponentEditor, HasRuntimeData,
-    IdentityData, InternalNote, MainCamera, SpawnSource, UICamera
+    despawn_entities_by_source_system, despawn_entities_system, generate_tangents_system,
+    BridgeTag, ComponentEditor, HasRuntimeData, IdentityData, InternalNote, MainCamera,
+    SpawnSource, UICamera,
 };
 use crate::entities::{editable::ClassTypePlugin, PromptImportSettings};
 use bevy::app::{App, Plugin, Update};
@@ -33,6 +36,16 @@ impl Plugin for EntityPlugin {
             //
             // Schedule system
             //
-            .add_systems(Update, (despawn_entities_system, despawn_entities_by_source_system, generate_tangents_system));
+            .add_systems(
+                Update,
+                (
+                    despawn_entities_system,
+                    despawn_entities_by_source_system,
+                    generate_tangents_system,
+                ),
+            );
+
+        // Add EditorIgnore to bevy types
+        super::add_ignore_serialize_to_bevy_types(app);
     }
 }

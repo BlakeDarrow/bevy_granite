@@ -53,6 +53,7 @@ fn get_colored_category(category: LogCategory) -> ColoredString {
         LogCategory::Network => "[NETWORK]".blue(),
         LogCategory::Other => "[OTHER]".red(),
         LogCategory::Blank => "".white(),
+        LogCategory::Serialization => "[SERDE]".truecolor(200, 62, 22),
     }
 }
 
