@@ -13,6 +13,6 @@ pub fn reload_world_system(
 ) {
     for RequestReloadEvent(path) in relead_watcher.read() {
         despawn_recursive_serializable_entities(&mut commands, &serializable_query);
-        load_world_writter.write(RequestLoadEvent(path.to_string()));
+        load_world_writter.write(RequestLoadEvent(path.to_string(), None));
     }
 }

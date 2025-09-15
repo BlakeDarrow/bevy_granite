@@ -17,7 +17,7 @@ pub mod shared;
 pub mod world;
 
 // Internal plugins from modules
-use crate::assets::AssetPlugin;
+use crate::{assets::AssetPlugin};
 use crate::entities::EntityPlugin;
 use crate::shared::SharedPlugin;
 use crate::world::WorldPlugin;

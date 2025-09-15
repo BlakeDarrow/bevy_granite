@@ -1,13 +1,14 @@
 use super::{ComponentEditor, EntitySaveReadyData, IdentityData, SceneData, SpawnSource};
 use crate::{
     absolute_asset_to_rel, materials_from_folder_into_scene, shared::is_scene_version_compatible,
-    AvailableEditableMaterials, GraniteType,
+    AvailableEditableMaterials, GraniteType, TransformData,
 };
 use bevy::{
     ecs::{entity::Entity, system::ResMut, world::World},
     pbr::StandardMaterial,
     prelude::{AppTypeRegistry, AssetServer, Assets, Commands, Component, Reflect, Res},
     render::mesh::Mesh,
+    transform::components::Transform,
 };
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
@@ -36,6 +37,7 @@ pub fn deserialize_entities(
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     mut meshes: ResMut<Assets<Mesh>>,
     abs_path: impl Into<Cow<'static, str>>, //absolute
+    transform_offset: Option<Transform>,
 ) {
     let abs_path: Cow<'static, str> = abs_path.into();
     // Build materials from the folder and load them into the scene
@@ -63,6 +65,7 @@ pub fn deserialize_entities(
             available_materials,
             &mut meshes,
             save_data,
+            transform_offset,
         );
 
         // Map the stored GUID to the new entity
@@ -330,10 +333,21 @@ fn spawn_entity_from_class_type(
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     meshes: &mut ResMut<Assets<Mesh>>,
     save_data: &EntitySaveReadyData,
+    transform_offset: Option<Transform>,
 ) -> (Entity, IdentityData) {
     let class = save_data.identity.class.clone();
+    let mut modified_save_data = save_data.clone();
+
+    // Apply offset if provided and parent entity
+    if let Some(offset) = transform_offset {
+        if save_data.parent.is_none() {
+            modified_save_data.transform =
+                offset_saved_transform(modified_save_data.transform, offset);
+        }
+    }
+
     let entity = class.spawn_from_save_data(
-        save_data,
+        &modified_save_data,
         commands,
         materials,
         meshes,
@@ -342,4 +356,15 @@ fn spawn_entity_from_class_type(
     );
 
     (entity, save_data.identity.clone())
+}
+
+fn offset_saved_transform(original: TransformData, offset: Transform) -> TransformData {
+    let original_transform = original.to_bevy();
+    let new_transform = offset.mul_transform(original_transform);
+
+    TransformData {
+        position: new_transform.translation,
+        rotation: new_transform.rotation,
+        scale: new_transform.scale,
+    }
 }

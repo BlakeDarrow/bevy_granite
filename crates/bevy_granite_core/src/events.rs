@@ -1,5 +1,4 @@
-use bevy::prelude::Event;
-
+use bevy::{prelude::Event, transform::components::Transform};
 
 #[derive(Event)]
 pub struct RuntimeDataReadyEvent(pub String);
@@ -21,8 +20,9 @@ pub struct RequestSaveEvent(pub String);
 #[derive(Event)]
 pub struct RequestReloadEvent(pub String);
 
+/// Request the loading of serialized save data from a file. Optionally takes a Transform offset
 #[derive(Event)]
-pub struct RequestLoadEvent(pub String);
+pub struct RequestLoadEvent(pub String, pub Option<Transform>);
 
 #[derive(Event)]
 pub struct RequestDespawnSerializableEntities;

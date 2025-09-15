@@ -157,7 +157,7 @@ fn handle_shortcuts(
         {
             events
                 .load
-                .write(RequestLoadEvent(path.display().to_string()));
+                .write(RequestLoadEvent(path.display().to_string(), None));
         };
     }
 

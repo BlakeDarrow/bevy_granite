@@ -28,7 +28,7 @@ pub struct SceneData {
     pub entities: Vec<EntitySaveReadyData>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EntitySaveReadyData {
     pub identity: IdentityData,
     pub transform: TransformData,

@@ -74,7 +74,7 @@ pub fn top_bar_ui(
                     {
                         events
                             .load
-                            .write(RequestLoadEvent(path.display().to_string()));
+                            .write(RequestLoadEvent(path.display().to_string(), None));
                     }
                     ui.close();
                 }
@@ -115,7 +115,7 @@ pub fn top_bar_ui(
                 if ui.button("Open Default World").clicked() {
                     events
                         .load
-                        .write(RequestLoadEvent(editor_state.default_world.clone()));
+                        .write(RequestLoadEvent(editor_state.default_world.clone(), None));
                     ui.close();
                 }
 
