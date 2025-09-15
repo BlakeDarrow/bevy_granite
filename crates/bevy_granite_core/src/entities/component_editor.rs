@@ -276,9 +276,20 @@ impl ComponentEditor {
     }
 
     /// Extract the data for a component using proper RON parsing
-    fn extract_component_data(&self, component_name: &str, serialized_data: &str) -> Option<String> {
+    fn extract_component_data(
+        &self,
+        component_name: &str,
+        serialized_data: &str,
+    ) -> Option<String> {
+        // First, try to parse the original data as RON to see if we can extract the component directly
+        if let Some(extracted) = self.try_extract_ron_component(component_name, serialized_data) {
+            return Some(extracted);
+        }
+
+        // Fallback to the existing JSON-based approach for backwards compatibility
         let parsed = ron::from_str::<HashMap<String, ron::Value>>(serialized_data).ok()?;
         let component_value = parsed.get(component_name)?;
+        
         log!(
             LogType::Game,
             LogLevel::Info,
@@ -298,7 +309,7 @@ impl ComponentEditor {
                     s
                 );
                 Some(s.clone())
-            },
+            }
             // For unit values we need to extract the original identifier
             ron::Value::Unit => {
                 log!(
@@ -307,21 +318,22 @@ impl ComponentEditor {
                     LogCategory::System,
                     "Found unit value - extracting identifier from original data"
                 );
-                
+
                 // For Unit values, we need to extract the original identifier from the serialized data
                 // Look for the pattern: "component_name":IDENTIFIER
                 let search_pattern = format!("\"{}\":", component_name);
                 if let Some(start) = serialized_data.find(&search_pattern) {
                     let after_colon = start + search_pattern.len();
                     let remaining = &serialized_data[after_colon..];
-                    
+
                     // Find the identifier (everything until } or end)
-                    let identifier = remaining.trim_start()
+                    let identifier = remaining
+                        .trim_start()
                         .split('}')
                         .next()
                         .unwrap_or("")
                         .trim();
-                    
+
                     log!(
                         LogType::Game,
                         LogLevel::Info,
@@ -329,30 +341,42 @@ impl ComponentEditor {
                         "Extracted identifier: '{}'",
                         identifier
                     );
-                    
+
                     if !identifier.is_empty() {
                         Some(identifier.to_string())
                     } else {
-                        // For unit structs like () 
+                        // For unit structs like ()
                         Some("()".to_string())
                     }
                 } else {
                     None
                 }
-            },
-            // For other types, serialize normally
-            other => {
-                let serialized = ron::to_string(other);
+            }
+            // For Map values, convert to proper RON struct syntax
+            ron::Value::Map(map) => {
                 log!(
                     LogType::Game,
                     LogLevel::Info,
                     LogCategory::System,
-                    "Serializing other type: {:?} -> {:?}",
-                    other,
-                    serialized
+                    "Converting Map to RON struct syntax"
                 );
-                match serialized {
-                    Ok(component_ron) => Some(component_ron),
+                Some(self.convert_map_to_ron_struct(map))
+            }
+            // For other types, keep as RON format instead of converting to JSON
+            other => {
+                // Try to serialize back to RON to maintain the expected format
+                match ron::to_string(other) {
+                    Ok(component_ron) => {
+                        log!(
+                            LogType::Game,
+                            LogLevel::Info,
+                            LogCategory::System,
+                            "Serializing to RON: {:?} -> {}",
+                            other,
+                            component_ron
+                        );
+                        Some(component_ron)
+                    }
                     Err(e) => {
                         log!(
                             LogType::Game,
@@ -378,6 +402,64 @@ impl ComponentEditor {
         );
 
         result
+    }
+
+    /// Try to extract component data directly from RON format
+    fn try_extract_ron_component(&self, component_name: &str, serialized_data: &str) -> Option<String> {
+        let search_pattern = format!("\"{}\":", component_name);
+        if let Some(start) = serialized_data.find(&search_pattern) {
+            let after_colon = start + search_pattern.len();
+            let remaining = &serialized_data[after_colon..];
+            
+            // Skip whitespace and quotes
+            let trimmed = remaining.trim_start();
+            if trimmed.starts_with('"') {
+                // Handle quoted RON data - extract everything between the quotes
+                if let Some(quote_start) = trimmed.find('"') {
+                    let after_quote = &trimmed[quote_start + 1..];
+                    if let Some(quote_end) = after_quote.rfind('"') {
+                        let ron_data = &after_quote[..quote_end];
+                        // Unescape the RON data
+                        let unescaped = ron_data.replace("\\\"", "\"");
+                        log!(
+                            LogType::Game,
+                            LogLevel::Info,
+                            LogCategory::System,
+                            "Extracted RON component data: {}",
+                            unescaped
+                        );
+                        return Some(unescaped);
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    /// Convert a RON Map to proper struct syntax
+    fn convert_map_to_ron_struct(&self, map: &ron::Map) -> String {
+        let mut fields = Vec::new();
+        
+        for (key, value) in map.iter() {
+            if let ron::Value::String(field_name) = key {
+                let field_value = match value {
+                    ron::Value::Map(nested_map) => {
+                        // Recursively convert nested maps
+                        self.convert_map_to_ron_struct(nested_map)
+                    }
+                    ron::Value::String(s) => format!("\"{}\"", s),
+                    ron::Value::Number(n) => match n {
+                        ron::Number::Integer(i) => i.to_string(),
+                        ron::Number::Float(f) => format!("{:?}", f),
+                    },
+                    ron::Value::Bool(b) => b.to_string(),
+                    other => ron::to_string(other).unwrap_or_default(),
+                };
+                fields.push(format!("{}:{}", field_name, field_value));
+            }
+        }
+        
+        format!("({})", fields.join(","))
     }
 
     /// Try to deserialize using multiple strategies
