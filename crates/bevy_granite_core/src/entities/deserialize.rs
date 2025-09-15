@@ -333,19 +333,28 @@ fn spawn_entity_from_class_type(
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     meshes: &mut ResMut<Assets<Mesh>>,
     save_data: &EntitySaveReadyData,
-    transform_override: Option<Transform>,
+    //transform_override: Option<Transform>,
+    transform_offset: Option<Transform>,
 ) -> (Entity, IdentityData) {
     let class = save_data.identity.class.clone();
     let mut modified_save_data = save_data.clone();
 
+    // Full override
     // Apply transform override if provided and parent entity
-    if let Some(transform_override) = transform_override {
+    //if let Some(transform_override) = transform_override {
+    //    if save_data.parent.is_none() {
+    //        modified_save_data.transform = TransformData {
+    //            position: transform_override.translation,
+    //            rotation: transform_override.rotation,
+    //            scale: transform_override.scale,
+    //        };
+    //    }
+    //}
+
+    // Apply transform offset if provided and parent entity
+    if let Some(offset) = transform_offset {
         if save_data.parent.is_none() {
-            modified_save_data.transform = TransformData {
-                position: transform_override.translation,
-                rotation: transform_override.rotation,
-                scale: transform_override.scale,
-            };
+            modified_save_data.transform = offset_saved_transform(modified_save_data.transform, offset);
         }
     }
 
@@ -359,4 +368,15 @@ fn spawn_entity_from_class_type(
     );
 
     (entity, save_data.identity.clone())
+}
+
+fn offset_saved_transform(original: TransformData, offset: Transform) -> TransformData {
+    let original_transform = original.to_bevy();
+    let new_transform = offset.mul_transform(original_transform);
+
+    TransformData {
+        position: new_transform.translation,
+        rotation: new_transform.rotation,
+        scale: new_transform.scale,
+    }
 }
