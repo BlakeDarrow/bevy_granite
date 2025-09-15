@@ -5,12 +5,14 @@ use std::{
 };
 
 pub fn rel_asset_to_absolute(rel_string: &str) -> Cow<'static, str> {
-    let abs_path: PathBuf = if !Path::new(rel_string).is_absolute() {
+    let normalized_rel = rel_string.replace('\\', "/");
+    
+    let abs_path: PathBuf = if !Path::new(&normalized_rel).is_absolute() {
         FileAssetReader::get_base_path()
             .join("assets")
-            .join(rel_string)
+            .join(&normalized_rel)
     } else {
-        PathBuf::from(rel_string)
+        PathBuf::from(&normalized_rel)
     };
 
     abs_path.to_string_lossy().replace('\\', "/").into()
@@ -25,9 +27,9 @@ pub fn absolute_asset_to_rel(abs_string: String) -> Cow<'static, str> {
         if let Ok(rel_path) = abs_path.strip_prefix(&base_assets_path) {
             rel_path.to_string_lossy().replace('\\', "/").into()
         } else {
-            abs_string.into()
+            abs_string.replace('\\', "/").into()
         }
     } else {
-        abs_string.into()
+        abs_string.replace('\\', "/").into()
     }
 }
