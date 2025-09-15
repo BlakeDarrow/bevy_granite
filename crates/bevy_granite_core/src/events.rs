@@ -20,7 +20,7 @@ pub struct RequestSaveEvent(pub String);
 #[derive(Event)]
 pub struct RequestReloadEvent(pub String);
 
-/// Request the loading of serialized save data from a file. Optionally takes a Transform offset
+/// Request the loading of serialized save data from a file. Optionally takes a Transform override to act as new loaded origin
 #[derive(Event)]
 pub struct RequestLoadEvent(pub String, pub Option<Transform>);
 
