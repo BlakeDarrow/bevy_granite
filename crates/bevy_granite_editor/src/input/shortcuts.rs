@@ -2,7 +2,9 @@ use bevy::{
     math::Vec2,
     prelude::{Children, Commands, Entity, Query, Res},
 };
-use bevy_granite_core::{RequestLoadEvent, RequestReloadEvent, RequestSaveEvent, UserInput};
+use bevy_granite_core::{
+    entities::EditorSaveControl, RequestLoadEvent, RequestReloadEvent, RequestSaveEvent, UserInput,
+};
 use bevy_granite_gizmos::{selection::events::EntityEvent, Selected};
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 use native_dialog::FileDialog;
@@ -155,9 +157,11 @@ fn handle_shortcuts(
             .show_open_single_file()
             .unwrap()
         {
-            events
-                .load
-                .write(RequestLoadEvent(path.display().to_string(), None));
+            events.load.write(RequestLoadEvent(
+                path.display().to_string(),
+                EditorSaveControl::Full,
+                None,
+            ));
         };
     }
 

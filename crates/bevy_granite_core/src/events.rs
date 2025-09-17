@@ -1,5 +1,7 @@
 use bevy::{prelude::Event, transform::components::Transform};
 
+use crate::entities::EditorSaveControl;
+
 #[derive(Event)]
 pub struct RuntimeDataReadyEvent(pub String);
 
@@ -22,7 +24,7 @@ pub struct RequestReloadEvent(pub String);
 
 /// Request the loading of serialized save data from a file. Optionally takes a Transform override to act as new loaded origin
 #[derive(Event)]
-pub struct RequestLoadEvent(pub String, pub Option<Transform>);
+pub struct RequestLoadEvent(pub String, pub EditorSaveControl, pub Option<Transform>);
 
 #[derive(Event)]
 pub struct RequestDespawnSerializableEntities;

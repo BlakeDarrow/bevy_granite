@@ -1,8 +1,7 @@
 use std::borrow::Cow;
 
 use bevy::{
-    ecs::component::Component,
-    ecs::resource::Resource,
+    ecs::{component::Component, resource::Resource},
     prelude::{
         Quat, ReflectComponent, ReflectDefault, ReflectDeserialize, ReflectFromReflect,
         ReflectSerialize, Vec3,
@@ -27,14 +26,23 @@ pub use editable::*;
 #[reflect(Component, Serialize, Deserialize, Default, FromReflect)]
 pub struct MainCamera;
 
+#[derive(Reflect, Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[reflect(Serialize, Deserialize, FromReflect)]
+pub enum EditorSaveControl {
+    #[default]
+    Full,
+    NonTransform,
+    ReadOnly
+}
+
 /// Tracks the source/origin of an entity
 /// String is relative path from /assets
 #[derive(Reflect, Serialize, Deserialize, Debug, Clone, Component, Default, PartialEq)]
 #[reflect(Component, Serialize, Deserialize, Default, FromReflect)]
-pub struct SpawnSource(Cow<'static, str>);
+pub struct SpawnSource(Cow<'static, str>, EditorSaveControl);
 impl SpawnSource {
-    pub fn new(path: impl Into<Cow<'static, str>>) -> Self {
-        Self(path.into())
+    pub fn new(path: impl Into<Cow<'static, str>>, editor_save_control: EditorSaveControl) -> Self {
+        Self(path.into(), editor_save_control)
     }
 
     pub fn str_ref(&self) -> &str {

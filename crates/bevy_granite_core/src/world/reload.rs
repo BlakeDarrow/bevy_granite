@@ -1,5 +1,5 @@
 use crate::{
-    entities::{despawn_recursive_serializable_entities, IdentityData},
+    entities::{despawn_recursive_serializable_entities, EditorSaveControl, IdentityData},
     events::{RequestLoadEvent, RequestReloadEvent},
 };
 use bevy::prelude::{Commands, Entity, EventReader, EventWriter, Query, With};
@@ -13,6 +13,11 @@ pub fn reload_world_system(
 ) {
     for RequestReloadEvent(path) in relead_watcher.read() {
         despawn_recursive_serializable_entities(&mut commands, &serializable_query);
-        load_world_writter.write(RequestLoadEvent(path.to_string(), None));
+        // need to have better way to do undo... actually use events
+        load_world_writter.write(RequestLoadEvent(
+            path.to_string(),
+            EditorSaveControl::Full,
+            None,
+        ));
     }
 }

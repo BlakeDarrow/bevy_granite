@@ -36,16 +36,13 @@ pub fn update_debug_tab_ui_system(
                 if let Some(active_entity) = active_selection_query.iter().next() {
                     let name = entity_query.get(active_entity).ok().map(|n| n.to_string());
                     let identity_data = identity_query.get(active_entity).ok().cloned();
-                    let spawned_from = spawn_source_query
-                        .get(active_entity)
-                        .ok()
-                        .map(|s| s.to_string());
+                    let spawned_from = spawn_source_query.get(active_entity).ok();
 
                     ActiveObjectDetails {
                         entity: Some(active_entity),
                         name,
                         identity_data,
-                        spawned_from,
+                        spawned_from: spawned_from.cloned(),
                     }
                 } else {
                     ActiveObjectDetails::default()

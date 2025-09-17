@@ -1,7 +1,7 @@
 use bevy::platform::collections::HashMap;
 use bevy::prelude::{default, Entity};
 use bevy_egui::egui;
-use bevy_granite_core::{AvailableEditableMaterials, IdentityData, UserInput};
+use bevy_granite_core::{AvailableEditableMaterials, IdentityData, SpawnSource, UserInput};
 
 #[derive(Clone, PartialEq, Default)]
 pub struct SelectionInfo {
@@ -14,7 +14,7 @@ pub struct ActiveObjectDetails {
     pub entity: Option<Entity>,
     pub name: Option<String>,
     pub identity_data: Option<IdentityData>,
-    pub spawned_from: Option<String>,
+    pub spawned_from: Option<SpawnSource>,
 }
 
 #[derive(PartialEq, Clone)]
@@ -143,7 +143,7 @@ pub fn debug_tab_ui(ui: &mut egui::Ui, data: &mut DebugTabData) {
 
                 ui.weak("Spawned from:");
                 if let Some(source) = &data.active_object_details.spawned_from {
-                    ui.label(source);
+                    ui.label(format!("{:?}", source));
                 } else {
                     ui.label("None");
                 }

@@ -11,7 +11,7 @@ use bevy::{
     transform::components::Transform,
 };
 use bevy_granite_core::{
-    entities::{GraniteType, SpawnSource},
+    entities::{EditorSaveControl, GraniteType, SpawnSource},
     shared::asset_file_browser_multiple,
     AvailableEditableMaterials, GraniteTypes, PromptData, PromptImportSettings,
 };
@@ -129,7 +129,7 @@ pub fn process_entity_spawn_queue_system(
         // Tag entity with spawn source
         commands
             .entity(entity)
-            .insert(SpawnSource::new(pending.source.clone()));
+            .insert(SpawnSource::new(pending.source.clone(), EditorSaveControl::Full));
 
         let additive = pending.batch_size > 1;
         let remaining = spawn_queue.pending.len();

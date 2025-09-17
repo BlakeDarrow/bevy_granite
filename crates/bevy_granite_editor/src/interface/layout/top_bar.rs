@@ -20,8 +20,8 @@ use crate::{
 use bevy::{ecs::system::Commands, prelude::ResMut};
 use bevy_egui::egui;
 use bevy_granite_core::{
-    RequestDespawnBySource, RequestDespawnSerializableEntities, RequestLoadEvent, RequestSaveEvent,
-    UserInput,
+    entities::EditorSaveControl, RequestDespawnBySource, RequestDespawnSerializableEntities,
+    RequestLoadEvent, RequestSaveEvent, UserInput,
 };
 use bevy_granite_gizmos::selection::events::EntityEvent;
 use native_dialog::FileDialog;
@@ -72,9 +72,11 @@ pub fn top_bar_ui(
                         .show_open_single_file()
                         .unwrap()
                     {
-                        events
-                            .load
-                            .write(RequestLoadEvent(path.display().to_string(), None));
+                        events.load.write(RequestLoadEvent(
+                            path.display().to_string(),
+                            EditorSaveControl::Full,
+                            None,
+                        ));
                     }
                     ui.close();
                 }
@@ -113,9 +115,11 @@ pub fn top_bar_ui(
                 ui.separator();
 
                 if ui.button("Open Default World").clicked() {
-                    events
-                        .load
-                        .write(RequestLoadEvent(editor_state.default_world.clone(), None));
+                    events.load.write(RequestLoadEvent(
+                        editor_state.default_world.clone(),
+                        EditorSaveControl::Full,
+                        None,
+                    ));
                     ui.close();
                 }
 

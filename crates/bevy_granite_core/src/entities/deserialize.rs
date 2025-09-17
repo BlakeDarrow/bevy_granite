@@ -1,7 +1,6 @@
 use super::{ComponentEditor, EntitySaveReadyData, IdentityData, SceneData, SpawnSource};
 use crate::{
-    absolute_asset_to_rel, materials_from_folder_into_scene, shared::is_scene_version_compatible,
-    AvailableEditableMaterials, GraniteType, TransformData,
+    absolute_asset_to_rel, entities::EditorSaveControl, materials_from_folder_into_scene, shared::is_scene_version_compatible, AvailableEditableMaterials, GraniteType, TransformData
 };
 use bevy::{
     ecs::{entity::Entity, system::ResMut, world::World},
@@ -37,6 +36,7 @@ pub fn deserialize_entities(
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     mut meshes: ResMut<Assets<Mesh>>,
     abs_path: impl Into<Cow<'static, str>>, //absolute
+    editor_save_control: EditorSaveControl,
     transform_override: Option<Transform>,
 ) {
     let abs_path: Cow<'static, str> = abs_path.into();
@@ -73,7 +73,7 @@ pub fn deserialize_entities(
 
         // Tag entity with its source file
         let relative: Cow<'static, str> = absolute_asset_to_rel(abs_path.to_string());
-        commands.entity(entity).insert(SpawnSource::new(relative));
+        commands.entity(entity).insert(SpawnSource::new(relative, editor_save_control.clone()));
 
         // Store parent relationships for second pass
         if let Some(parent_guid) = save_data.parent {
