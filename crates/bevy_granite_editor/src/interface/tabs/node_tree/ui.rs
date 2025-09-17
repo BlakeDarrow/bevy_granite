@@ -52,6 +52,7 @@ fn draw_node_background(
     is_selected: bool,
     is_active_selected: bool,
     search_term: &str,
+    is_dummy_parent: bool,
 ) {
     let is_being_dragged = data
         .drag_payload
@@ -67,7 +68,15 @@ fn draw_node_background(
                 .any(|&dragged_entity| is_descendant_of(entity, dragged_entity, &data.hierarchy))
     });
 
-    if is_being_dragged {
+    if is_dummy_parent {
+        // Dummy parent - use red background color
+        let red_color = egui::Color32::from_rgb(120, 40, 40); // Dark red background
+        ui.painter().rect_filled(
+            *row_rect,
+            ui.style().visuals.menu_corner_radius / 2.,
+            red_color,
+        );
+    } else if is_being_dragged {
         // Being dragged - use a tinted version of the selection color
         let drag_color = ui.style().visuals.selection.bg_fill.gamma_multiply(0.7);
         ui.painter().rect_filled(
@@ -181,6 +190,7 @@ fn draw_expand_triangle(
     is_active_selected: bool,
     search_term: &str,
     icon_size: f32,
+    is_dummy_parent: bool,
 ) {
     let text_center_y = button_response.rect.center().y;
     let painter = column_ui.painter();
@@ -203,9 +213,13 @@ fn draw_expand_triangle(
             ]
         };
 
-        let triangle_color = visuals
-            .override_text_color
-            .unwrap_or_else(|| column_ui.style().visuals.text_color());
+        let triangle_color = if is_dummy_parent {
+            egui::Color32::from_rgb(255, 100, 100) // Red for dummy parents
+        } else {
+            visuals
+                .override_text_color
+                .unwrap_or_else(|| column_ui.style().visuals.text_color())
+        };
         painter.add(egui::Shape::convex_polygon(
             points.to_vec(),
             triangle_color,
@@ -218,33 +232,30 @@ fn draw_expand_triangle(
             egui::pos2(center.x - half_size, center.y + half_size),
         ];
 
-        if is_selected || is_active_selected {
-            let stroke_color = visuals
+        let stroke_color = if is_dummy_parent {
+            egui::Color32::from_rgb(255, 150, 150) // Light red for dummy parent stroke
+        } else if is_selected || is_active_selected {
+            visuals
                 .override_text_color
-                .unwrap_or_else(|| column_ui.style().visuals.strong_text_color());
-            painter.add(egui::Shape::closed_line(
-                points.to_vec(),
-                egui::Stroke::new(0.3, stroke_color),
-            ));
-        } else {
-            let stroke_color = if visuals.override_text_color.is_some() {
-                let base_color = visuals
-                    .override_text_color
-                    .unwrap_or_else(|| column_ui.style().visuals.text_color());
-                if base_color.a() < 255 {
-                    egui::Color32::from_rgb(base_color.r(), base_color.g(), base_color.b())
-                // Make solid
-                } else {
-                    base_color
-                }
+                .unwrap_or_else(|| column_ui.style().visuals.strong_text_color())
+        } else if visuals.override_text_color.is_some() {
+            let base_color = visuals
+                .override_text_color
+                .unwrap_or_else(|| column_ui.style().visuals.text_color());
+            if base_color.a() < 255 {
+                egui::Color32::from_rgb(base_color.r(), base_color.g(), base_color.b())
+            // Make solid
             } else {
-                column_ui.style().visuals.text_color()
-            };
-            painter.add(egui::Shape::closed_line(
-                points.to_vec(),
-                egui::Stroke::new(0.3, stroke_color),
-            ));
-        }
+                base_color
+            }
+        } else {
+            column_ui.style().visuals.text_color()
+        };
+        
+        painter.add(egui::Shape::closed_line(
+            points.to_vec(),
+            egui::Stroke::new(0.3, stroke_color),
+        ));
     }
 }
 
@@ -323,11 +334,16 @@ fn render_tree_node(
         .get(&Some(entity))
         .map_or(false, |children| !children.is_empty());
 
-    let is_expanded = data
+    let hierarchy_entry = data
         .hierarchy
         .iter()
-        .find(|entry| entry.entity == entity)
+        .find(|entry| entry.entity == entity);
+    
+    let is_expanded = hierarchy_entry
         .map_or(false, |entry| entry.is_expanded);
+    
+    let is_dummy_parent = hierarchy_entry
+        .map_or(false, |entry| entry.is_dummy_parent);
 
     // Pre-allocate space to know the rect size
     let available_rect = ui.available_rect_before_wrap();
@@ -352,6 +368,7 @@ fn render_tree_node(
         is_selected,
         is_active_selected,
         search_term,
+        is_dummy_parent,
     );
 
     let shift_held = ui.input(|i| i.modifiers.shift);
@@ -378,8 +395,15 @@ fn render_tree_node(
             let (name_text, type_text) =
                 create_highlighted_text(name, entity_type, search_term, &columns[0]);
 
-            let name_button =
-                create_name_button(&name_text, &visuals, is_selected, is_active_selected);
+            let name_button = if is_dummy_parent {
+                // Special styling for dummy parents - red text
+                let red_text = egui::RichText::new(name).color(egui::Color32::from_rgb(255, 100, 100)).strong();
+                egui::Button::new(red_text)
+                    .fill(egui::Color32::TRANSPARENT)
+                    .stroke(egui::Stroke::NONE)
+            } else {
+                create_name_button(&name_text, &visuals, is_selected, is_active_selected)
+            };
 
             let button_response = columns[0].add(name_button);
             if verbose {
@@ -395,17 +419,23 @@ fn render_tree_node(
                 egui::Sense::click_and_drag(),
             );
 
-            if combined_response.clicked() {
+            if combined_response.clicked() && !is_dummy_parent {
                 handle_node_selection(entity, name, data, ctrl_held, shift_held);
             }
 
-            // Handle drag and drop using the combined_response
-            handle_drag_and_drop(&combined_response, entity, data, search_term);
+            // Handle drag and drop using the combined_response (but not for dummy parents)
+            if !is_dummy_parent {
+                handle_drag_and_drop(&combined_response, entity, data, search_term);
+            }
 
             columns[2].with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.add_space(spacing);
 
-                if is_selected || is_active_selected {
+                if is_dummy_parent {
+                    // Special styling for dummy parent type text
+                    let red_type_text = egui::RichText::new(entity_type).color(egui::Color32::from_rgb(255, 150, 150));
+                    ui.label(red_type_text);
+                } else if is_selected || is_active_selected {
                     let text_color = visuals
                         .override_text_color
                         .unwrap_or_else(|| style_visuals.text_color());
@@ -430,6 +460,7 @@ fn render_tree_node(
                 is_active_selected,
                 search_term,
                 icon_size,
+                is_dummy_parent,
             );
 
             // Handle icon click for expand/collapse
