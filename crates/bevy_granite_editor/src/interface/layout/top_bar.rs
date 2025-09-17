@@ -3,7 +3,7 @@ use crate::{
     interface::{
         events::{
             PopupMenuRequestedEvent, RequestCameraEntityFrame, RequestEditorToggle,
-            RequestToggleCameraSync,
+            RequestToggleCameraSync, SetActiveWorld,
         },
         panels::{
             bottom_panel::{BottomDockState, BottomTab},
@@ -106,6 +106,39 @@ pub fn top_bar_ui(
                                 events
                                     .despawn_by_source
                                     .write(RequestDespawnBySource(source));
+                                ui.close();
+                            }
+                        }
+                    }
+                });
+
+                ui.menu_button("Set Active Scene", |ui| {
+                    ui.label(format!(
+                        "Available Sources ({}):",
+                        editor_state.loaded_sources.len()
+                    ));
+
+                    if editor_state.loaded_sources.is_empty() {
+                        ui.label("  (No sources loaded)");
+                    } else {
+                        let sources: Vec<String> =
+                            editor_state.loaded_sources.iter().cloned().collect();
+                        for source in sources {
+                            let is_current = editor_state.current_file
+                                .as_ref()
+                                .map(|current| current == &source)
+                                .unwrap_or(false);
+                            
+                            let button_text = if is_current {
+                                format!("[ACTIVE] {}", source)
+                            } else {
+                                source.clone()
+                            };
+                            
+                            if ui.button(button_text).clicked() {
+                                events
+                                    .set_active_world
+                                    .write(SetActiveWorld(source));
                                 ui.close();
                             }
                         }

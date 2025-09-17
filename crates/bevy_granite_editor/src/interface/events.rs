@@ -25,6 +25,7 @@ pub struct EditorEvents<'w> {
     pub remove_children: EventWriter<'w, RequestRemoveChildren>,
     pub despawn_all: EventWriter<'w, RequestDespawnSerializableEntities>,
     pub despawn_by_source: EventWriter<'w, RequestDespawnBySource>,
+    pub set_active_world: EventWriter<'w, SetActiveWorld>,
 }
 
 // Internal Events
