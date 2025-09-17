@@ -64,6 +64,7 @@ pub struct HierarchyEntry {
     pub parent: Option<Entity>,
     pub is_expanded: bool,
     pub is_dummy_parent: bool, // True if this is a file-based grouping dummy parent
+    pub is_preserve_disk: bool, // True if entity has SaveAs::PreserveDisk
 }
 
 pub fn update_node_tree_tabs_system(
@@ -437,11 +438,14 @@ fn update_hierarchy_data<'a>(
         .map(|entry| (entry.entity, entry.is_expanded))
         .collect();
 
-    // First, collect all entities and group those with PreserveDisk SpawnSource
+    // First, collect all entities and group those with ANY SpawnSource
     let mut real_entities: Vec<HierarchyEntry> = Vec::new();
     let mut file_groups: HashMap<String, Vec<Entity>> = HashMap::new();
     
     for (entity, name, relation, identity, spawn_source) in hierarchy_query {
+        let is_preserve_disk = spawn_source
+            .map_or(false, |source| matches!(source.spawn_as(), SaveAs::PreserveDisk));
+            
         let entry = HierarchyEntry {
             entity,
             name: name.to_string(),
@@ -451,14 +455,13 @@ fn update_hierarchy_data<'a>(
             parent: relation.map(|r| r.parent()),
             is_expanded: existing_expanded.get(&entity).copied().unwrap_or(false),
             is_dummy_parent: false,
+            is_preserve_disk,
         };
         
-        // Check if this entity has PreserveDisk SpawnSource
+        // Group ALL entities that have SpawnSource (regardless of SaveAs mode)
         if let Some(spawn_source) = spawn_source {
-            if matches!(spawn_source.spawn_as(), SaveAs::PreserveDisk) {
-                let file_path = spawn_source.str_ref().to_string();
-                file_groups.entry(file_path).or_default().push(entity);
-            }
+            let file_path = spawn_source.str_ref().to_string();
+            file_groups.entry(file_path).or_default().push(entity);
         }
         
         real_entities.push(entry);
@@ -471,10 +474,14 @@ fn update_hierarchy_data<'a>(
     // Create dummy parent entities for each file group
     for (file_path, entities) in &file_groups {
         if entities.len() > 0 { // Only create dummy parent if there are entities
-            // Create a unique dummy entity ID based on file path hash
-            let dummy_entity = Entity::from_raw(
-                (file_path.as_bytes().iter().fold(0u32, |acc, &b| acc.wrapping_mul(31).wrapping_add(b as u32)) % (u32::MAX / 2)) + (u32::MAX / 2)
-            );
+            // Create a stable dummy entity ID based on file path hash
+            // Use a simple but stable hash of the file path
+            let mut hash: u32 = 5381;
+            for byte in file_path.bytes() {
+                hash = hash.wrapping_mul(33).wrapping_add(byte as u32);
+            }
+            // Ensure we use the high range to avoid conflicts with real entities
+            let dummy_entity = Entity::from_raw(u32::MAX - (hash % 1000000));
             
             dummy_parent_entities.insert(file_path.clone(), dummy_entity);
             
@@ -482,10 +489,11 @@ fn update_hierarchy_data<'a>(
             let dummy_entry = HierarchyEntry {
                 entity: dummy_entity,
                 name: file_path.clone(),
-                entity_type: "PreserveDisk".to_string(),
+                entity_type: "File".to_string(),
                 parent: None,
                 is_expanded: existing_expanded.get(&dummy_entity).copied().unwrap_or(true), // Default expanded
                 is_dummy_parent: true,
+                is_preserve_disk: false, // Dummy parents are never preserve disk
             };
             
             hierarchy_entries.push(dummy_entry);
@@ -509,11 +517,12 @@ fn update_hierarchy_data<'a>(
         hierarchy_entries.push(entry);
     }
 
-    hierarchy_entries.sort_by_key(|entry| {
-        if entry.is_dummy_parent {
-            0 // Dummy parents sort first
-        } else {
-            entry.entity.index()
+    hierarchy_entries.sort_by(|a, b| {
+        match (a.is_dummy_parent, b.is_dummy_parent) {
+            (true, false) => std::cmp::Ordering::Less,  // Dummy parents first
+            (false, true) => std::cmp::Ordering::Greater, // Real entities after
+            (true, true) => a.name.cmp(&b.name),         // Sort dummy parents by file path
+            (false, false) => a.entity.index().cmp(&b.entity.index()), // Sort real entities by entity index
         }
     });
     
