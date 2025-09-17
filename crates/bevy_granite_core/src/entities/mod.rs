@@ -28,25 +28,28 @@ pub struct MainCamera;
 
 #[derive(Reflect, Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[reflect(Serialize, Deserialize, FromReflect)]
-pub enum EditorSaveControl {
+pub enum SaveAs {
+    PreserveDisk,
     #[default]
-    Full,
-    NonTransform,
-    ReadOnly
+    Runtime,
 }
 
 /// Tracks the source/origin of an entity
 /// String is relative path from /assets
 #[derive(Reflect, Serialize, Deserialize, Debug, Clone, Component, Default, PartialEq)]
 #[reflect(Component, Serialize, Deserialize, Default, FromReflect)]
-pub struct SpawnSource(Cow<'static, str>, EditorSaveControl);
+pub struct SpawnSource(Cow<'static, str>, SaveAs);
 impl SpawnSource {
-    pub fn new(path: impl Into<Cow<'static, str>>, editor_save_control: EditorSaveControl) -> Self {
-        Self(path.into(), editor_save_control)
+    pub fn new(path: impl Into<Cow<'static, str>>, spawn_as: SaveAs) -> Self {
+        Self(path.into(), spawn_as)
     }
 
     pub fn str_ref(&self) -> &str {
         self.0.as_ref()
+    }
+
+    pub fn spawn_as(&self) -> &SaveAs {
+        &self.1
     }
 }
 

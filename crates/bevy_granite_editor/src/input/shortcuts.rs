@@ -3,7 +3,7 @@ use bevy::{
     prelude::{Children, Commands, Entity, Query, Res},
 };
 use bevy_granite_core::{
-    entities::EditorSaveControl, RequestLoadEvent, RequestReloadEvent, RequestSaveEvent, UserInput,
+    entities::SaveAs, RequestLoadEvent, RequestReloadEvent, RequestSaveEvent, UserInput,
 };
 use bevy_granite_gizmos::{selection::events::EntityEvent, Selected};
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
@@ -159,7 +159,7 @@ fn handle_shortcuts(
         {
             events.load.write(RequestLoadEvent(
                 path.display().to_string(),
-                EditorSaveControl::Full,
+                SaveAs::Runtime,
                 None,
             ));
         };

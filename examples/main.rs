@@ -1,7 +1,7 @@
 // main.rs - bevy 0.16
 use bevy::prelude::*;
 use bevy_granite::prelude::*;
-use bevy_granite_core::entities::EditorSaveControl;
+use bevy_granite_core::entities::SaveAs;
 
 const STARTING_WORLD: &str = "scenes/starting.scene"; // Your starting world file. Doesn't have to actually exist yet
 
@@ -53,7 +53,7 @@ fn setup(mut open_event: EventWriter<RequestLoadEvent>) {
     // When finished loading it will send a `WorldLoadSuccessEvent` with the loaded world str name
     open_event.write(RequestLoadEvent(
         STARTING_WORLD.to_string(),
-        EditorSaveControl::Full,
+        SaveAs::Runtime,
         None,
     ));
 }
