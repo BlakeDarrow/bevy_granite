@@ -251,7 +251,7 @@ fn draw_expand_triangle(
         } else {
             column_ui.style().visuals.text_color()
         };
-        
+
         painter.add(egui::Shape::closed_line(
             points.to_vec(),
             egui::Stroke::new(0.3, stroke_color),
@@ -334,19 +334,13 @@ fn render_tree_node(
         .get(&Some(entity))
         .map_or(false, |children| !children.is_empty());
 
-    let hierarchy_entry = data
-        .hierarchy
-        .iter()
-        .find(|entry| entry.entity == entity);
-    
-    let is_expanded = hierarchy_entry
-        .map_or(false, |entry| entry.is_expanded);
-    
-    let is_dummy_parent = hierarchy_entry
-        .map_or(false, |entry| entry.is_dummy_parent);
-    
-    let is_preserve_disk = hierarchy_entry
-        .map_or(false, |entry| entry.is_preserve_disk);
+    let hierarchy_entry = data.hierarchy.iter().find(|entry| entry.entity == entity);
+
+    let is_expanded = hierarchy_entry.map_or(false, |entry| entry.is_expanded);
+
+    let is_dummy_parent = hierarchy_entry.map_or(false, |entry| entry.is_dummy_parent);
+
+    let is_preserve_disk = hierarchy_entry.map_or(false, |entry| entry.is_preserve_disk);
 
     // Pre-allocate space to know the rect size
     let available_rect = ui.available_rect_before_wrap();
@@ -398,13 +392,24 @@ fn render_tree_node(
             let (name_text, type_text) =
                 create_highlighted_text(name, entity_type, search_term, &columns[0]);
 
-            let name_button = if is_preserve_disk {
-                // Special styling for PreserveDisk entities - red text
-                let red_text = egui::RichText::new(name).color(egui::Color32::from_rgb(255, 100, 100)).strong();
+            let name_button = if is_dummy_parent {
+                // Special styling for dummy parents - neutral color
+                let neutral_text =
+                    egui::RichText::new(name).color(egui::Color32::from_rgb(180, 180, 180));
+                egui::Button::new(neutral_text)
+                    .fill(egui::Color32::TRANSPARENT)
+                    .stroke(egui::Stroke::NONE)
+            } else if is_preserve_disk {
+                // Special styling for PreserveDisk entities
+                let locked_name = format!("[READ ONLY] {}", name);
+                let red_text = egui::RichText::new(locked_name)
+                    .color(egui::Color32::from_rgb(255, 100, 100))
+                    .strong();
                 egui::Button::new(red_text)
                     .fill(egui::Color32::TRANSPARENT)
                     .stroke(egui::Stroke::NONE)
             } else {
+                // All other entities (including editable SpawnSource ones)
                 create_name_button(&name_text, &visuals, is_selected, is_active_selected)
             };
 
@@ -436,7 +441,8 @@ fn render_tree_node(
 
                 if is_preserve_disk {
                     // Special styling for PreserveDisk entity type text
-                    let red_type_text = egui::RichText::new(entity_type).color(egui::Color32::from_rgb(255, 150, 150));
+                    let red_type_text = egui::RichText::new(entity_type)
+                        .color(egui::Color32::from_rgb(255, 150, 150));
                     ui.label(red_type_text);
                 } else if is_selected || is_active_selected {
                     let text_color = visuals
