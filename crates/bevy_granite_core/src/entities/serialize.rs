@@ -1,4 +1,4 @@
-use super::{IdentityData, TransformData};
+use super::{IdentityData, TransformData, SaveAs};
 use crate::{get_current_scene_version, world::WorldState};
 use bevy::prelude::{Quat, Vec3};
 use bevy_granite_logging::{
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs::{self, File},
-    io::Write,
+    io::{Write, Read},
     path::Path,
 };
 use uuid::Uuid;
@@ -45,10 +45,23 @@ pub fn serialize_entities(world_state: WorldState, path: Option<String>) {
     let entities_data = world_state.entity_data;
     let runtime_data_provider = world_state.component_data.unwrap_or_default();
 
+    // Read original file data for PreserveDisk entities
+    let original_entities = if let Some(ref path_str) = path {
+        read_existing_file_data(path_str)
+    } else {
+        Vec::new()
+    };
+    
+    // Create map of UUID -> original data for quick lookup
+    let original_by_uuid: HashMap<Uuid, EntitySaveReadyData> = original_entities
+        .into_iter()
+        .map(|entity| (entity.identity.uuid, entity))
+        .collect();
+
     // Map entity indices to their actual UUIDs from IdentityData
     let mut entity_uuid_map = std::collections::HashMap::new();
     if let Some(entity_vec) = &entities_data {
-        for (entity, identity, _, _) in entity_vec.iter() {
+        for (entity, identity, _, _, _) in entity_vec.iter() {
             entity_uuid_map.insert(entity.index(), identity.uuid);
         }
     }
@@ -56,20 +69,54 @@ pub fn serialize_entities(world_state: WorldState, path: Option<String>) {
     let entities_to_serialize: Vec<EntitySaveReadyData> = match &entities_data {
         Some(entity_vec) => entity_vec
             .iter()
-            .map(|(entity, identity, transform, parent)| {
-                let translation = round_vec3(transform.translation);
-                let rotation = round_quat(transform.rotation);
-                let scale = round_vec3(transform.scale);
+            .map(|(entity, identity, transform, parent, save_as)| {
                 let parent_uuid = parent.and_then(|p| entity_uuid_map.get(&p.index()).copied());
-                EntitySaveReadyData {
-                    identity: identity.clone(),
-                    transform: TransformData {
-                        position: translation,
-                        rotation,
-                        scale,
+                
+                match save_as {
+                    SaveAs::Runtime => {
+                        // Use current world state
+                        let translation = round_vec3(transform.translation);
+                        let rotation = round_quat(transform.rotation);
+                        let scale = round_vec3(transform.scale);
+                        EntitySaveReadyData {
+                            identity: identity.clone(),
+                            transform: TransformData {
+                                position: translation,
+                                rotation,
+                                scale,
+                            },
+                            parent: parent_uuid, 
+                            components: runtime_data_provider.get(entity).cloned(),
+                        }
                     },
-                    parent: parent_uuid, 
-                    components: runtime_data_provider.get(entity).cloned(),
+                    SaveAs::PreserveDisk => {
+                        // Use original file data
+                        original_by_uuid.get(&identity.uuid)
+                            .cloned()
+                            .unwrap_or_else(|| {
+                                // Fallback to current world state if original not found
+                                log!(
+                                    LogType::Game,
+                                    LogLevel::Warning,
+                                    LogCategory::System,
+                                    "PreserveDisk entity {} not found in original file, using current state",
+                                    identity.uuid
+                                );
+                                let translation = round_vec3(transform.translation);
+                                let rotation = round_quat(transform.rotation);
+                                let scale = round_vec3(transform.scale);
+                                EntitySaveReadyData {
+                                    identity: identity.clone(),
+                                    transform: TransformData {
+                                        position: translation,
+                                        rotation,
+                                        scale,
+                                    },
+                                    parent: parent_uuid, 
+                                    components: runtime_data_provider.get(entity).cloned(),
+                                }
+                            })
+                    }
                 }
             })
             .collect(),
@@ -141,4 +188,42 @@ fn round_vec3(v: Vec3) -> Vec3 {
 
 fn round_quat(q: Quat) -> Quat {
     Quat::from_xyzw(round3(q.x), round3(q.y), round3(q.z), round3(q.w))
+}
+
+/// Read existing file data to get original entity data for PreserveDisk entities
+fn read_existing_file_data(path: &str) -> Vec<EntitySaveReadyData> {
+    let file_path = Path::new(path);
+    if !file_path.exists() {
+        return Vec::new();
+    }
+
+    let mut file = match std::fs::File::open(file_path) {
+        Ok(file) => file,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut file_contents = String::new();
+    if file.read_to_string(&mut file_contents).is_err() {
+        return Vec::new();
+    }
+
+    if file_contents.trim().is_empty() {
+        return Vec::new();
+    }
+
+    // Try to parse with new format first (with metadata), fallback to old format
+    if let Ok(scene_data) = ron::de::from_str::<SceneData>(&file_contents) {
+        scene_data.entities
+    } else if let Ok(entities) = ron::de::from_str::<Vec<EntitySaveReadyData>>(&file_contents) {
+        entities
+    } else {
+        log!(
+            LogType::Game,
+            LogLevel::Warning,
+            LogCategory::System,
+            "Failed to parse existing file data from: {}",
+            path
+        );
+        Vec::new()
+    }
 }

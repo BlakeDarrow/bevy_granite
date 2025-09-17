@@ -17,7 +17,7 @@ pub mod shared;
 pub mod world;
 
 // Internal plugins from modules
-use crate::{assets::AssetPlugin};
+use crate::assets::AssetPlugin;
 use crate::entities::EntityPlugin;
 use crate::shared::SharedPlugin;
 use crate::world::WorldPlugin;
@@ -34,7 +34,8 @@ pub use entities::{
     BridgeTag, Camera3D, ClassCategory, ComponentEditor, DirLight, EditorIgnore,
     GraniteEditorSerdeEntity, GraniteType, GraniteTypes, HasRuntimeData, IdentityData, MainCamera,
     MaterialNameSource, NeedsTangents, PointLightData, PromptData, PromptImportSettings, RectBrush,
-    ReflectedComponent, SpawnSource, TransformData, TreeHiddenEntity, UICamera, VolumetricFog, OBJ,
+    ReflectedComponent, SaveAs, SpawnSource, TransformData, TreeHiddenEntity, UICamera,
+    VolumetricFog, OBJ,
 };
 pub use events::{
     CollectRuntimeDataEvent, RequestDespawnBySource, RequestDespawnSerializableEntities,
@@ -44,8 +45,8 @@ pub use events::{
 pub use setup::RegisteredTypeNames;
 pub use shared::{
     absolute_asset_to_rel, get_current_scene_version, get_minimum_scene_version,
-    is_scene_version_compatible, mouse_to_world_delta, CursorWindowPos, IconEntity, IconProxy,
-    IconType, InputTypes, UserInput,
+    is_scene_version_compatible, mouse_to_world_delta, rel_asset_to_absolute, CursorWindowPos,
+    IconEntity, IconProxy, IconType, InputTypes, UserInput,
 };
 
 // Bevy Granite Core plugin
