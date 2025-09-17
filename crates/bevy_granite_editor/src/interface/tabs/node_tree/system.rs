@@ -1,11 +1,12 @@
 use super::ui::expand_to_entity;
 use crate::interface::events::RequestRemoveParentsFromEntities;
 use crate::interface::{SideDockState, SideTab};
+use crate::editor_state::EditorState;
 use bevy::ecs::query::Has;
 use bevy::ecs::system::Commands;
 use bevy::{
     ecs::query::{Changed, Or},
-    prelude::{ChildOf, Entity, Event, EventWriter, Name, Query, ResMut, With},
+    prelude::{ChildOf, Entity, Event, EventWriter, Name, Query, Res, ResMut, With},
 };
 use bevy_granite_core::{GraniteType, IdentityData, TreeHiddenEntity, SpawnSource, SaveAs};
 use bevy_granite_gizmos::selection::events::EntityEvent;
@@ -34,6 +35,7 @@ pub struct NodeTreeTabData {
     pub search_filter: String,
     pub drag_payload: Option<Vec<Entity>>, // Entities being dragged
     pub drop_target: Option<Entity>,       // Entity being dropped onto
+    pub active_scene_file: Option<String>, // Currently active scene file path
 }
 
 impl Default for NodeTreeTabData {
@@ -53,6 +55,7 @@ impl Default for NodeTreeTabData {
             search_filter: String::new(),
             drag_payload: None,
             drop_target: None,
+            active_scene_file: None,
         }
     }
 }
@@ -71,6 +74,7 @@ pub fn update_node_tree_tabs_system(
     mut right_dock: ResMut<SideDockState>,
     active_selection: Query<Entity, With<ActiveSelection>>,
     all_selected: Query<Entity, With<Selected>>,
+    editor_state: Res<EditorState>,
     mut hierarchy_query: Query<(
         Entity,
         &Name,
@@ -94,6 +98,7 @@ pub fn update_node_tree_tabs_system(
             let previous_selection = data.active_selection;
             data.active_selection = active_selection.single().ok();
             data.selected_entities = all_selected.iter().collect();
+            data.active_scene_file = editor_state.current_file.clone();
 
             let (entities_changed, data_changed, hierarchy_changed) = if data.filtered_hierarchy {
                 let q = hierarchy_query

@@ -68,15 +68,7 @@ fn draw_node_background(
                 .any(|&dragged_entity| is_descendant_of(entity, dragged_entity, &data.hierarchy))
     });
 
-    if is_preserve_disk {
-        // PreserveDisk entity - use red background color
-        let red_color = egui::Color32::from_rgb(120, 40, 40); // Dark red background
-        ui.painter().rect_filled(
-            *row_rect,
-            ui.style().visuals.menu_corner_radius / 2.,
-            red_color,
-        );
-    } else if is_being_dragged {
+    if is_being_dragged {
         // Being dragged - use a tinted version of the selection color
         let drag_color = ui.style().visuals.selection.bg_fill.gamma_multiply(0.7);
         ui.painter().rect_filled(
@@ -214,7 +206,7 @@ fn draw_expand_triangle(
         };
 
         let triangle_color = if is_preserve_disk {
-            egui::Color32::from_rgb(255, 100, 100) // Red for PreserveDisk entities
+            egui::Color32::from_rgb(200, 120, 120) // Subtle red for PreserveDisk entities
         } else {
             visuals
                 .override_text_color
@@ -233,7 +225,7 @@ fn draw_expand_triangle(
         ];
 
         let stroke_color = if is_preserve_disk {
-            egui::Color32::from_rgb(255, 150, 150) // Light red for PreserveDisk entity stroke
+            egui::Color32::from_rgb(200, 140, 140) // Subtle light red for PreserveDisk entity stroke
         } else if is_selected || is_active_selected {
             visuals
                 .override_text_color
@@ -393,19 +385,56 @@ fn render_tree_node(
                 create_highlighted_text(name, entity_type, search_term, &columns[0]);
 
             let name_button = if is_dummy_parent {
-                // Special styling for dummy parents - neutral color
-                let neutral_text =
-                    egui::RichText::new(name).color(egui::Color32::from_rgb(180, 180, 180));
-                egui::Button::new(neutral_text)
-                    .fill(egui::Color32::TRANSPARENT)
-                    .stroke(egui::Stroke::NONE)
+                // Check if this dummy parent represents the active scene
+                let is_active_scene = data.active_scene_file.as_ref()
+                    .map_or(false, |active_file| name == active_file);
+                
+                if is_active_scene {
+                    // Active scene - create button with mixed colored text
+                    let font_id = egui::TextStyle::Button.resolve(&columns[0].style());
+                    let mut job = egui::text::LayoutJob::default();
+                    job.append("[ACTIVE] ", 0.0, egui::TextFormat {
+                        color: egui::Color32::from_rgb(100, 255, 100),
+                        font_id: font_id.clone(),
+                        ..Default::default()
+                    });
+                    job.append(name, 0.0, egui::TextFormat {
+                        color: egui::Color32::from_rgb(180, 180, 180),
+                        font_id,
+                        ..Default::default()
+                    });
+                    
+                    egui::Button::new(job)
+                        .fill(egui::Color32::TRANSPARENT)
+                        .stroke(egui::Stroke::NONE)
+                } else {
+                    // Inactive spawn source - neutral color
+                    let neutral_text = egui::RichText::new(name)
+                        .color(egui::Color32::from_rgb(180, 180, 180));
+                    egui::Button::new(neutral_text)
+                        .fill(egui::Color32::TRANSPARENT)
+                        .stroke(egui::Stroke::NONE)
+                }
             } else if is_preserve_disk {
-                // Special styling for PreserveDisk entities
-                let locked_name = format!("[READ ONLY] {}", name);
-                let red_text = egui::RichText::new(locked_name)
-                    .color(egui::Color32::from_rgb(255, 100, 100))
-                    .strong();
-                egui::Button::new(red_text)
+                // Special styling for PreserveDisk entities - red prefix + normal name
+                let font_id = egui::TextStyle::Button.resolve(&columns[0].style());
+                let mut job = egui::text::LayoutJob::default();
+                job.append("[READ ONLY] ", 0.0, egui::TextFormat {
+                    color: egui::Color32::from_rgb(255, 100, 100),
+                    font_id: font_id.clone(),
+                    ..Default::default()
+                });
+                job.append(name, 0.0, egui::TextFormat {
+                    color: if is_selected || is_active_selected {
+                        visuals.override_text_color.unwrap_or_else(|| visuals.strong_text_color())
+                    } else {
+                        visuals.override_text_color.unwrap_or_else(|| visuals.text_color())
+                    },
+                    font_id,
+                    ..Default::default()
+                });
+                
+                egui::Button::new(job)
                     .fill(egui::Color32::TRANSPARENT)
                     .stroke(egui::Stroke::NONE)
             } else {
