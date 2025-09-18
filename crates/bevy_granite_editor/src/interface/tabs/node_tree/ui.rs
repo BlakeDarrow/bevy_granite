@@ -389,14 +389,10 @@ fn render_tree_node(
             let name_button = if is_dummy_parent {
                 // Check if this dummy parent represents the active scene
 
-                let is_active_scene =
-                    data.active_scene_file
-                        .as_ref()
-                        .map_or(false, |active_file| {
-                            name == active_file
-                                .strip_prefix("scenes/")
-                                .unwrap_or_else(|| active_file)
-                        });
+                let is_active_scene = data
+                    .active_scene_file
+                    .as_ref()
+                    .map_or(false, |active_file| name == active_file);
 
                 if is_active_scene {
                     // Active scene - create button with mixed colored text
@@ -415,19 +411,22 @@ fn render_tree_node(
                         name,
                         0.0,
                         egui::TextFormat {
-                            color: egui::Color32::from_rgb(180, 180, 180),
+                            color: visuals
+                                .override_text_color
+                                .unwrap_or_else(|| style_visuals.text_color()),
                             font_id,
                             ..Default::default()
                         },
                     );
-
                     egui::Button::new(job)
                         .fill(egui::Color32::TRANSPARENT)
                         .stroke(egui::Stroke::NONE)
                 } else {
                     // Inactive spawn source - neutral color
-                    let neutral_text =
-                        egui::RichText::new(name).color(egui::Color32::from_rgb(180, 180, 180));
+                    let weak_color = visuals
+                        .override_text_color
+                        .unwrap_or_else(|| style_visuals.text_color());
+                    let neutral_text = egui::RichText::new(name).color(weak_color);
                     egui::Button::new(neutral_text)
                         .fill(egui::Color32::TRANSPARENT)
                         .stroke(egui::Stroke::NONE)

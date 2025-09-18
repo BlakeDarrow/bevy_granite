@@ -478,11 +478,7 @@ fn update_hierarchy_data<'a>(
 
         // Group ALL entities that have SpawnSource (regardless of SaveSettings mode)
         if let Some(spawn_source) = spawn_source {
-            let file_path = spawn_source
-                .str_ref()
-                .strip_prefix("scenes/")
-                .unwrap_or_else(|| spawn_source.str_ref())
-                .to_string();
+            let file_path = spawn_source.str_ref().to_string();
 
             file_groups.entry(file_path).or_default().push(entity);
         }
@@ -513,7 +509,7 @@ fn update_hierarchy_data<'a>(
             let dummy_entry = HierarchyEntry {
                 entity: dummy_entity,
                 name: file_path.clone(),
-                entity_type: "File".to_string(),
+                entity_type: "Scene".to_string(),
                 parent: None,
                 is_expanded: existing_expanded
                     .get(&dummy_entity)
