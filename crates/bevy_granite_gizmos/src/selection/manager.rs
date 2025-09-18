@@ -90,16 +90,16 @@ pub fn deselect_entity(
 ) {
     match event.event() {
         EntityEvent::Deselect { target } => {
-            commands.entity(*target).remove::<Selected>();
+            commands.entity(*target).remove::<(ActiveSelection, Selected)>();
         }
         EntityEvent::DeselectRange { range } => {
             for entity in range {
-                commands.entity(*entity).remove::<Selected>();
+                commands.entity(*entity).remove::<(ActiveSelection, Selected)>();
             }
         }
         EntityEvent::DeselectAll => {
             for entity in selection.iter() {
-                commands.entity(entity).remove::<Selected>();
+                commands.entity(entity).remove::<(ActiveSelection, Selected)>();
             }
         }
         _ => {}
