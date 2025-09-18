@@ -442,24 +442,41 @@ impl ComponentEditor {
         
         for (key, value) in map.iter() {
             if let ron::Value::String(field_name) = key {
-                let field_value = match value {
-                    ron::Value::Map(nested_map) => {
-                        // Recursively convert nested maps
-                        self.convert_map_to_ron_struct(nested_map)
-                    }
-                    ron::Value::String(s) => format!("\"{}\"", s),
-                    ron::Value::Number(n) => match n {
-                        ron::Number::Integer(i) => i.to_string(),
-                        ron::Number::Float(f) => format!("{:?}", f),
-                    },
-                    ron::Value::Bool(b) => b.to_string(),
-                    other => ron::to_string(other).unwrap_or_default(),
-                };
-                fields.push(format!("{}:{}", field_name, field_value));
+                // Just serialize the value and clean up any RON wrapper types
+                let field_value = ron::to_string(value).unwrap_or_default();
+                let cleaned_value = self.clean_ron_value(&field_value);
+                fields.push(format!("{}:{}", field_name, cleaned_value));
             }
         }
         
         format!("({})", fields.join(","))
+    }
+
+    /// Clean up RON serialized values by removing wrapper types and converting arrays to tuples
+    fn clean_ron_value(&self, ron_str: &str) -> String {
+        let mut result = ron_str.to_string();
+        
+        // Remove Float() wrappers
+        while result.contains("Float(") {
+            result = result.replace("Float(", "").replace(")", "");
+        }
+        
+        // Convert arrays [a,b,c] to tuples (a,b,c) for Vec3, Vec2, etc.
+        if result.starts_with('[') && result.ends_with(']') {
+            result = format!("({})", &result[1..result.len()-1]);
+        }
+        
+        // Handle nested maps recursively by parsing and reconverting
+        if let Ok(parsed) = ron::from_str::<ron::Value>(&result) {
+            match parsed {
+                ron::Value::Map(map) => {
+                    return self.convert_map_to_ron_struct(&map);
+                }
+                _ => {}
+            }
+        }
+        
+        result
     }
 
     /// Try to deserialize using multiple strategies

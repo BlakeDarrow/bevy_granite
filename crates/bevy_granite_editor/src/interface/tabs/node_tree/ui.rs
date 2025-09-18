@@ -52,7 +52,6 @@ fn draw_node_background(
     is_selected: bool,
     is_active_selected: bool,
     search_term: &str,
-    is_preserve_disk: bool,
 ) {
     let is_being_dragged = data
         .drag_payload
@@ -327,11 +326,8 @@ fn render_tree_node(
         .map_or(false, |children| !children.is_empty());
 
     let hierarchy_entry = data.hierarchy.iter().find(|entry| entry.entity == entity);
-
     let is_expanded = hierarchy_entry.map_or(false, |entry| entry.is_expanded);
-
     let is_dummy_parent = hierarchy_entry.map_or(false, |entry| entry.is_dummy_parent);
-
     let is_preserve_disk = hierarchy_entry.map_or(false, |entry| entry.is_preserve_disk);
 
     // Pre-allocate space to know the rect size
@@ -357,7 +353,6 @@ fn render_tree_node(
         is_selected,
         is_active_selected,
         search_term,
-        is_preserve_disk,
     );
 
     let shift_held = ui.input(|i| i.modifiers.shift);
@@ -380,7 +375,7 @@ fn render_tree_node(
         let visuals = ui.visuals().clone();
         let style_visuals = ui.style().visuals.clone();
 
-        ui.columns(3, |columns| {
+        ui.columns(2, |columns| {
             let (name_text, type_text) =
                 create_highlighted_text(name, entity_type, search_term, &columns[0]);
 
@@ -419,7 +414,7 @@ fn render_tree_node(
                 // Special styling for PreserveDisk entities - red prefix + normal name
                 let font_id = egui::TextStyle::Button.resolve(&columns[0].style());
                 let mut job = egui::text::LayoutJob::default();
-                job.append("[READ ONLY] ", 0.0, egui::TextFormat {
+                job.append("[READ] ", 0.0, egui::TextFormat {
                     color: egui::Color32::from_rgb(255, 100, 100),
                     font_id: font_id.clone(),
                     ..Default::default()
@@ -443,11 +438,6 @@ fn render_tree_node(
             };
 
             let button_response = columns[0].add(name_button);
-            if verbose {
-                let label = bevy_egui::egui::Label::new(format!("Entity: {}", entity.index()))
-                    .halign(egui::Align::Center);
-                columns[1].add(label);
-            }
 
             // Create a combined click and drag interaction over the same area
             let combined_response = columns[0].interact(
@@ -465,24 +455,71 @@ fn render_tree_node(
                 handle_drag_and_drop(&combined_response, entity, data, search_term);
             }
 
-            columns[2].with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            columns[1].with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.add_space(spacing);
+
+                // Combine entity info and type
+                let info_text = if verbose {
+                    format!("Entity: {} | {}", entity.index(), entity_type)
+                } else {
+                    entity_type.to_string()
+                };
 
                 if is_preserve_disk {
                     // Special styling for PreserveDisk entity type text
-                    let red_type_text = egui::RichText::new(entity_type)
+                    let red_type_text = egui::RichText::new(&info_text)
                         .color(egui::Color32::from_rgb(255, 150, 150));
                     ui.label(red_type_text);
                 } else if is_selected || is_active_selected {
                     let text_color = visuals
                         .override_text_color
                         .unwrap_or_else(|| style_visuals.text_color());
-                    ui.label(type_text.color(text_color));
+                    let highlighted_info = if verbose {
+                        // For verbose mode, we need to handle highlighting differently
+                        if !search_term.is_empty() && entity_type.to_lowercase().contains(search_term) {
+                            egui::RichText::new(&info_text)
+                                .background_color(if ui.style().visuals.dark_mode {
+                                    egui::Color32::from_rgb(100, 80, 0)
+                                } else {
+                                    egui::Color32::LIGHT_YELLOW
+                                })
+                                .color(if ui.style().visuals.dark_mode {
+                                    egui::Color32::WHITE
+                                } else {
+                                    egui::Color32::BLACK
+                                })
+                        } else {
+                            egui::RichText::new(&info_text).color(text_color)
+                        }
+                    } else {
+                        type_text.color(text_color)
+                    };
+                    ui.label(highlighted_info);
                 } else {
                     let weak_color = visuals
                         .override_text_color
                         .unwrap_or_else(|| style_visuals.weak_text_color());
-                    ui.label(type_text.color(weak_color));
+                    let highlighted_info = if verbose {
+                        // For verbose mode, we need to handle highlighting differently
+                        if !search_term.is_empty() && entity_type.to_lowercase().contains(search_term) {
+                            egui::RichText::new(&info_text)
+                                .background_color(if ui.style().visuals.dark_mode {
+                                    egui::Color32::from_rgb(100, 80, 0)
+                                } else {
+                                    egui::Color32::LIGHT_YELLOW
+                                })
+                                .color(if ui.style().visuals.dark_mode {
+                                    egui::Color32::WHITE
+                                } else {
+                                    egui::Color32::BLACK
+                                })
+                        } else {
+                            egui::RichText::new(&info_text).color(weak_color)
+                        }
+                    } else {
+                        type_text.color(weak_color)
+                    };
+                    ui.label(highlighted_info);
                 }
             });
 
