@@ -141,7 +141,7 @@ pub mod prelude {
         bevy_granite_core::{
             absolute_asset_to_rel, rel_asset_to_absolute, BridgeTag, MainCamera,
             RequestDespawnBySource, RequestDespawnSerializableEntities, RequestLoadEvent,
-            RequestReloadEvent, RequestSaveEvent, SaveAs, SpawnSource, TreeHiddenEntity, UICamera,
+            RequestReloadEvent, RequestSaveEvent, SaveSettings, SpawnSource, TreeHiddenEntity, UICamera,
             WorldLoadSuccessEvent, WorldSaveSuccessEvent,
         },
         bevy_granite_logging::{log, LogCategory, LogLevel, LogType},

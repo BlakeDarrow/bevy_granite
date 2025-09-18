@@ -34,7 +34,7 @@ pub use entities::{
     BridgeTag, Camera3D, ClassCategory, ComponentEditor, DirLight, EditorIgnore,
     GraniteEditorSerdeEntity, GraniteType, GraniteTypes, HasRuntimeData, IdentityData, MainCamera,
     MaterialNameSource, NeedsTangents, PointLightData, PromptData, PromptImportSettings, RectBrush,
-    ReflectedComponent, SaveAs, SpawnSource, TransformData, TreeHiddenEntity, UICamera,
+    ReflectedComponent, SaveSettings, SpawnSource, TransformData, TreeHiddenEntity, UICamera,
     VolumetricFog, OBJ,
 };
 pub use events::{

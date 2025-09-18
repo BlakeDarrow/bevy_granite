@@ -20,7 +20,7 @@ use crate::{
 use bevy::{ecs::system::Commands, prelude::ResMut};
 use bevy_egui::egui;
 use bevy_granite_core::{
-    entities::SaveAs, RequestDespawnBySource, RequestDespawnSerializableEntities,
+    entities::SaveSettings, RequestDespawnBySource, RequestDespawnSerializableEntities,
     RequestLoadEvent, RequestSaveEvent, UserInput,
 };
 use bevy_granite_gizmos::selection::events::EntityEvent;
@@ -74,7 +74,7 @@ pub fn top_bar_ui(
                     {
                         events.load.write(RequestLoadEvent(
                             path.display().to_string(),
-                            SaveAs::Runtime,
+                            SaveSettings::Runtime,
                             None,
                         ));
                     }
@@ -150,7 +150,7 @@ pub fn top_bar_ui(
                 if ui.button("Open Default World").clicked() {
                     events.load.write(RequestLoadEvent(
                         editor_state.default_world.clone(),
-                        SaveAs::Runtime,
+                        SaveSettings::Runtime,
                         None,
                     ));
                     ui.close();

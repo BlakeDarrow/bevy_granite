@@ -28,8 +28,9 @@ pub struct MainCamera;
 
 #[derive(Reflect, Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[reflect(Serialize, Deserialize, FromReflect)]
-pub enum SaveAs {
-    PreserveDisk,
+pub enum SaveSettings {
+    PreserveDiskFull,
+    PreserveDiskTransform,
     #[default]
     Runtime,
 }
@@ -38,9 +39,9 @@ pub enum SaveAs {
 /// String is relative path from /assets
 #[derive(Reflect, Serialize, Deserialize, Debug, Clone, Component, Default, PartialEq)]
 #[reflect(Component, Serialize, Deserialize, Default, FromReflect)]
-pub struct SpawnSource(Cow<'static, str>, SaveAs);
+pub struct SpawnSource(Cow<'static, str>, SaveSettings);
 impl SpawnSource {
-    pub fn new(path: impl Into<Cow<'static, str>>, spawn_as: SaveAs) -> Self {
+    pub fn new(path: impl Into<Cow<'static, str>>, spawn_as: SaveSettings) -> Self {
         Self(path.into(), spawn_as)
     }
 
@@ -48,7 +49,7 @@ impl SpawnSource {
         self.0.as_ref()
     }
 
-    pub fn spawn_as(&self) -> &SaveAs {
+    pub fn spawn_as(&self) -> &SaveSettings {
         &self.1
     }
 }

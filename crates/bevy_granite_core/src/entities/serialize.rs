@@ -1,4 +1,4 @@
-use super::{IdentityData, TransformData, SaveAs};
+use super::{IdentityData, TransformData, SaveSettings};
 use crate::{get_current_scene_version, world::WorldState};
 use bevy::prelude::{Quat, Vec3};
 use bevy_granite_logging::{
@@ -45,7 +45,7 @@ pub fn serialize_entities(world_state: WorldState, path: Option<String>) {
     let entities_data = world_state.entity_data;
     let runtime_data_provider = world_state.component_data.unwrap_or_default();
 
-    // Read original file data for PreserveDisk entities
+    // Read original file data for PreserveDiskFull entities
     let original_entities = if let Some(ref path_str) = path {
         read_existing_file_data(path_str)
     } else {
@@ -73,7 +73,7 @@ pub fn serialize_entities(world_state: WorldState, path: Option<String>) {
                 let parent_uuid = parent.and_then(|p| entity_uuid_map.get(&p.index()).copied());
                 
                 match save_as {
-                    SaveAs::Runtime => {
+                    SaveSettings::Runtime => {
                         // Use current world state
                         let translation = round_vec3(transform.translation);
                         let rotation = round_quat(transform.rotation);
@@ -89,7 +89,37 @@ pub fn serialize_entities(world_state: WorldState, path: Option<String>) {
                             components: runtime_data_provider.get(entity).cloned(),
                         }
                     },
-                    SaveAs::PreserveDisk => {
+                    SaveSettings::PreserveDiskTransform => {
+                        // Use current world state for everything except transform, which comes from disk
+                        let disk_transform = original_by_uuid.get(&identity.uuid)
+                            .map(|original| original.transform.clone())
+                            .unwrap_or_else(|| {
+                                // Fallback to current transform if original not found
+                                log!(
+                                    LogType::Game,
+                                    LogLevel::Warning,
+                                    LogCategory::System,
+                                    "PreserveDiskTransform entity {} not found in original file, using current transform",
+                                    identity.uuid
+                                );
+                                let translation = round_vec3(transform.translation);
+                                let rotation = round_quat(transform.rotation);
+                                let scale = round_vec3(transform.scale);
+                                TransformData {
+                                    position: translation,
+                                    rotation,
+                                    scale,
+                                }
+                            });
+
+                        EntitySaveReadyData {
+                            identity: identity.clone(),
+                            transform: disk_transform,
+                            parent: parent_uuid,
+                            components: runtime_data_provider.get(entity).cloned(),
+                        }
+                    }
+                    SaveSettings::PreserveDiskFull => {
                         // Use original file data
                         original_by_uuid.get(&identity.uuid)
                             .cloned()
@@ -99,7 +129,7 @@ pub fn serialize_entities(world_state: WorldState, path: Option<String>) {
                                     LogType::Game,
                                     LogLevel::Warning,
                                     LogCategory::System,
-                                    "PreserveDisk entity {} not found in original file, using current state",
+                                    "PreserveDiskFull entity {} not found in original file, using current state",
                                     identity.uuid
                                 );
                                 let translation = round_vec3(transform.translation);
@@ -190,7 +220,7 @@ fn round_quat(q: Quat) -> Quat {
     Quat::from_xyzw(round3(q.x), round3(q.y), round3(q.z), round3(q.w))
 }
 
-/// Read existing file data to get original entity data for PreserveDisk entities
+/// Read existing file data to get original entity data for PreserveDiskFull entities
 fn read_existing_file_data(path: &str) -> Vec<EntitySaveReadyData> {
     let file_path = Path::new(path);
     if !file_path.exists() {

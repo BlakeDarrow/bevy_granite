@@ -20,7 +20,7 @@ use std::{borrow::Cow, collections::HashMap};
 #[derive(Default, Debug, Clone)]
 pub struct WorldState {
     // Can easily be queried for, so we can immediately get this data
-    pub entity_data: Option<Vec<(Entity, IdentityData, Transform, Option<Entity>, crate::entities::SaveAs)>>, // Added parent entity, UUID, and SaveAs
+    pub entity_data: Option<Vec<(Entity, IdentityData, Transform, Option<Entity>, crate::entities::SaveSettings)>>, // Added parent entity, UUID, and SaveSettings
 
     // More difficult to get, so we do no have this off rip
     // We need to use World and the type registry to build and send event back saying its ready
@@ -71,7 +71,7 @@ pub fn save_request_system(
         // Part 1.
         // Gather all entities that are serializeable and contain IdentityData and Transform
         // Filter by SpawnSource to only include entities from the target source
-        let entities_data: Vec<(Entity, IdentityData, Transform, Option<Entity>, crate::entities::SaveAs)> = query
+        let entities_data: Vec<(Entity, IdentityData, Transform, Option<Entity>, crate::entities::SaveSettings)> = query
             .iter()
             .filter(|(_, _, _, _, source)| source.str_ref() == spawn_source)
             .map(|(entity, obj, transform, relation, source)| {

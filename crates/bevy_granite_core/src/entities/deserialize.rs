@@ -1,6 +1,6 @@
 use super::{ComponentEditor, EntitySaveReadyData, IdentityData, SceneData, SpawnSource};
 use crate::{
-    absolute_asset_to_rel, entities::SaveAs, materials_from_folder_into_scene, shared::is_scene_version_compatible, AvailableEditableMaterials, GraniteType, TransformData
+    absolute_asset_to_rel, entities::SaveSettings, materials_from_folder_into_scene, shared::is_scene_version_compatible, AvailableEditableMaterials, GraniteType, TransformData
 };
 use bevy::{
     ecs::{entity::Entity, system::ResMut, world::World},
@@ -36,7 +36,7 @@ pub fn deserialize_entities(
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     mut meshes: ResMut<Assets<Mesh>>,
     abs_path: impl Into<Cow<'static, str>>, //absolute
-    spawn_as: SaveAs,
+    spawn_as: SaveSettings,
     transform_override: Option<Transform>,
 ) {
     let abs_path: Cow<'static, str> = abs_path.into();

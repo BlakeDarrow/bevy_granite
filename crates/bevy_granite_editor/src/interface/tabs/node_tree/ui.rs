@@ -182,6 +182,7 @@ fn draw_expand_triangle(
     search_term: &str,
     icon_size: f32,
     is_preserve_disk: bool,
+    is_preserve_disk_transform: bool,
 ) {
     let text_center_y = button_response.rect.center().y;
     let painter = column_ui.painter();
@@ -205,7 +206,9 @@ fn draw_expand_triangle(
         };
 
         let triangle_color = if is_preserve_disk {
-            egui::Color32::from_rgb(200, 120, 120) // Subtle red for PreserveDisk entities
+            egui::Color32::from_rgb(200, 120, 120) // Subtle red for PreserveDiskFull entities
+        } else if is_preserve_disk_transform {
+            egui::Color32::from_rgb(200, 170, 80) // Yellow for PreserveDiskTransform entities
         } else {
             visuals
                 .override_text_color
@@ -224,7 +227,9 @@ fn draw_expand_triangle(
         ];
 
         let stroke_color = if is_preserve_disk {
-            egui::Color32::from_rgb(200, 140, 140) // Subtle light red for PreserveDisk entity stroke
+            egui::Color32::from_rgb(200, 140, 140) // Subtle light red for PreserveDiskFull entity stroke
+        } else if is_preserve_disk_transform {
+            egui::Color32::from_rgb(200, 180, 100) // Light yellow for PreserveDiskTransform entity stroke
         } else if is_selected || is_active_selected {
             visuals
                 .override_text_color
@@ -329,6 +334,8 @@ fn render_tree_node(
     let is_expanded = hierarchy_entry.map_or(false, |entry| entry.is_expanded);
     let is_dummy_parent = hierarchy_entry.map_or(false, |entry| entry.is_dummy_parent);
     let is_preserve_disk = hierarchy_entry.map_or(false, |entry| entry.is_preserve_disk);
+    let is_preserve_disk_transform =
+        hierarchy_entry.map_or(false, |entry| entry.is_preserve_disk_transform);
 
     // Pre-allocate space to know the rect size
     let available_rect = ui.available_rect_before_wrap();
@@ -381,54 +388,115 @@ fn render_tree_node(
 
             let name_button = if is_dummy_parent {
                 // Check if this dummy parent represents the active scene
-                let is_active_scene = data.active_scene_file.as_ref()
-                    .map_or(false, |active_file| name == active_file);
-                
+
+                let is_active_scene =
+                    data.active_scene_file
+                        .as_ref()
+                        .map_or(false, |active_file| {
+                            name == active_file
+                                .strip_prefix("scenes/")
+                                .unwrap_or_else(|| active_file)
+                        });
+
                 if is_active_scene {
                     // Active scene - create button with mixed colored text
                     let font_id = egui::TextStyle::Button.resolve(&columns[0].style());
                     let mut job = egui::text::LayoutJob::default();
-                    job.append("[ACTIVE] ", 0.0, egui::TextFormat {
-                        color: egui::Color32::from_rgb(100, 255, 100),
-                        font_id: font_id.clone(),
-                        ..Default::default()
-                    });
-                    job.append(name, 0.0, egui::TextFormat {
-                        color: egui::Color32::from_rgb(180, 180, 180),
-                        font_id,
-                        ..Default::default()
-                    });
-                    
+                    job.append(
+                        "[ACTIVE] ",
+                        0.0,
+                        egui::TextFormat {
+                            color: egui::Color32::from_rgb(100, 255, 100),
+                            font_id: font_id.clone(),
+                            ..Default::default()
+                        },
+                    );
+                    job.append(
+                        name,
+                        0.0,
+                        egui::TextFormat {
+                            color: egui::Color32::from_rgb(180, 180, 180),
+                            font_id,
+                            ..Default::default()
+                        },
+                    );
+
                     egui::Button::new(job)
                         .fill(egui::Color32::TRANSPARENT)
                         .stroke(egui::Stroke::NONE)
                 } else {
                     // Inactive spawn source - neutral color
-                    let neutral_text = egui::RichText::new(name)
-                        .color(egui::Color32::from_rgb(180, 180, 180));
+                    let neutral_text =
+                        egui::RichText::new(name).color(egui::Color32::from_rgb(180, 180, 180));
                     egui::Button::new(neutral_text)
                         .fill(egui::Color32::TRANSPARENT)
                         .stroke(egui::Stroke::NONE)
                 }
             } else if is_preserve_disk {
-                // Special styling for PreserveDisk entities - red prefix + normal name
+                // Special styling for PreserveDiskFull entities - red prefix + normal name
                 let font_id = egui::TextStyle::Button.resolve(&columns[0].style());
                 let mut job = egui::text::LayoutJob::default();
-                job.append("[READ] ", 0.0, egui::TextFormat {
-                    color: egui::Color32::from_rgb(255, 100, 100),
-                    font_id: font_id.clone(),
-                    ..Default::default()
-                });
-                job.append(name, 0.0, egui::TextFormat {
-                    color: if is_selected || is_active_selected {
-                        visuals.override_text_color.unwrap_or_else(|| visuals.strong_text_color())
-                    } else {
-                        visuals.override_text_color.unwrap_or_else(|| visuals.text_color())
+                job.append(
+                    "[READ] ",
+                    0.0,
+                    egui::TextFormat {
+                        color: egui::Color32::from_rgb(255, 100, 100),
+                        font_id: font_id.clone(),
+                        ..Default::default()
                     },
-                    font_id,
-                    ..Default::default()
-                });
-                
+                );
+                job.append(
+                    name,
+                    0.0,
+                    egui::TextFormat {
+                        color: if is_selected || is_active_selected {
+                            visuals
+                                .override_text_color
+                                .unwrap_or_else(|| visuals.strong_text_color())
+                        } else {
+                            visuals
+                                .override_text_color
+                                .unwrap_or_else(|| visuals.text_color())
+                        },
+                        font_id,
+                        ..Default::default()
+                    },
+                );
+
+                egui::Button::new(job)
+                    .fill(egui::Color32::TRANSPARENT)
+                    .stroke(egui::Stroke::NONE)
+            } else if is_preserve_disk_transform {
+                // Special styling for PreserveDiskTransform entities - yellow prefix + normal name
+                let font_id = egui::TextStyle::Button.resolve(&columns[0].style());
+                let mut job = egui::text::LayoutJob::default();
+                job.append(
+                    "[LIMITED] ",
+                    0.0,
+                    egui::TextFormat {
+                        color: egui::Color32::from_rgb(200, 170, 80),
+                        font_id: font_id.clone(),
+                        ..Default::default()
+                    },
+                );
+                job.append(
+                    name,
+                    0.0,
+                    egui::TextFormat {
+                        color: if is_selected || is_active_selected {
+                            visuals
+                                .override_text_color
+                                .unwrap_or_else(|| visuals.strong_text_color())
+                        } else {
+                            visuals
+                                .override_text_color
+                                .unwrap_or_else(|| visuals.text_color())
+                        },
+                        font_id,
+                        ..Default::default()
+                    },
+                );
+
                 egui::Button::new(job)
                     .fill(egui::Color32::TRANSPARENT)
                     .stroke(egui::Stroke::NONE)
@@ -466,17 +534,24 @@ fn render_tree_node(
                 };
 
                 if is_preserve_disk {
-                    // Special styling for PreserveDisk entity type text
+                    // Special styling for PreserveDiskFull entity type text
                     let red_type_text = egui::RichText::new(&info_text)
                         .color(egui::Color32::from_rgb(255, 150, 150));
                     ui.label(red_type_text);
+                } else if is_preserve_disk_transform {
+                    // Special styling for PreserveDiskTransform entity type text
+                    let yellow_type_text = egui::RichText::new(&info_text)
+                        .color(egui::Color32::from_rgb(220, 190, 100));
+                    ui.label(yellow_type_text);
                 } else if is_selected || is_active_selected {
                     let text_color = visuals
                         .override_text_color
                         .unwrap_or_else(|| style_visuals.text_color());
                     let highlighted_info = if verbose {
                         // For verbose mode, we need to handle highlighting differently
-                        if !search_term.is_empty() && entity_type.to_lowercase().contains(search_term) {
+                        if !search_term.is_empty()
+                            && entity_type.to_lowercase().contains(search_term)
+                        {
                             egui::RichText::new(&info_text)
                                 .background_color(if ui.style().visuals.dark_mode {
                                     egui::Color32::from_rgb(100, 80, 0)
@@ -501,7 +576,9 @@ fn render_tree_node(
                         .unwrap_or_else(|| style_visuals.weak_text_color());
                     let highlighted_info = if verbose {
                         // For verbose mode, we need to handle highlighting differently
-                        if !search_term.is_empty() && entity_type.to_lowercase().contains(search_term) {
+                        if !search_term.is_empty()
+                            && entity_type.to_lowercase().contains(search_term)
+                        {
                             egui::RichText::new(&info_text)
                                 .background_color(if ui.style().visuals.dark_mode {
                                     egui::Color32::from_rgb(100, 80, 0)
@@ -536,6 +613,7 @@ fn render_tree_node(
                 search_term,
                 icon_size,
                 is_preserve_disk,
+                is_preserve_disk_transform,
             );
 
             // Handle icon click for expand/collapse
