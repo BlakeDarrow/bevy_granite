@@ -1,15 +1,13 @@
-use bevy_egui::egui;
 use bevy::prelude::*;
+use bevy_egui::egui;
 use std::sync::Mutex;
 
-// Registry for UI callable events - stores type information and event senders
 pub struct EventInfo {
     pub struct_name: &'static str,
     pub event_names: &'static [&'static str],
     pub event_senders: Vec<Box<dyn Fn(&mut World) + Send + Sync>>,
 }
 
-// Queue for pending event requests
 pub struct EventRequest {
     pub struct_name: String,
     pub event_name: String,
@@ -41,14 +39,7 @@ pub struct EventsTabData {
 }
 
 pub fn events_tab_ui(ui: &mut egui::Ui, data: &mut EventsTabData) {
-    let spacing = crate::UI_CONFIG.spacing;
-    
-    ui.label("UI Callable Events");
-    ui.add_space(spacing);
-    
-    ui.separator(); 
-    
-    // Dynamically create buttons from registry
+    let spacing = crate::UI_CONFIG.small_spacing;
     let registry = EVENT_REGISTRY.lock().unwrap();
     if registry.is_empty() {
         ui.label("No UI callable events registered yet.");
@@ -56,20 +47,59 @@ pub fn events_tab_ui(ui: &mut egui::Ui, data: &mut EventsTabData) {
         ui.label("Events will appear here when structs with #[ui_callable_events] are processed.");
     } else {
         for event_info in registry.iter() {
-            ui.label(format!("{}:", event_info.struct_name));
-            ui.add_space(spacing * 0.5);
-            
+            ui.label(format!("{}:", clean_name(event_info.struct_name)));
+            ui.add_space(spacing);
+            ui.separator();
+            ui.add_space(spacing);
+
             for event_name in event_info.event_names.iter() {
-                if ui.button(*event_name).clicked() {
-                    // Queue the event request
+                let clean_event_name = clean_name(event_name);
+                if ui.button(&clean_event_name).clicked() {
                     EVENT_REQUEST_QUEUE.lock().unwrap().push(EventRequest {
                         struct_name: event_info.struct_name.to_string(),
                         event_name: event_name.to_string(),
                     });
-                    data.button_clicked = Some(event_name.to_string());
+                    data.button_clicked = Some(clean_event_name);
                 }
+                ui.add_space(spacing);
             }
             ui.add_space(spacing);
         }
     }
+}
+
+fn clean_name(name: &str) -> String {
+    let mut result = String::new();
+    let mut chars = name.chars().peekable();
+    let mut is_first = true;
+
+    while let Some(ch) = chars.next() {
+        if ch == '_' {
+            if !is_first {
+                result.push(' ');
+            }
+        } else if ch.is_uppercase() && !is_first {
+            result.push(' ');
+            result.push(ch);
+        } else if is_first {
+            result.push(ch.to_uppercase().next().unwrap_or(ch));
+        } else {
+            result.push(ch);
+        }
+        is_first = false;
+    }
+
+    result
+        .split_whitespace()
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                None => String::new(),
+                Some(first) => {
+                    first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase()
+                }
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
