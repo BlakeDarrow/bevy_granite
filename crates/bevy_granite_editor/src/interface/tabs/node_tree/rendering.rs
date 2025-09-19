@@ -46,7 +46,6 @@ fn render_search_bar(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
 
 /// Renders the main entity tree
 fn render_entity_tree(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
-    // Handle dropping on empty space to remove parents
     handle_empty_space_drop(ui, data);
 
     let search_term = data.search_filter.to_lowercase();
@@ -62,7 +61,7 @@ fn render_entity_tree(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
 fn handle_empty_space_drop(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
     if data.drag_payload.is_some() && ui.input(|i| i.pointer.any_released()) {
         if data.drop_target.is_none() {
-            data.drop_target = Some(Entity::PLACEHOLDER); // Sentinel for "remove parents"
+            data.drop_target = Some(Entity::PLACEHOLDER); 
         }
     }
 }
@@ -104,7 +103,7 @@ fn render_search_results(ui: &mut egui::Ui, data: &mut NodeTreeTabData, search_t
             entry.entity,
             &entry.name,
             &entry.entity_type,
-            &HashMap::new(), // No children in search mode
+            &HashMap::new(), 
             data,
             search_term,
         );
@@ -166,15 +165,11 @@ fn render_tree_node(
         data.should_scroll_to_selection = false;
     }
 
-    // Draw row background
     styling::draw_row_background(ui, &row_rect, &visual_state, search_term);
 
-    // Handle input modifiers
     let shift_held = ui.input(|i| i.modifiers.shift);
     let ctrl_held = ui.input(|i| i.modifiers.ctrl || i.modifiers.command);
-    //let ctrl_held = ui.input(|i| i.modifiers.ctrl);
 
-    // Render the actual row content
     ui.horizontal(|ui| {
         let font_id = egui::TextStyle::Button.resolve(ui.style());
         let icon_size = ui.fonts(|f| f.row_height(&font_id));
@@ -183,7 +178,6 @@ fn render_tree_node(
         let (icon_rect, icon_response) =
             ui.allocate_exact_size(egui::Vec2::new(icon_size, row_height), egui::Sense::click());
 
-        // Render in two columns: name and type
         ui.columns(2, |columns| {
             render_name_column(
                 &mut columns[0],
@@ -228,7 +222,6 @@ fn render_tree_node(
         }
     });
 
-    // Render children if expanded
     render_children(ui, entity, hierarchy, data, &visual_state, search_term);
 }
 

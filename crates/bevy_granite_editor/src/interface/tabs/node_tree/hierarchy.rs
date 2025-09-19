@@ -158,7 +158,6 @@ fn create_file_grouped_hierarchy(
             .find(|(_, entities)| entities.contains(&entry.entity))
             .map(|(path, _)| path)
         {
-            // Only reparent if the entity doesn't already have a real parent
             if entry.parent.is_none() {
                 if let Some(&dummy_parent) = dummy_parent_entities.get(spawn_source_path) {
                     entry.parent = Some(dummy_parent);
@@ -176,12 +175,10 @@ fn create_file_grouped_hierarchy(
 
 /// Creates a stable dummy entity ID from a file path
 fn create_stable_dummy_entity(file_path: &str) -> Entity {
-    // Use a simple but stable hash of the file path
     let mut hash: u32 = 5381;
     for byte in file_path.bytes() {
         hash = hash.wrapping_mul(33).wrapping_add(byte as u32);
     }
-    // Ensure we use the high range to avoid conflicts with real entities
     Entity::from_raw(u32::MAX - (hash % 1000000))
 }
 
@@ -234,7 +231,6 @@ fn add_visible_children(
         for &child in children {
             visual_order.push(child);
 
-            // Only add children if this node is expanded
             if expanded_map.get(&child).copied().unwrap_or(false) {
                 add_visible_children(Some(child), children_map, expanded_map, visual_order);
             }

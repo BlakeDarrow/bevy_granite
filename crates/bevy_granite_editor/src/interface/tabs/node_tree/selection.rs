@@ -7,15 +7,11 @@ use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 /// Validation functions for drag and drop operations
 pub mod validation {
     use super::*;
-
-    /// Check if dropping the entities onto the target would create a valid hierarchy
     pub fn is_valid_drop(entities: &[Entity], target: Entity, hierarchy: &[HierarchyEntry]) -> bool {
-        // Don't allow dropping onto any of the entities being dragged
         if entities.contains(&target) {
             return false;
         }
 
-        // Don't allow dropping a parent onto any of its descendants
         for &entity in entities {
             if is_descendant_of(target, entity, hierarchy) {
                 return false;
@@ -80,11 +76,10 @@ pub fn process_selection_changes(
     if let Some(new_selection) = data.new_selection {
         if data.clicked_via_node_tree {
             if data.range_selection {
-                // Range selection: select all between previous_active_selection and new_selection
+                // Range selection
                 if let Some(prev_active) = data.active_selection {
                     perform_range_selection(prev_active, new_selection, data, commands);
                 } else {
-                    // No previous selection, just select the new one
                     commands.trigger(EntityEvent::Select {
                         target: new_selection,
                         additive: false,
@@ -93,7 +88,7 @@ pub fn process_selection_changes(
                 data.previous_active_selection = data.active_selection;
                 data.active_selection = Some(new_selection);
             } else if data.additive_selection {
-                // Ctrl/Cmd (additive): toggle selection
+                // Toggle selection
                 let already_selected = data.selected_entities.contains(&new_selection);
                 if already_selected {
                     commands.trigger(EntityEvent::Deselect {
@@ -105,7 +100,6 @@ pub fn process_selection_changes(
                         additive: true,
                     });
                 }
-                // Always set the clicked entity as active selection
                 data.previous_active_selection = data.active_selection;
                 data.active_selection = Some(new_selection);
             } else {
@@ -117,13 +111,11 @@ pub fn process_selection_changes(
                 data.previous_active_selection = data.active_selection;
                 data.active_selection = Some(new_selection);
             }
-            // Set counter to prevent expansion for a few frames while events are processed
             data.tree_click_frames_remaining = 3;
             data.clicked_via_node_tree = false;
         }
     }
     
-    // Reset selection state
     data.new_selection = None;
     data.additive_selection = false;
     data.range_selection = false;
@@ -136,12 +128,10 @@ pub fn handle_drag_drop(
     data: &mut NodeTreeTabData,
     search_term: &str,
 ) {
-    // Only allow drag/drop when not searching
     if !search_term.is_empty() {
         return;
     }
 
-    // Handle drag start
     if response.drag_started() {
         let entities_to_drag = if data.selected_entities.contains(&entity) {
             data.selected_entities.clone()
@@ -160,10 +150,8 @@ pub fn handle_drag_drop(
         data.drag_payload = Some(entities_to_drag);
     }
 
-    // Handle drop detection when mouse is released
     if data.drag_payload.is_some() && response.ctx.input(|i| i.pointer.any_released()) {
         if response.hovered() {
-            // Valid drop target
             if let Some(ref dragged_entities) = data.drag_payload {
                 if validation::is_valid_drop(dragged_entities, entity, &data.hierarchy) {
                     log!(
@@ -182,14 +170,12 @@ pub fn handle_drag_drop(
 
 /// Expands the tree to show the path to a specific entity
 pub fn expand_to_entity(hierarchy: &mut Vec<HierarchyEntry>, target_entity: Entity) {
-    // Find the target
     let mut ancestors = Vec::new();
     let mut current_parent = hierarchy
         .iter()
         .find(|entry| entry.entity == target_entity)
         .and_then(|entry| entry.parent);
 
-    // Walk up the hierarchy to collect ancestors
     while let Some(parent_entity) = current_parent {
         ancestors.push(parent_entity);
         current_parent = hierarchy
@@ -198,7 +184,6 @@ pub fn expand_to_entity(hierarchy: &mut Vec<HierarchyEntry>, target_entity: Enti
             .and_then(|entry| entry.parent);
     }
 
-    // Expand all ancestors
     for ancestor in ancestors {
         if let Some(entry) = hierarchy.iter_mut().find(|e| e.entity == ancestor) {
             entry.is_expanded = true;
@@ -216,7 +201,6 @@ pub fn handle_external_selection_change(
             && !data.clicked_via_node_tree
             && data.tree_click_frames_remaining == 0
         {
-            // Auto-expand and scroll for any external selection change
             expand_to_entity(&mut data.hierarchy, new_active);
             data.should_scroll_to_selection = true;
 
@@ -228,7 +212,6 @@ pub fn handle_external_selection_change(
                 new_active
             );
         } else {
-            // Prevent scroll/expand for user clicks or no change
             data.should_scroll_to_selection = false;
         }
     }
@@ -248,26 +231,20 @@ fn perform_range_selection(
     data: &mut NodeTreeTabData,
     commands: &mut bevy::ecs::system::Commands,
 ) {
-    // Build the visual order of entities as they appear in the tree
     let visual_order = build_visual_order(&data.hierarchy);
-    
-    // Find the indices of start and end entities
     let start_index = visual_order.iter().position(|&e| e == start_entity);
     let end_index = visual_order.iter().position(|&e| e == end_entity);
     
     if let (Some(start_idx), Some(end_idx)) = (start_index, end_index) {
-        // Get the range (handle both directions)
         let min_idx = start_idx.min(end_idx);
         let max_idx = start_idx.max(end_idx);
         
-        // Clear existing selection first
         commands.trigger(EntityEvent::Select {
-            target: visual_order[min_idx],
-            additive: false,
+            target: start_entity,
+            additive: true,
         });
         
-        // Select all entities in the range
-        for i in (min_idx + 1)..=max_idx {
+        for i in min_idx..=max_idx {
             commands.trigger(EntityEvent::Select {
                 target: visual_order[i],
                 additive: true,
