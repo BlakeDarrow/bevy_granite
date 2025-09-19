@@ -19,9 +19,11 @@ bevy_granite_gizmos = { path = "../bevy_granite_gizmos"}
 bevy_granite_core = { path = "../bevy_granite_core"}
 bevy_granite_logging = { path = "../bevy_granite_logging"}
 bevy_granite_expose = { path = "../bevy_granite_expose" }
+bevy_granite_macros = { path = "../bevy_granite_macros" }
 
 egui_dock = {version = "0.17.0", features = ["serde"]}
 webbrowser = "1.0.5"
+inventory = "0.3.19"
 
 [lib]
 name = "bevy_granite_editor"

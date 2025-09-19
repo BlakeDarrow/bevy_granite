@@ -30,6 +30,16 @@ pub use assets::{
     RequiredMaterialData, RequiredMaterialDataMut, StandardMaterialDef,
 };
 pub use bevy_granite_macros::register_editor_components;
+
+// Marker trait for UI callable events
+pub trait UICallableEventMarker {}
+
+// Trait for providing event information to UI
+pub trait UICallableEventProvider {
+    fn get_struct_name() -> &'static str;
+    fn get_event_names() -> &'static [&'static str];
+}
+
 pub use entities::{
     BridgeTag, Camera3D, ClassCategory, ComponentEditor, DirLight, EditorIgnore,
     GraniteEditorSerdeEntity, GraniteType, GraniteTypes, HasRuntimeData, IdentityData, MainCamera,
@@ -39,8 +49,8 @@ pub use entities::{
 };
 pub use events::{
     CollectRuntimeDataEvent, RequestDespawnBySource, RequestDespawnSerializableEntities,
-    RequestLoadEvent, RequestReloadEvent, RequestSaveEvent, 
-    RuntimeDataReadyEvent, WorldLoadSuccessEvent, WorldSaveSuccessEvent,
+    RequestLoadEvent, RequestReloadEvent, RequestSaveEvent, RuntimeDataReadyEvent,
+    WorldLoadSuccessEvent, WorldSaveSuccessEvent,
 };
 pub use setup::RegisteredTypeNames;
 pub use shared::{

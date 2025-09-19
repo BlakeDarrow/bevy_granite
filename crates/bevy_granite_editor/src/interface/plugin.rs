@@ -10,10 +10,10 @@ use super::{
     layout::dock_ui_system,
     popups::{handle_popup_requests_system, show_active_popups_system},
     tabs::{
-        handle_material_deletion_system, update_debug_tab_ui_system,
+        handle_material_deletion_system, send_queued_events_system, update_debug_tab_ui_system,
         update_editor_settings_tab_system, update_entity_editor_tab_system,
         update_entity_with_new_components_system, update_entity_with_new_identity_system,
-        update_entity_with_new_transform_system, update_log_tab_system,
+        update_entity_with_new_transform_system, update_events_tab_system, update_log_tab_system,
         update_material_handle_system, update_node_tree_tabs_system, RequestReparentEntityEvent,
     },
     BottomDockState, EntityUIDataCache, PopupState, SideDockState,
@@ -50,6 +50,7 @@ impl Plugin for InterfacePlugin {
             // need to rework
             .add_event::<RequestReparentEntityEvent>()
             .add_event::<RequestRemoveParentsFromEntities>()
+
             //
             // Register types
             // If you want to duplicate bevy data you must register the type
@@ -93,6 +94,7 @@ impl Plugin for InterfacePlugin {
                     update_editor_settings_tab_system,
                     update_log_tab_system,
                     update_debug_tab_ui_system,
+                    update_events_tab_system,
                     update_node_tree_tabs_system,
                 )
                     .chain()
@@ -101,6 +103,10 @@ impl Plugin for InterfacePlugin {
             .add_systems(
                 EguiPrimaryContextPass,
                 (show_active_popups_system, dock_ui_system).run_if(is_editor_active),
+            )
+            .add_systems(
+                Update,
+                send_queued_events_system.run_if(is_editor_active),
             );
     }
 }

@@ -1,4 +1,5 @@
 use bevy::{prelude::Event, transform::components::Transform};
+use bevy_granite_macros::ui_callable_events;
 
 use crate::entities::SaveSettings;
 
@@ -31,3 +32,5 @@ pub struct RequestDespawnSerializableEntities;
 
 #[derive(Event)]
 pub struct RequestDespawnBySource(pub String);
+
+

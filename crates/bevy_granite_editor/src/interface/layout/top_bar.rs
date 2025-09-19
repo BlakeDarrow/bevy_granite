@@ -12,6 +12,7 @@ use crate::{
         popups::PopupType,
         tabs::{
             debug::ui::DebugTabData, log::LogTabData, EditorSettingsTabData, EntityEditorTabData,
+            EventsTabData,
         },
         EditorEvents, NodeTreeTabData,
     },
@@ -164,6 +165,7 @@ pub fn top_bar_ui(
                 }
             });
             ui.menu_button("Panels", |ui| {
+                // Entity Editor
                 if !side_dock
                     .dock_state
                     .iter_all_tabs()
@@ -177,6 +179,7 @@ pub fn top_bar_ui(
                     ui.close();
                 }
 
+                // Node tree
                 if !side_dock
                     .dock_state
                     .iter_all_tabs()
@@ -190,6 +193,7 @@ pub fn top_bar_ui(
                     ui.close();
                 }
 
+                // Settings
                 if !side_dock
                     .dock_state
                     .iter_all_tabs()
@@ -203,6 +207,7 @@ pub fn top_bar_ui(
                     ui.close();
                 }
 
+                // Log
                 if !bottom_dock
                     .dock_state
                     .iter_all_tabs()
@@ -216,6 +221,7 @@ pub fn top_bar_ui(
                     ui.close();
                 }
 
+                // Debug
                 if !bottom_dock
                     .dock_state
                     .iter_all_tabs()
@@ -224,6 +230,20 @@ pub fn top_bar_ui(
                 {
                     let tab = BottomTab::Debug {
                         data: DebugTabData::default(),
+                    };
+                    bottom_dock.dock_state.push_to_focused_leaf(tab);
+                    ui.close();
+                }
+
+                // Event
+                if !bottom_dock
+                    .dock_state
+                    .iter_all_tabs()
+                    .any(|(_, tab)| matches!(tab, BottomTab::Events { .. }))
+                    && ui.button("Events").clicked()
+                {
+                    let tab = BottomTab::Events {
+                        data: EventsTabData::default(),
                     };
                     bottom_dock.dock_state.push_to_focused_leaf(tab);
                     ui.close();

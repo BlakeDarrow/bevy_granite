@@ -145,8 +145,10 @@ pub mod prelude {
             WorldLoadSuccessEvent, WorldSaveSuccessEvent,
         },
         bevy_granite_logging::{log, LogCategory, LogLevel, LogType},
-        bevy_granite_macros::{granite_component, register_editor_components},
+        bevy_granite_macros::{granite_component, register_editor_components, ui_callable_events},
     };
+
+
 
     #[cfg(feature = "gizmos")]
     pub use crate::bevy_granite_gizmos::{
@@ -158,4 +160,7 @@ pub mod prelude {
         RequestCameraEntityFrame, RequestEditorToggle, RequestNewParent, RequestRemoveChildren,
         RequestRemoveParents, RequestToggleCameraSync,
     };
+
+    #[cfg(feature = "editor")]
+    pub use crate::bevy_granite_editor::interface::tabs::events::ui::register_ui_callable_events_with_senders;
 }
