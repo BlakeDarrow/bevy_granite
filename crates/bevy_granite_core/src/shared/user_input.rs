@@ -27,6 +27,7 @@ pub struct UserInput {
     pub key_u: UserButtonState,
     pub key_f1: UserButtonState,
     pub key_f2: UserButtonState,
+    pub key_f3: UserButtonState,
     pub key_h: UserButtonState,
     pub key_e: UserButtonState,
     pub key_s: UserButtonState,
@@ -35,6 +36,7 @@ pub struct UserInput {
     pub key_d: UserButtonState,
     pub key_q: UserButtonState,
     pub key_z: UserButtonState,
+    pub key_r: UserButtonState,
     pub key_f: UserButtonState,
     pub key_p: UserButtonState,
     pub key_delete: UserButtonState,
@@ -147,10 +149,12 @@ pub fn capture_input_events(
     let mut key_h = user_input.key_h;
     let mut key_e = user_input.key_e;
     let mut key_s = user_input.key_s;
+    let mut key_r = user_input.key_r;
     let mut key_a = user_input.key_a;
     let mut key_d = user_input.key_d;
     let mut key_f1 = user_input.key_f1;
     let mut key_f2 = user_input.key_f2;
+    let mut key_f3 = user_input.key_f3;
     let mut key_delete = user_input.key_delete;
     let mut key_q = user_input.key_q;
     let mut key_z = user_input.key_z;
@@ -173,12 +177,14 @@ pub fn capture_input_events(
     key_u.update_key(&keyboard_input, KeyCode::KeyU, &mut user_input);
     key_e.update_key(&keyboard_input, KeyCode::KeyE, &mut user_input);
     key_s.update_key(&keyboard_input, KeyCode::KeyS, &mut user_input);
+    key_r.update_key(&keyboard_input, KeyCode::KeyR, &mut user_input);
     key_a.update_key(&keyboard_input, KeyCode::KeyA, &mut user_input);
     key_d.update_key(&keyboard_input, KeyCode::KeyD, &mut user_input);
     key_o.update_key(&keyboard_input, KeyCode::KeyO, &mut user_input);
     key_h.update_key(&keyboard_input, KeyCode::KeyH, &mut user_input);
     key_f1.update_key(&keyboard_input, KeyCode::F1, &mut user_input);
     key_f2.update_key(&keyboard_input, KeyCode::F2, &mut user_input);
+    key_f3.update_key(&keyboard_input, KeyCode::F3, &mut user_input);
     key_q.update_key(&keyboard_input, KeyCode::KeyQ, &mut user_input);
     key_f.update_key(&keyboard_input, KeyCode::KeyF, &mut user_input);
     key_space.update_key(&keyboard_input, KeyCode::Space, &mut user_input);
@@ -195,12 +201,14 @@ pub fn capture_input_events(
     user_input.key_u = key_u;
     user_input.key_f1 = key_f1;
     user_input.key_f2 = key_f2;
+    user_input.key_f3 = key_f3;
     user_input.key_f = key_f;
     user_input.key_e = key_e;
     user_input.key_o = key_o;
     user_input.key_h = key_h;
     user_input.key_s = key_s;
     user_input.key_a = key_a;
+    user_input.key_r = key_r;
     user_input.key_d = key_d;
     user_input.key_q = key_q;
     user_input.key_z = key_z;

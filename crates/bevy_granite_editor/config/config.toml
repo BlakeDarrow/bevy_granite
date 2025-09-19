@@ -68,12 +68,12 @@ Gizmos:
 Tools:
 • Shift + A - Add entity popup
 • Shift + P - Relationship (parent) popup
-• F1 - Toggle editor on/off
-• F2 - Toggle main/editor camera Controls
-• H - Show this help menu
+• F1 - Show this help menu
+• F2 - Toggle editor on/off
+• F3 - Toggle main/editor camera Controls
 • Ctrl + S - Save current world
 • Ctrl + O - Load new world
-• Ctrl + Z - Despawn world and load again (fake undo)
+• Ctrl + R - Despawn worlds and load again
 
 ---
 
