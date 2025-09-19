@@ -362,6 +362,16 @@ impl ComponentEditor {
                 );
                 Some(self.convert_map_to_ron_struct(map))
             }
+            // For Sequence values, convert to tuple format for tuple structs
+            ron::Value::Seq(seq) => {
+                log!(
+                    LogType::Game,
+                    LogLevel::Info,
+                    LogCategory::System,
+                    "Converting Seq to tuple format for tuple struct"
+                );
+                Some(self.convert_seq_to_tuple(seq))
+            }
             // For other types, keep as RON format instead of converting to JSON
             other => {
                 // Try to serialize back to RON to maintain the expected format
@@ -450,6 +460,20 @@ impl ComponentEditor {
         }
         
         format!("({})", fields.join(","))
+    }
+
+    /// Convert a RON Seq to tuple format for tuple structs
+    fn convert_seq_to_tuple(&self, seq: &Vec<ron::Value>) -> String {
+        let mut values = Vec::new();
+        
+        for value in seq.iter() {
+            // Serialize each value and clean it up
+            let serialized_value = ron::to_string(value).unwrap_or_default();
+            let cleaned_value = self.clean_ron_value(&serialized_value);
+            values.push(cleaned_value);
+        }
+        
+        format!("({})", values.join(","))
     }
 
     /// Clean up RON serialized values by removing wrapper types and converting arrays to tuples
