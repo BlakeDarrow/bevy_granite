@@ -457,10 +457,10 @@ fn update_hierarchy_data<'a>(
 
     for (entity, name, relation, identity, spawn_source) in hierarchy_query {
         let is_preserve_disk = spawn_source.map_or(false, |source| {
-            matches!(source.spawn_as(), SaveSettings::PreserveDiskFull)
+            matches!(source.save_settings_ref(), SaveSettings::PreserveDiskFull)
         });
         let is_preserve_disk_transform = spawn_source.map_or(false, |source| {
-            matches!(source.spawn_as(), SaveSettings::PreserveDiskTransform)
+            matches!(source.save_settings_ref(), SaveSettings::PreserveDiskTransform)
         });
 
         let entry = HierarchyEntry {

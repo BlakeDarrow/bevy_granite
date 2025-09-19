@@ -17,7 +17,7 @@ pub fn open_world_reader(
     mut world_open_reader: EventReader<RequestLoadEvent>,
     mut world_load_success_writer: EventWriter<WorldLoadSuccessEvent>,
 ) {
-    if let Some(RequestLoadEvent(path, spawn_as, translation)) = world_open_reader.read().next() {
+    if let Some(RequestLoadEvent(path, save_settings, translation)) = world_open_reader.read().next() {
         let abs_path: String;
         if !Path::new(path).is_absolute() {
             abs_path = FileAssetReader::get_base_path()
@@ -43,7 +43,7 @@ pub fn open_world_reader(
             &mut available_materials,
             meshes,
             abs_path,
-            spawn_as.clone(),
+            save_settings.clone(),
             *translation
         );
 

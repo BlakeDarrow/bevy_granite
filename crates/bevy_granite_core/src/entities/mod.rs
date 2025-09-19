@@ -49,7 +49,7 @@ impl SpawnSource {
         self.0.as_ref()
     }
 
-    pub fn spawn_as(&self) -> &SaveSettings {
+    pub fn save_settings_ref(&self) -> &SaveSettings {
         &self.1
     }
 }

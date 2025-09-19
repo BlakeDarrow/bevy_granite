@@ -36,7 +36,7 @@ pub fn deserialize_entities(
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     mut meshes: ResMut<Assets<Mesh>>,
     abs_path: impl Into<Cow<'static, str>>, //absolute
-    spawn_as: SaveSettings,
+    save_settings: SaveSettings,
     transform_override: Option<Transform>,
 ) {
     let abs_path: Cow<'static, str> = abs_path.into();
@@ -73,7 +73,7 @@ pub fn deserialize_entities(
 
         // Tag entity with its source file
         let relative: Cow<'static, str> = absolute_asset_to_rel(abs_path.to_string());
-        commands.entity(entity).insert(SpawnSource::new(relative, spawn_as.clone()));
+        commands.entity(entity).insert(SpawnSource::new(relative, save_settings.clone()));
 
         // Store parent relationships for second pass
         if let Some(parent_guid) = save_data.parent {

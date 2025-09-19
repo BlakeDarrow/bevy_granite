@@ -80,7 +80,7 @@ pub fn save_request_system(
                     obj.clone(),
                     transform.cloned().unwrap_or_default(),
                     relation.map(|r| r.parent()),
-                    source.spawn_as().clone(),
+                    source.save_settings_ref().clone(),
                 )
             })
             .collect();
