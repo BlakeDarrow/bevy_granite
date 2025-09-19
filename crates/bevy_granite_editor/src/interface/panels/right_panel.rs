@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::interface::{
     tabs::{
         editor_settings::ui::editor_settings_tab_ui, entity_editor::tab::entity_editor_tab_ui,
-        node_tree::ui::node_tree_tab_ui, EditorSettingsTabData, EntityEditorTabData, NodeTreeTabData
+        node_tree::node_tree_tab_ui, EditorSettingsTabData, EntityEditorTabData, NodeTreeTabData
     },
 };
 
