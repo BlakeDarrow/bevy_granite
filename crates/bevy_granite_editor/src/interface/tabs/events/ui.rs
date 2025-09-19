@@ -39,31 +39,30 @@ pub struct EventsTabData {
 }
 
 pub fn events_tab_ui(ui: &mut egui::Ui, data: &mut EventsTabData) {
-    let spacing = crate::UI_CONFIG.small_spacing;
+    let small_spacing = crate::UI_CONFIG.small_spacing;
+    let spacing = crate::UI_CONFIG.spacing;
     let registry = EVENT_REGISTRY.lock().unwrap();
     if registry.is_empty() {
-        ui.label("No UI callable events registered yet.");
-        ui.add_space(spacing);
         ui.label("Events will appear here when structs with #[ui_callable_events] are processed.");
     } else {
         for event_info in registry.iter() {
-            ui.label(format!("{}:", clean_name(event_info.struct_name)));
-            ui.add_space(spacing);
-            ui.separator();
-            ui.add_space(spacing);
-
-            for event_name in event_info.event_names.iter() {
-                let clean_event_name = clean_name(event_name);
-                if ui.button(&clean_event_name).clicked() {
-                    EVENT_REQUEST_QUEUE.lock().unwrap().push(EventRequest {
-                        struct_name: event_info.struct_name.to_string(),
-                        event_name: event_name.to_string(),
-                    });
-                    data.button_clicked = Some(clean_event_name);
-                }
+            ui.group(|ui| {
+                ui.label(format!("{}:", clean_name(event_info.struct_name)));
                 ui.add_space(spacing);
-            }
-            ui.add_space(spacing);
+                ui.set_width(ui.available_width());
+                for event_name in event_info.event_names.iter() {
+                    let clean_event_name = clean_name(event_name);
+                    if ui.button(&clean_event_name).clicked() {
+                        EVENT_REQUEST_QUEUE.lock().unwrap().push(EventRequest {
+                            struct_name: event_info.struct_name.to_string(),
+                            event_name: event_name.to_string(),
+                        });
+                        data.button_clicked = Some(clean_event_name);
+                    }
+                    ui.add_space(small_spacing);
+                }
+                ui.add_space(small_spacing);
+            });
         }
     }
 }

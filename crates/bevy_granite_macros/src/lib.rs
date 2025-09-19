@@ -139,7 +139,7 @@ pub fn ui_callable_events(_attr: TokenStream, item: TokenStream) -> TokenStream 
                 &[#(stringify!(#field_types)),*]
             }
             
-            pub fn register_events() {
+            pub fn register_ui() {
                 let event_senders = vec![#(#event_senders),*];
                 let event_names: &'static [&'static str] = &[#(#field_names),*];
                 
