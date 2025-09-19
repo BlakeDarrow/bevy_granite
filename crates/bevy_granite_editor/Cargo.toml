@@ -23,7 +23,6 @@ bevy_granite_macros = { path = "../bevy_granite_macros" }
 
 egui_dock = {version = "0.17.0", features = ["serde"]}
 webbrowser = "1.0.5"
-inventory = "0.3.19"
 
 [lib]
 name = "bevy_granite_editor"
