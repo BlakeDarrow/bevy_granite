@@ -152,12 +152,12 @@ pub fn handle_picking_selection(
         Err(_) => {}
     }
     if user_input.mouse_over_egui {
-        log!(
-            LogType::Editor,
-            LogLevel::Info,
-            LogCategory::Input,
-            "Clicked on egui, ignoring"
-        );
+        //log!(
+        //    LogType::Editor,
+        //    LogLevel::Info,
+        //    LogCategory::Input,
+        //    "Clicked on egui, ignoring"
+        //);
         return;
     }
     

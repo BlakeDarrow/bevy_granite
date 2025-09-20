@@ -24,12 +24,12 @@ pub struct EntityGlobalTransformData {
 
 impl EntityGlobalTransformData {
     pub fn clear(&mut self) {
-        log!(
-            LogType::Editor,
-            LogLevel::Info,
-            LogCategory::UI,
-            "EntityGlobalTransformData cleared"
-        );
+        //log!(
+        //    LogType::Editor,
+        //    LogLevel::Info,
+        //    LogCategory::UI,
+        //    "EntityGlobalTransformData cleared"
+        //);
         self.global_transform_data = TransformData::default();
         self.transform_data_changed = false;
         self.gizmo_axis = None;
