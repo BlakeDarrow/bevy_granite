@@ -1,0 +1,4 @@
+(
+    friendly_name: "rectangle brush",
+    base_color: Some((1.0, 1.0, 1.0, 1.0)),
+)

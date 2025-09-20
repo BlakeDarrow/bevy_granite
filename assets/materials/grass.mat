@@ -1,0 +1,6 @@
+(
+    friendly_name: "Grass",
+    base_color: Some((0.17254902, 0.7137255, 0.3764706, 1.0)),
+    roughness: Some(0.93),
+    emissive: Some((0.0050956216, 0.24160053, 0.021263625)),
+)

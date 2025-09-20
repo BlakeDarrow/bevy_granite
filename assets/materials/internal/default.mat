@@ -1,0 +1,4 @@
+(
+    friendly_name: "default",
+    base_color: Some((1.0, 1.0, 1.0, 1.0)),
+)

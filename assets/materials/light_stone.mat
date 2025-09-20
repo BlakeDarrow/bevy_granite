@@ -1,0 +1,5 @@
+(
+    friendly_name: "Light_stone",
+    base_color: Some((0.6431373, 0.6431373, 0.6431373, 1.0)),
+    roughness: Some(0.56),
+)

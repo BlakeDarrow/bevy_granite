@@ -1,0 +1,5 @@
+(
+    friendly_name: "cube.002",
+    base_color: Some((0.34509805, 0.3372549, 0.3372549, 1.0)),
+    roughness: Some(0.81),
+)

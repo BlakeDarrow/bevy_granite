@@ -1,0 +1,6 @@
+(
+    friendly_name: "Fence",
+    base_color: Some((0.5019608, 0.5058824, 0.5019608, 1.0)),
+    roughness: Some(0.11),
+    metalness: Some(0.8),
+)

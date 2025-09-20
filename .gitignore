@@ -62,7 +62,7 @@ Thumbs.db
 # Build results
 /debug/
 /release/
-/assets
+/assets/config
 
 /.vs
 /.notes

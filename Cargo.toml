@@ -41,7 +41,7 @@ bevy_granite_macros = { path = "crates/bevy_granite_macros", optional = true }
 serde = "*"
 
 [[example]]
-name = "main"
+name = "dungeon"
 required-features = ["bevy/bevy_winit"]
 
 [profile.dev]
