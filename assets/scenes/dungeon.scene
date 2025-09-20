@@ -5,8 +5,8 @@
 	),
 	entities: [(
 		identity: (
-			uuid: "2163c90b-5f26-41d4-8cad-38e3e5bf8615",
-			name: "Walls",
+			uuid: "2ed15f57-730d-43a4-afdc-2328219392e8",
+			name: "Floors",
 			class: Empty(()),
 		),
 		transform: (
@@ -16,8 +16,8 @@
 		),
 	), (
 		identity: (
-			uuid: "2ed15f57-730d-43a4-afdc-2328219392e8",
-			name: "Floors",
+			uuid: "2163c90b-5f26-41d4-8cad-38e3e5bf8615",
+			name: "Walls",
 			class: Empty(()),
 		),
 		transform: (
@@ -38,8 +38,8 @@
 		),
 	), (
 		identity: (
-			uuid: "11240f70-01bb-40a3-95db-748ee67c247a",
-			name: "Arches",
+			uuid: "f1f7d8bd-8998-47d2-a0ad-617e8096e6f0",
+			name: "Grasses",
 			class: Empty(()),
 		),
 		transform: (
@@ -49,8 +49,8 @@
 		),
 	), (
 		identity: (
-			uuid: "f1f7d8bd-8998-47d2-a0ad-617e8096e6f0",
-			name: "Grasses",
+			uuid: "11240f70-01bb-40a3-95db-748ee67c247a",
+			name: "Arches",
 			class: Empty(()),
 		),
 		transform: (
@@ -170,52 +170,6 @@
 			rotation: (-0.613, 0.094, -0.118, 0.775),
 			scale: (1.0, 1.0, 1.0),
 		),
-	), (
-		identity: (
-			uuid: "f938f739-21fa-4701-b296-d9adc37961d7",
-			name: "Camera 3D",
-			class: Camera3D((
-				is_active: true,
-				has_volumetric_fog: true,
-				volumetric_fog_settings: Some((
-					fog_color: LinearRgba((
-						red: 1.0,
-						green: 1.0,
-						blue: 1.0,
-						alpha: 1.0,
-					)),
-					ambient_color: LinearRgba((
-						red: 1.0,
-						green: 1.0,
-						blue: 1.0,
-						alpha: 1.0,
-					)),
-					ambient_intensity: 0.1,
-					step_count: 64,
-					max_depth: 25.0,
-					absorption: 0.3,
-					scattering: 0.3,
-					density: 0.1,
-					scattering_asymmetry: 0.8,
-					light_tint: LinearRgba((
-						red: 1.0,
-						green: 1.0,
-						blue: 1.0,
-						alpha: 1.0,
-					)),
-					light_intensity: 0.1,
-				)),
-			)),
-		),
-		transform: (
-			position: (-14.078, 4.061, 1.007),
-			rotation: (-0.102, -0.675, -0.095, 0.725),
-			scale: (1.0, 1.0, 1.0),
-		),
-		components: Some({
-			"bevy_core_pipeline::tonemapping::Tonemapping": "{\"bevy_core_pipeline::tonemapping::Tonemapping\":None}",
-			"bevy_granite_core::entities::MainCamera": "{\"bevy_granite_core::entities::MainCamera\":()}",
-		}),
 	), (
 		identity: (
 			uuid: "64dfee78-3672-4e9c-a352-824a93f46fc8",
@@ -830,17 +784,17 @@
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "48c909ea-8876-442e-a9ad-614e4fd94abf",
+			uuid: "7a2cff4f-06c7-4b9c-9234-3104ec8fcd66",
 			name: "1m_Floor",
 			class: OBJ((
 				mesh_path: "models/1m_Floor.obj",
 				material: (
-					path: "materials/light_stone.mat",
+					path: "materials/floor.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (3.0, 2.125, 2.0),
+			position: (11.0, -1.0, 2.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
@@ -1969,21 +1923,21 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "f2d88c85-a184-446a-8bc8-efee61c18c5a",
-			name: "1m_Floor",
+			uuid: "8a95f135-6a89-457a-bed7-15c298c85105",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/light_stone.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (5.0, 1.875, 4.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (-13.0, 1.0, 3.0),
+			rotation: (0.0, 0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "ca582b49-21d6-476d-9b29-0fa7d9159de2",
@@ -2224,21 +2178,21 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "19608ec4-b5e9-4f5b-9b09-2ac1fb2babde",
-			name: "Cube.001",
+			uuid: "cc3691bf-056a-4abb-9b17-6a96875da3f3",
+			name: "1m_Floor",
 			class: OBJ((
-				mesh_path: "models/Small_Fence.obj",
+				mesh_path: "models/1m_Floor.obj",
 				material: (
-					path: "materials/fence.mat",
+					path: "materials/grass.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-3.0, 0.0, 1.0),
+			position: (-7.0, 0.0, 5.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
 			uuid: "d2127b46-0562-4157-872e-b66db6098cfd",
@@ -2700,21 +2654,21 @@
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "2d267456-de16-4e74-b375-52b0188d3a60",
-			name: "1m_Floor",
+			uuid: "1c38158e-3588-41b0-8474-69fd2af050c1",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/floor.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (2.0, 0.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (11.0, 0.0, 8.0),
+			rotation: (0.0, 1.0, 0.0, 0.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "31f9a9fa-4b08-4862-8150-db63952262b3",
@@ -3108,7 +3062,7 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "80513847-4ebe-4da0-adca-ec0ee25cefda",
+			uuid: "b22ae1e4-f5a0-4457-8c34-435d2c79b223",
 			name: "1m_Floor",
 			class: OBJ((
 				mesh_path: "models/1m_Floor.obj",
@@ -3118,7 +3072,7 @@
 			)),
 		),
 		transform: (
-			position: (1.0, 0.0, 0.0),
+			position: (12.0, -1.0, 2.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
@@ -4281,58 +4235,7 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "d9aa7c67-93bb-4096-bfc9-db484ec32a24",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (1.0, 1.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "08ff4bf8-88d3-4850-bac3-53fb3ef0023c",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (0.0, 1.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "6c5019ec-e9c1-467a-a09c-3b4bcbf6588c",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (0.0, 0.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "e95bae12-07f4-41d1-aa59-4db353de12d3",
+			uuid: "250c703a-5bb7-4475-b463-ee9d537edb63",
 			name: "1m_Floor",
 			class: OBJ((
 				mesh_path: "models/1m_Floor.obj",
@@ -4342,28 +4245,79 @@
 			)),
 		),
 		transform: (
-			position: (-1.0, 0.0, 0.0),
+			position: (8.0, -0.75, 2.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "8628bb83-eb64-48b8-95cb-4d7a4de5d3a1",
-			name: "1m_Floor",
+			uuid: "da3f6587-56d5-4f07-bc8f-63f471e1e292",
+			name: "Cube.001",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/Small_Fence.obj",
 				material: (
-					path: "materials/grass.mat",
+					path: "materials/fence.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-1.0, 0.0, 1.0),
+			position: (-8.0, 0.0, 4.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
+	), (
+		identity: (
+			uuid: "59be0f45-5a0d-46be-b534-53bdd1e3f940",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/floor.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (2.0, 0.0, 5.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "6532951f-d461-4c83-8d74-fd94b47312d3",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-9.0, 0.0, 4.0),
+			rotation: (0.0, 1.0, 0.0, -0.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "a6d9dd8f-6786-4aa4-99e7-2595783866a9",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (13.0, 1.0, 3.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "1de49d16-c3ff-4d3c-92ec-bda6fc404d1a",
@@ -4400,24 +4354,7 @@
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "5a4e4b86-93d6-4bee-a3c9-61d6bc48e2cb",
-			name: "Cube.001",
-			class: OBJ((
-				mesh_path: "models/Small_Fence.obj",
-				material: (
-					path: "materials/fence.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-1.0, 0.0, 1.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
-	), (
-		identity: (
-			uuid: "8234a484-eeb0-4144-aabb-0fd66497ea1e",
+			uuid: "64d5352b-453d-4790-8d03-7c03c077a803",
 			name: "1m_Wall",
 			class: OBJ((
 				mesh_path: "models/1m_Wall.obj",
@@ -4427,14 +4364,14 @@
 			)),
 		),
 		transform: (
-			position: (-1.0, 0.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (9.0, 1.0, 5.0),
+			rotation: (0.0, 1.0, 0.0, -0.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "2dda47ab-586f-439d-9dd1-c4a40481ca83",
+			uuid: "b40d5b53-1d34-494e-a43b-381763e2cbc9",
 			name: "1m_Wall",
 			class: OBJ((
 				mesh_path: "models/1m_Wall.obj",
@@ -4444,11 +4381,28 @@
 			)),
 		),
 		transform: (
-			position: (-2.0, 0.0, 0.0),
+			position: (-7.0, 0.0, 0.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "36603c02-d5ac-459e-8d62-252197ae7da1",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/floor.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (11.0, -1.125, 5.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
 			uuid: "19f60a92-a09c-4a94-a15b-ddbaaba78ef6",
@@ -4570,38 +4524,38 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "6502bd81-bfa8-4143-ae19-2edd2e46aa1f",
-			name: "Cube.004",
+			uuid: "cd0e4aa8-7403-4860-bce8-324e6e522b5d",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/0_25m_Trim.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/light_stone.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (3.0, 1.0, 4.0),
+			position: (3.0, 0.0, 0.0),
 			rotation: (0.0, -0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "d1700300-bd2c-4885-95ed-8d2acbc34e57",
-			name: "1m_Floor",
+			uuid: "e68db129-48a4-41c5-8062-cea3a5100e33",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/light_stone.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (3.0, 2.125, 4.0),
+			position: (2.0, 0.0, 0.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "34a834d3-05d5-4abc-8c76-bb323c4f9b84",
@@ -4655,72 +4609,72 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "6aad0e17-6f10-4c3a-aadd-8299c4e54d49",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (5.0, 1.0, 5.0),
-			rotation: (0.0, 1.0, 0.0, -0.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "ed72ac18-ce2e-4fc9-8bc1-ec5d8d56b611",
+			uuid: "70f94f8b-dd16-4d3b-b776-3498b418821f",
 			name: "1m_Floor",
 			class: OBJ((
 				mesh_path: "models/1m_Floor.obj",
 				material: (
-					path: "materials/light_stone.mat",
+					path: "materials/floor.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (5.0, 1.875, 2.0),
+			position: (-5.0, 0.0, 0.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "68abeea8-c378-44c3-8c92-7c19a2627553",
-			name: "1m_Wall",
+			uuid: "915692ed-db2f-41b1-9629-97623d207944",
+			name: "Cube.004",
 			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-1.0, 1.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "f8740107-a711-44a0-9af3-6b493379231c",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/0_25m_Trim.obj",
 				material: (
 					path: "materials/light_stone.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (6.0, 1.75, 3.0),
+			position: (-9.0, 1.0, 2.0),
+			rotation: (0.0, 0.707, 0.0, 0.707),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "8915c5d9-9c66-47bc-817b-84f3735566af",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/floor.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-9.0, 0.0, 0.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "be051409-e5b0-4c10-8fc7-79ff070422b7",
+			name: "Cube.004",
+			class: OBJ((
+				mesh_path: "models/0_25m_Trim.obj",
+				material: (
+					path: "materials/light_stone.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-7.0, 1.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "92942932-fa6c-455c-a6ca-a962d142b73d",
@@ -4757,7 +4711,7 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "21486fe6-309e-429f-8cd2-f6cd37bd3c5e",
+			uuid: "786b9b43-d141-4d00-b10e-456b2875292f",
 			name: "1m_Wall",
 			class: OBJ((
 				mesh_path: "models/1m_Wall.obj",
@@ -4767,25 +4721,25 @@
 			)),
 		),
 		transform: (
-			position: (7.0, 1.0, 5.0),
-			rotation: (0.0, 1.0, 0.0, -0.0),
+			position: (-6.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "20c3651b-cf6b-484f-825b-df04e9fd94e5",
-			name: "1m_Wall",
+			uuid: "85920981-dd83-4625-a5d4-eb417b339925",
+			name: "Cube.004",
 			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
+				mesh_path: "models/0_25m_Trim.obj",
 				material: (
-					path: "materials/material.mat",
+					path: "materials/light_stone.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (6.0, 1.0, 5.0),
-			rotation: (0.0, 1.0, 0.0, -0.0),
+			position: (-13.0, 1.0, 4.0),
+			rotation: (0.0, 0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
@@ -4842,55 +4796,55 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "f216e1b6-0874-4313-ae6c-4ce5b305f2b7",
-			name: "Plane.001",
+			uuid: "cb884ed3-a2c7-4278-b355-fc3bba9ce926",
+			name: "1m_Floor",
 			class: OBJ((
-				mesh_path: "models/2x1m_Arch.obj",
+				mesh_path: "models/1m_Floor.obj",
 				material: (
-					path: "materials/light_stone.mat",
+					path: "materials/floor.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-1.0, 0.0, 0.0),
+			position: (8.0, -0.75, 3.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("11240f70-01bb-40a3-95db-748ee67c247a"),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "8d29f9db-9708-47e8-aee2-0bbdfe037bd8",
-			name: "1m_Wall",
+			uuid: "8d82b931-82c5-4429-9509-e59154b3111d",
+			name: "1m_Floor",
 			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
+				mesh_path: "models/1m_Floor.obj",
 				material: (
-					path: "materials/material.mat",
+					path: "materials/floor.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-2.0, 1.0, 0.0),
+			position: (7.0, -0.625, 2.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "1fcae46b-1a9b-42a0-b72c-cc471514ceb9",
-			name: "1m_Wall",
+			uuid: "9c92ae3f-db93-4e57-810e-d0a7e7e0a39b",
+			name: "1m_Floor",
 			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
+				mesh_path: "models/1m_Floor.obj",
 				material: (
-					path: "materials/material.mat",
+					path: "materials/floor.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-3.0, 0.0, 0.0),
+			position: (-4.0, 0.0, 6.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
 			uuid: "be3d4e29-ddb3-4ac2-98e0-4a363b2c7e1e",
@@ -5046,41 +5000,24 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "1a32c1e3-dbeb-41d9-bb65-00ea4cbab675",
-			name: "1m_Wall",
+			uuid: "5004c0c3-5b86-4e0a-abf6-bac34822e59e",
+			name: "1m_Floor",
 			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
+				mesh_path: "models/1m_Floor.obj",
 				material: (
-					path: "materials/material.mat",
+					path: "materials/floor.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (2.0, 1.0, 0.0),
+			position: (10.0, -1.0, 2.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "ae1580e3-bbe0-4fb5-9722-65ee9e97ff77",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (1.0, 0.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "4c6634a1-a4db-4298-b814-f98c4df06206",
+			uuid: "59799907-3e65-4f3a-80ee-342d70d2d8b1",
 			name: "1m_Floor",
 			class: OBJ((
 				mesh_path: "models/1m_Floor.obj",
@@ -5090,11 +5027,28 @@
 			)),
 		),
 		transform: (
-			position: (-3.0, 0.0, 2.0),
+			position: (-6.0, 0.0, 4.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "9906d760-19fd-4f8c-81be-94b003fb3933",
+			name: "Cube.004",
+			class: OBJ((
+				mesh_path: "models/0_25m_Trim.obj",
+				material: (
+					path: "materials/light_stone.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-3.0, 1.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "5c4e7867-11c4-46a2-813e-af31e3ea3df8",
@@ -5250,21 +5204,21 @@
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "67a02ef7-ed5b-443e-a10b-df5055edf8b1",
-			name: "1m_Floor",
+			uuid: "084dac54-104f-4b4a-a859-f727720ce5c0",
+			name: "Cube.004",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/0_25m_Trim.obj",
 				material: (
-					path: "materials/floor.mat",
+					path: "materials/light_stone.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (2.0, 0.0, 1.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (3.0, 1.0, 6.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "e5394d02-265d-4f13-924b-2f553c7bac77",
@@ -5488,38 +5442,38 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "92780407-4007-4dc7-955b-18c75ccf922c",
-			name: "1m_Floor",
+			uuid: "af239f7f-510a-4695-a3f4-361cd5383dad",
+			name: "Cube.001",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/Small_Fence.obj",
 				material: (
-					path: "materials/light_stone.mat",
+					path: "materials/fence.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (7.0, 1.625, 2.0),
+			position: (-5.0, 0.0, 1.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
 	), (
 		identity: (
-			uuid: "b98461a7-de6c-4c44-9e04-15c29e1900af",
-			name: "1m_Floor",
+			uuid: "11b518ef-32d2-47e5-9e3f-220fbdc017ac",
+			name: "Cube.004",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/0_25m_Trim.obj",
 				material: (
 					path: "materials/light_stone.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (5.0, 1.875, 3.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (-13.0, 1.0, 3.0),
+			rotation: (0.0, 0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "87a51995-ade0-452b-a22d-35c19520246d",
@@ -5556,21 +5510,21 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "b1af63f1-cc6b-48d4-bd96-03c966737f25",
-			name: "1m_Floor",
+			uuid: "c2bf23f6-4902-4bf7-9010-912427c2d539",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/light_stone.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (6.0, 1.75, 2.0),
+			position: (-12.0, 1.0, 0.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "ee7f21c2-6201-40d1-9308-112399ac38ef",
@@ -5726,38 +5680,38 @@
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "c03947a1-dc59-4b4d-bc5c-114691e3b8bc",
-			name: "1m_Floor",
+			uuid: "43ae64ed-ee6b-425a-afa6-d16d54b6d37d",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/grass.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-3.0, 0.0, 1.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (13.0, 1.0, 6.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "62814bd7-c592-4dd3-b592-9135284c3354",
-			name: "1m_Floor",
+			uuid: "69af9253-334b-43dc-a091-7110bd4d322e",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/grass.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-2.0, 0.0, 1.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (13.0, 1.0, 4.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "2338152f-bcbb-4646-b50c-22f5621d76fd",
@@ -5811,7 +5765,7 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "e512756d-554e-4bc0-9cb7-c86538dc311c",
+			uuid: "a20fd083-70c8-43bf-90cc-7150e877687a",
 			name: "1m_Wall",
 			class: OBJ((
 				mesh_path: "models/1m_Wall.obj",
@@ -5821,8 +5775,8 @@
 			)),
 		),
 		transform: (
-			position: (5.0, 1.0, 2.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (13.0, -1.0, 2.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
@@ -5845,21 +5799,21 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "b73bd8ab-29a6-41b4-b441-c993360470bf",
-			name: "1m_Floor",
+			uuid: "77ea2b8b-55cc-46bf-9ed9-a95532b1511b",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/floor.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (0.0, 0.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (13.0, -1.0, 3.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "e4aaccd9-1963-4bf1-b386-656d0290b1f1",
@@ -6015,17 +5969,17 @@
 		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
 	), (
 		identity: (
-			uuid: "90109931-d8a9-465c-9c31-88e5081fddf4",
+			uuid: "59f76ac0-c657-4933-a4f0-2595976fc531",
 			name: "1m_Floor",
 			class: OBJ((
 				mesh_path: "models/1m_Floor.obj",
 				material: (
-					path: "materials/floor.mat",
+					path: "materials/light_stone.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-2.0, 0.0, 0.0),
+			position: (7.0, 1.625, 4.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
@@ -6049,21 +6003,21 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "cbc7e782-961b-4ea6-a24a-6f5969cbf663",
-			name: "1m_Floor",
+			uuid: "f16ebcad-a209-4b00-b801-1dcaa85bb5e9",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/light_stone.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (4.0, 2.0, 4.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (-13.0, 1.0, 4.0),
+			rotation: (0.0, 0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "80b01b65-9809-4cc8-8f5e-164972ee7e95",
@@ -6134,38 +6088,38 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "2b7a9bbc-fdd7-4999-8b37-9005f6110f61",
-			name: "Cube.004",
+			uuid: "edb6bb7c-2fca-4c30-8dde-fd3168bbffac",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/0_25m_Trim.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/light_stone.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (3.0, 1.0, 2.0),
+			position: (13.0, 1.0, 2.0),
 			rotation: (0.0, -0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "a8a0fa67-965a-4c01-84ed-5664718cab28",
-			name: "Cube.001",
+			uuid: "84a4303a-2037-42f0-8fed-52d8fc051668",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/Small_Fence.obj",
+				mesh_path: "models/1m_Wall.obj",
 				material: (
-					path: "materials/fence.mat",
+					path: "materials/material.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (0.0, 0.0, 1.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
+			position: (13.0, 1.0, 5.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
 			uuid: "50165cbf-a2c8-4376-b349-5b4eb1d6f0a1",
@@ -6185,21 +6139,21 @@
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "7cc0a647-b43c-49cb-ac26-60fb9af434a6",
-			name: "Cube.001",
+			uuid: "b01d1a32-f30a-47c8-9ff2-e80064fdbff5",
+			name: "Grass",
 			class: OBJ((
-				mesh_path: "models/Small_Fence.obj",
+				mesh_path: "models/Grass.obj",
 				material: (
-					path: "materials/fence.mat",
+					path: "materials/grass.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (1.0, 0.0, 2.0),
-			rotation: (0.0, 0.707, 0.0, 0.707),
+			position: (-4.759, 0.0, 4.858),
+			rotation: (0.0, -0.178, 0.0, 0.984),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
+		parent: Some("f1f7d8bd-8998-47d2-a0ad-617e8096e6f0"),
 	), (
 		identity: (
 			uuid: "0cfa50f2-9ee6-492b-897f-27e7309e59fe",
@@ -6678,17 +6632,17 @@
 		parent: Some("f1f7d8bd-8998-47d2-a0ad-617e8096e6f0"),
 	), (
 		identity: (
-			uuid: "004532e7-1211-42dc-bdd2-cd66097df4f3",
+			uuid: "966bfe84-2f5f-4a49-ad3e-f28fb8ff3e0c",
 			name: "1m_Floor",
 			class: OBJ((
 				mesh_path: "models/1m_Floor.obj",
 				material: (
-					path: "materials/floor.mat",
+					path: "materials/grass.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-3.0, 0.0, 0.0),
+			position: (-6.0, 0.0, 5.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
@@ -7035,24 +6989,92 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "084dac54-104f-4b4a-a859-f727720ce5c0",
-			name: "Cube.004",
+			uuid: "08ff4bf8-88d3-4850-bac3-53fb3ef0023c",
+			name: "1m_Wall",
 			class: OBJ((
-				mesh_path: "models/0_25m_Trim.obj",
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (0.0, 1.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "68abeea8-c378-44c3-8c92-7c19a2627553",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-1.0, 1.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "8234a484-eeb0-4144-aabb-0fd66497ea1e",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-1.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "2dda47ab-586f-439d-9dd1-c4a40481ca83",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-2.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "f216e1b6-0874-4313-ae6c-4ce5b305f2b7",
+			name: "Plane.001",
+			class: OBJ((
+				mesh_path: "models/2x1m_Arch.obj",
 				material: (
 					path: "materials/light_stone.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (3.0, 1.0, 6.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
+			position: (-1.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+		parent: Some("11240f70-01bb-40a3-95db-748ee67c247a"),
 	), (
 		identity: (
-			uuid: "1c38158e-3588-41b0-8474-69fd2af050c1",
+			uuid: "8d29f9db-9708-47e8-aee2-0bbdfe037bd8",
 			name: "1m_Wall",
 			class: OBJ((
 				mesh_path: "models/1m_Wall.obj",
@@ -7062,133 +7084,14 @@
 			)),
 		),
 		transform: (
-			position: (11.0, 0.0, 8.0),
-			rotation: (0.0, 1.0, 0.0, 0.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "b01d1a32-f30a-47c8-9ff2-e80064fdbff5",
-			name: "Grass",
-			class: OBJ((
-				mesh_path: "models/Grass.obj",
-				material: (
-					path: "materials/grass.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-4.759, 0.0, 4.858),
-			rotation: (0.0, -0.178, 0.0, 0.984),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("f1f7d8bd-8998-47d2-a0ad-617e8096e6f0"),
-	), (
-		identity: (
-			uuid: "59799907-3e65-4f3a-80ee-342d70d2d8b1",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/grass.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-6.0, 0.0, 4.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "59be0f45-5a0d-46be-b534-53bdd1e3f940",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (2.0, 0.0, 5.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "9c92ae3f-db93-4e57-810e-d0a7e7e0a39b",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-4.0, 0.0, 6.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "966bfe84-2f5f-4a49-ad3e-f28fb8ff3e0c",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/grass.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-6.0, 0.0, 5.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "cc3691bf-056a-4abb-9b17-6a96875da3f3",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/grass.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-7.0, 0.0, 5.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "9906d760-19fd-4f8c-81be-94b003fb3933",
-			name: "Cube.004",
-			class: OBJ((
-				mesh_path: "models/0_25m_Trim.obj",
-				material: (
-					path: "materials/light_stone.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-3.0, 1.0, 0.0),
+			position: (-2.0, 1.0, 0.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "43ae64ed-ee6b-425a-afa6-d16d54b6d37d",
+			uuid: "d9aa7c67-93bb-4096-bfc9-db484ec32a24",
 			name: "1m_Wall",
 			class: OBJ((
 				mesh_path: "models/1m_Wall.obj",
@@ -7198,14 +7101,14 @@
 			)),
 		),
 		transform: (
-			position: (13.0, 1.0, 6.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
+			position: (1.0, 1.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "69af9253-334b-43dc-a091-7110bd4d322e",
+			uuid: "1a32c1e3-dbeb-41d9-bb65-00ea4cbab675",
 			name: "1m_Wall",
 			class: OBJ((
 				mesh_path: "models/1m_Wall.obj",
@@ -7215,82 +7118,14 @@
 			)),
 		),
 		transform: (
-			position: (13.0, 1.0, 4.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
+			position: (2.0, 1.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "a6d9dd8f-6786-4aa4-99e7-2595783866a9",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (13.0, 1.0, 3.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "edb6bb7c-2fca-4c30-8dde-fd3168bbffac",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (13.0, 1.0, 2.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "84a4303a-2037-42f0-8fed-52d8fc051668",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (13.0, 1.0, 5.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "64d5352b-453d-4790-8d03-7c03c077a803",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (9.0, 1.0, 5.0),
-			rotation: (0.0, 1.0, 0.0, -0.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "59f76ac0-c657-4933-a4f0-2595976fc531",
+			uuid: "48c909ea-8876-442e-a9ad-614e4fd94abf",
 			name: "1m_Floor",
 			class: OBJ((
 				mesh_path: "models/1m_Floor.obj",
@@ -7300,14 +7135,31 @@
 			)),
 		),
 		transform: (
-			position: (7.0, 1.625, 4.0),
+			position: (3.0, 2.125, 2.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "db119e6b-938f-4373-926f-835f631a7882",
+			uuid: "e512756d-554e-4bc0-9cb7-c86538dc311c",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (5.0, 1.0, 2.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "ed72ac18-ce2e-4fc9-8bc1-ec5d8d56b611",
 			name: "1m_Floor",
 			class: OBJ((
 				mesh_path: "models/1m_Floor.obj",
@@ -7317,252 +7169,65 @@
 			)),
 		),
 		transform: (
-			position: (6.0, 1.75, 4.0),
+			position: (5.0, 1.875, 2.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "57473fd5-06ae-4ad7-b494-d84a55c01e82",
-			name: "Cube.004",
+			uuid: "b98461a7-de6c-4c44-9e04-15c29e1900af",
+			name: "1m_Floor",
 			class: OBJ((
-				mesh_path: "models/0_25m_Trim.obj",
+				mesh_path: "models/1m_Floor.obj",
 				material: (
 					path: "materials/light_stone.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (3.0, 1.0, 3.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "77ea2b8b-55cc-46bf-9ed9-a95532b1511b",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (13.0, -1.0, 3.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "b22ae1e4-f5a0-4457-8c34-435d2c79b223",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (12.0, -1.0, 2.0),
+			position: (5.0, 1.875, 3.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "cd0e4aa8-7403-4860-bce8-324e6e522b5d",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (3.0, 0.0, 0.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "e68db129-48a4-41c5-8062-cea3a5100e33",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (2.0, 0.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "70f94f8b-dd16-4d3b-b776-3498b418821f",
+			uuid: "f2d88c85-a184-446a-8bc8-efee61c18c5a",
 			name: "1m_Floor",
 			class: OBJ((
 				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-5.0, 0.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "af239f7f-510a-4695-a3f4-361cd5383dad",
-			name: "Cube.001",
-			class: OBJ((
-				mesh_path: "models/Small_Fence.obj",
-				material: (
-					path: "materials/fence.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-5.0, 0.0, 1.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
-	), (
-		identity: (
-			uuid: "c2bf23f6-4902-4bf7-9010-912427c2d539",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-12.0, 1.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "be051409-e5b0-4c10-8fc7-79ff070422b7",
-			name: "Cube.004",
-			class: OBJ((
-				mesh_path: "models/0_25m_Trim.obj",
 				material: (
 					path: "materials/light_stone.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-7.0, 1.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "6532951f-d461-4c83-8d74-fd94b47312d3",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-9.0, 0.0, 4.0),
-			rotation: (0.0, 1.0, 0.0, -0.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "786b9b43-d141-4d00-b10e-456b2875292f",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-6.0, 0.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "b40d5b53-1d34-494e-a43b-381763e2cbc9",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-7.0, 0.0, 0.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "8915c5d9-9c66-47bc-817b-84f3735566af",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-9.0, 0.0, 0.0),
+			position: (5.0, 1.875, 4.0),
 			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "85920981-dd83-4625-a5d4-eb417b339925",
-			name: "Cube.004",
+			uuid: "cbc7e782-961b-4ea6-a24a-6f5969cbf663",
+			name: "1m_Floor",
 			class: OBJ((
-				mesh_path: "models/0_25m_Trim.obj",
+				mesh_path: "models/1m_Floor.obj",
 				material: (
 					path: "materials/light_stone.mat",
 				),
 			)),
 		),
 		transform: (
-			position: (-13.0, 1.0, 4.0),
-			rotation: (0.0, 0.707, 0.0, 0.707),
+			position: (4.0, 2.0, 4.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
 	), (
 		identity: (
-			uuid: "f16ebcad-a209-4b00-b801-1dcaa85bb5e9",
+			uuid: "20c3651b-cf6b-484f-825b-df04e9fd94e5",
 			name: "1m_Wall",
 			class: OBJ((
 				mesh_path: "models/1m_Wall.obj",
@@ -7572,194 +7237,7 @@
 			)),
 		),
 		transform: (
-			position: (-13.0, 1.0, 4.0),
-			rotation: (0.0, 0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "8a95f135-6a89-457a-bed7-15c298c85105",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-13.0, 1.0, 3.0),
-			rotation: (0.0, 0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "11b518ef-32d2-47e5-9e3f-220fbdc017ac",
-			name: "Cube.004",
-			class: OBJ((
-				mesh_path: "models/0_25m_Trim.obj",
-				material: (
-					path: "materials/light_stone.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-13.0, 1.0, 3.0),
-			rotation: (0.0, 0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "915692ed-db2f-41b1-9629-97623d207944",
-			name: "Cube.004",
-			class: OBJ((
-				mesh_path: "models/0_25m_Trim.obj",
-				material: (
-					path: "materials/light_stone.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (-9.0, 1.0, 2.0),
-			rotation: (0.0, 0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "a20fd083-70c8-43bf-90cc-7150e877687a",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (13.0, -1.0, 2.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
-	), (
-		identity: (
-			uuid: "7a2cff4f-06c7-4b9c-9234-3104ec8fcd66",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (11.0, -1.0, 2.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "5004c0c3-5b86-4e0a-abf6-bac34822e59e",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (10.0, -1.0, 2.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "250c703a-5bb7-4475-b463-ee9d537edb63",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (8.0, -0.75, 2.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "8d82b931-82c5-4429-9509-e59154b3111d",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (7.0, -0.625, 2.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "cb884ed3-a2c7-4278-b355-fc3bba9ce926",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (8.0, -0.75, 3.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "36603c02-d5ac-459e-8d62-252197ae7da1",
-			name: "1m_Floor",
-			class: OBJ((
-				mesh_path: "models/1m_Floor.obj",
-				material: (
-					path: "materials/floor.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (11.0, -1.125, 5.0),
-			rotation: (0.0, 0.0, 0.0, 1.0),
-			scale: (1.0, 1.0, 1.0),
-		),
-		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "7de992da-47d8-488e-89f5-388fafa72fb9",
-			name: "1m_Wall",
-			class: OBJ((
-				mesh_path: "models/1m_Wall.obj",
-				material: (
-					path: "materials/material.mat",
-				),
-			)),
-		),
-		transform: (
-			position: (7.0, 0.0, 5.0),
+			position: (6.0, 1.0, 5.0),
 			rotation: (0.0, 1.0, 0.0, -0.0),
 			scale: (1.0, 1.0, 1.0),
 		),
@@ -7783,7 +7261,194 @@
 		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
 	), (
 		identity: (
-			uuid: "da3f6587-56d5-4f07-bc8f-63f471e1e292",
+			uuid: "7de992da-47d8-488e-89f5-388fafa72fb9",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (7.0, 0.0, 5.0),
+			rotation: (0.0, 1.0, 0.0, -0.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "21486fe6-309e-429f-8cd2-f6cd37bd3c5e",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (7.0, 1.0, 5.0),
+			rotation: (0.0, 1.0, 0.0, -0.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "db119e6b-938f-4373-926f-835f631a7882",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/light_stone.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (6.0, 1.75, 4.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "f8740107-a711-44a0-9af3-6b493379231c",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/light_stone.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (6.0, 1.75, 3.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "b1af63f1-cc6b-48d4-bd96-03c966737f25",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/light_stone.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (6.0, 1.75, 2.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "92780407-4007-4dc7-955b-18c75ccf922c",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/light_stone.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (7.0, 1.625, 2.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "6aad0e17-6f10-4c3a-aadd-8299c4e54d49",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (5.0, 1.0, 5.0),
+			rotation: (0.0, 1.0, 0.0, -0.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "d1700300-bd2c-4885-95ed-8d2acbc34e57",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/light_stone.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (3.0, 2.125, 4.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "6502bd81-bfa8-4143-ae19-2edd2e46aa1f",
+			name: "Cube.004",
+			class: OBJ((
+				mesh_path: "models/0_25m_Trim.obj",
+				material: (
+					path: "materials/light_stone.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (3.0, 1.0, 4.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "80513847-4ebe-4da0-adca-ec0ee25cefda",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/floor.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (1.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "b73bd8ab-29a6-41b4-b441-c993360470bf",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/floor.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (0.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "a8a0fa67-965a-4c01-84ed-5664718cab28",
 			name: "Cube.001",
 			class: OBJ((
 				mesh_path: "models/Small_Fence.obj",
@@ -7793,10 +7458,345 @@
 			)),
 		),
 		transform: (
-			position: (-8.0, 0.0, 4.0),
-			rotation: (0.0, -0.707, 0.0, 0.707),
+			position: (0.0, 0.0, 1.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
+	), (
+		identity: (
+			uuid: "e95bae12-07f4-41d1-aa59-4db353de12d3",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/floor.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-1.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "90109931-d8a9-465c-9c31-88e5081fddf4",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/floor.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-2.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "5a4e4b86-93d6-4bee-a3c9-61d6bc48e2cb",
+			name: "Cube.001",
+			class: OBJ((
+				mesh_path: "models/Small_Fence.obj",
+				material: (
+					path: "materials/fence.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-1.0, 0.0, 1.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
+	), (
+		identity: (
+			uuid: "57473fd5-06ae-4ad7-b494-d84a55c01e82",
+			name: "Cube.004",
+			class: OBJ((
+				mesh_path: "models/0_25m_Trim.obj",
+				material: (
+					path: "materials/light_stone.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (3.0, 1.0, 3.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "2b7a9bbc-fdd7-4999-8b37-9005f6110f61",
+			name: "Cube.004",
+			class: OBJ((
+				mesh_path: "models/0_25m_Trim.obj",
+				material: (
+					path: "materials/light_stone.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (3.0, 1.0, 2.0),
+			rotation: (0.0, -0.707, 0.0, 0.707),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "8628bb83-eb64-48b8-95cb-4d7a4de5d3a1",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/grass.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-1.0, 0.0, 1.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "62814bd7-c592-4dd3-b592-9135284c3354",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/grass.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-2.0, 0.0, 1.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "c03947a1-dc59-4b4d-bc5c-114691e3b8bc",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/grass.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-3.0, 0.0, 1.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "4c6634a1-a4db-4298-b814-f98c4df06206",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/grass.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-3.0, 0.0, 2.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "19608ec4-b5e9-4f5b-9b09-2ac1fb2babde",
+			name: "Cube.001",
+			class: OBJ((
+				mesh_path: "models/Small_Fence.obj",
+				material: (
+					path: "materials/fence.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-3.0, 0.0, 1.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
+	), (
+		identity: (
+			uuid: "004532e7-1211-42dc-bdd2-cd66097df4f3",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/floor.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-3.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "1fcae46b-1a9b-42a0-b72c-cc471514ceb9",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (-3.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "6c5019ec-e9c1-467a-a09c-3b4bcbf6588c",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (0.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "ae1580e3-bbe0-4fb5-9722-65ee9e97ff77",
+			name: "1m_Wall",
+			class: OBJ((
+				mesh_path: "models/1m_Wall.obj",
+				material: (
+					path: "materials/material.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (1.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2163c90b-5f26-41d4-8cad-38e3e5bf8615"),
+	), (
+		identity: (
+			uuid: "7cc0a647-b43c-49cb-ac26-60fb9af434a6",
+			name: "Cube.001",
+			class: OBJ((
+				mesh_path: "models/Small_Fence.obj",
+				material: (
+					path: "materials/fence.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (1.0, 0.0, 2.0),
+			rotation: (0.0, 0.707, 0.0, 0.707),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("904e43eb-53b2-430f-975f-c255ff5a10e4"),
+	), (
+		identity: (
+			uuid: "2d267456-de16-4e74-b375-52b0188d3a60",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/floor.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (2.0, 0.0, 0.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "67a02ef7-ed5b-443e-a10b-df5055edf8b1",
+			name: "1m_Floor",
+			class: OBJ((
+				mesh_path: "models/1m_Floor.obj",
+				material: (
+					path: "materials/floor.mat",
+				),
+			)),
+		),
+		transform: (
+			position: (2.0, 0.0, 1.0),
+			rotation: (0.0, 0.0, 0.0, 1.0),
+			scale: (1.0, 1.0, 1.0),
+		),
+		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
+	), (
+		identity: (
+			uuid: "f938f739-21fa-4701-b296-d9adc37961d7",
+			name: "Camera 3D",
+			class: Camera3D((
+				is_active: true,
+				has_volumetric_fog: true,
+				volumetric_fog_settings: Some((
+					fog_color: Srgba((
+						red: 0.0,
+						green: 0.0,
+						blue: 1.0,
+						alpha: 1.0,
+					)),
+					ambient_color: Srgba((
+						red: 0.12941177,
+						green: 0.0,
+						blue: 1.0,
+						alpha: 1.0,
+					)),
+					ambient_intensity: 0.01,
+					step_count: 64,
+					max_depth: 25.0,
+					absorption: 0.3,
+					scattering: 0.3,
+					density: 0.1,
+					scattering_asymmetry: 0.8,
+					light_tint: LinearRgba((
+						red: 1.0,
+						green: 1.0,
+						blue: 1.0,
+						alpha: 1.0,
+					)),
+					light_intensity: 0.1,
+				)),
+			)),
+		),
+		transform: (
+			position: (-10.958, 4.294, 6.215),
+			rotation: (-0.143, -0.574, -0.102, 0.8),
+			scale: (1.0, 1.0, 1.0),
+		),
+		components: Some({
+			"bevy_core_pipeline::tonemapping::Tonemapping": "{\"bevy_core_pipeline::tonemapping::Tonemapping\":None}",
+			"bevy_granite_core::entities::MainCamera": "{\"bevy_granite_core::entities::MainCamera\":()}",
+		}),
 	)],
 )
