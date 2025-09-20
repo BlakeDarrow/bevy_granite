@@ -35,6 +35,7 @@ pub use update_event::*;
 pub struct UserUpdatedOBJEvent {
     pub entity: Entity,
     pub data: OBJ,
+    pub reload_mesh: bool,
 }
 
 /// Actual serialized class data thats stored inside IdentityData
@@ -44,12 +45,15 @@ pub struct UserUpdatedOBJEvent {
 pub struct OBJ {
     pub mesh_path: Cow<'static, str>,
     pub material: MaterialData,
+    #[serde(skip)]
+    pub reload_requested: bool,
 }
 impl Default for OBJ {
     fn default() -> Self {
         Self {
             mesh_path: "".into(),
             material: MaterialData::new("".to_string()),
+            reload_requested: false,
         }
     }
 }
