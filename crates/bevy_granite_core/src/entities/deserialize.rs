@@ -80,21 +80,23 @@ pub fn deserialize_entities(
             parent_relationships.push((entity, parent_guid));
         }
 
-        log!(
-            LogType::Game,
-            LogLevel::Info,
-            LogCategory::Entity,
-            "Inserted: {:?}",
-            final_identity
-        );
+        //
+        //log!(
+        //    LogType::Game,
+        //    LogLevel::Info,
+        //    LogCategory::Entity,
+        //    "Inserted: {:?}",
+        //    final_identity
+        //);
 
-        log!(
-            LogType::Game,
-            LogLevel::Info,
-            LogCategory::Entity,
-            "Found Components {:?}",
-            save_data.components,
-        );
+        //log!(
+        //    LogType::Game,
+        //    LogLevel::Info,
+        //    LogCategory::Entity,
+        //    "Found Components {:?}",
+        //    save_data.components,
+        //);
+        //
 
         // Load components into the scene entities
         if let Some(component_map) = save_data.components.as_ref() {
@@ -124,14 +126,6 @@ pub fn deserialize_entities(
     for (child_entity, parent_guid) in parent_relationships {
         if let Some(&parent_entity) = uuid_to_entity_map.get(&parent_guid) {
             commands.entity(parent_entity).add_child(child_entity);
-            log!(
-                LogType::Game,
-                LogLevel::Info,
-                LogCategory::Entity,
-                "Applied parent relationship: child {:?} -> parent {:?}",
-                child_entity,
-                parent_entity
-            );
         } else {
             log!(
                 LogType::Game,

@@ -38,13 +38,13 @@ pub fn material_from_path_into_scene(
     asset_server: &Res<AssetServer>,
 ) -> Option<EditableMaterial> {
     if let Some(existing) = available_materials.find_material_by_path(path) {
-        log!(
-            LogType::Editor,
-            LogLevel::Info,
-            LogCategory::Asset,
-            "Reused existing material: {}",
-            existing.friendly_name
-        );
+        //log!(
+        //    LogType::Editor,
+        //    LogLevel::Info,
+        //    LogCategory::Asset,
+        //    "Reused existing material: {}",
+        //    existing.friendly_name
+        //);
         return Some(existing.clone());
     }
 

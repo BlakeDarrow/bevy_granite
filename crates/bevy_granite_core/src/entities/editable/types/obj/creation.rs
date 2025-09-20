@@ -139,13 +139,13 @@ impl OBJ {
         create_material: bool,
         create_material_from: MaterialNameSource,
     ) -> Entity {
-        log!(
-            LogType::Game,
-            LogLevel::Info,
-            LogCategory::Asset,
-            "User wants obj from: {}",
-            self.mesh_path,
-        );
+        //log!(
+        //    LogType::Game,
+        //    LogLevel::Info,
+        //    LogCategory::Asset,
+        //    "User wants obj from: {}",
+        //    self.mesh_path,
+        //);
 
         // Load and configure the material
         self.load_and_configure_material(
@@ -297,14 +297,14 @@ impl OBJ {
             };
         };
 
-        log!(
-            LogType::Game,
-            LogLevel::Info,
-            LogCategory::Asset,
-            "Create/load material: {}, path: {:?}",
-            create_material,
-            material_path
-        );
+        //log!(
+        //    LogType::Game,
+        //    LogLevel::Info,
+        //    LogCategory::Asset,
+        //    "Create/load material: {}, path: {:?}",
+        //    create_material,
+        //    material_path
+        //);
 
         // Set the path on the current material before loading
         self.material.current.path = material_path.clone();
