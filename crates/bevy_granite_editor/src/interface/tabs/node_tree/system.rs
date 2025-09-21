@@ -53,35 +53,32 @@ pub fn update_node_tree_tabs_system(
             data.selected_entities = all_selected.iter().collect();
             data.active_scene_file = editor_state.current_file.clone();
 
-            let (entities_changed, data_changed, hierarchy_changed) = if data.filtered_hierarchy {
-                let q = hierarchy_query
-                    .iter()
-                    .filter(|(_, _, _, _, _, a)| !(a.0 || a.1 || a.2))
-                    .map(|(a, b, c, d, e, _)| (a, b, c, d, e));
-                let c = changed_hierarchy
-                    .iter()
-                    .any(|filter| !(filter.0 || filter.1 || filter.2));
-                detect_changes(q, c, data)
+            // OPTIMIZATION: Only query once, not twice!
+            let has_changes = !changed_hierarchy.is_empty();
+            
+            // Early exit if no changes detected
+            if !has_changes && !data.hierarchy.is_empty() {
+                // No changes, skip expensive processing
             } else {
-                let q = hierarchy_query
-                    .iter()
-                    .map(|(a, b, c, d, e, _)| (a, b, c, d, e));
-                let c = !changed_hierarchy.is_empty();
-                detect_changes(q, c, data)
-            };
-
-            if entities_changed || data_changed || hierarchy_changed {
-                if data.filtered_hierarchy {
-                    let q = hierarchy_query
+                // Only iterate hierarchy_query ONCE
+                let filtered_entities: Vec<_> = if data.filtered_hierarchy {
+                    hierarchy_query
                         .iter()
                         .filter(|(_, _, _, _, _, a)| !(a.0 || a.1 || a.2))
-                        .map(|(a, b, c, d, e, _)| (a, b, c, d, e));
-                    update_hierarchy_data(data, q, hierarchy_changed);
+                        .map(|(a, b, c, d, e, _)| (a, b, c, d, e))
+                        .collect()
                 } else {
-                    let q = hierarchy_query
+                    hierarchy_query
                         .iter()
-                        .map(|(a, b, c, d, e, _)| (a, b, c, d, e));
-                    update_hierarchy_data(data, q, hierarchy_changed);
+                        .map(|(a, b, c, d, e, _)| (a, b, c, d, e))
+                        .collect()
+                };
+                
+                let (entities_changed, data_changed, hierarchy_changed) = 
+                    detect_changes(filtered_entities.iter().cloned(), has_changes, data);
+
+                if entities_changed || data_changed || hierarchy_changed {
+                    update_hierarchy_data(data, filtered_entities, hierarchy_changed);
                 }
             }
 
