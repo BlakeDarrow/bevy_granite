@@ -14,6 +14,7 @@ pub enum PendingContextAction {
 pub struct NodeTreeTabData {
     pub filtered_hierarchy: bool, // whether the hierarchy shows all entities or hides editor related ones
     pub expand_to_enabled: bool, // whether to auto-expand to selected entities
+    pub scroll_to_enabled: bool, // whether to auto-scroll to selected entities
     pub active_selection: Option<Entity>,
     pub selected_entities: Vec<Entity>,
     pub new_selection: Option<Entity>,
@@ -37,6 +38,7 @@ impl Default for NodeTreeTabData {
         Self {
             filtered_hierarchy: true,
             expand_to_enabled: true,
+            scroll_to_enabled: true,
             active_selection: None,
             selected_entities: Vec::new(),
             new_selection: None,

@@ -41,12 +41,20 @@ fn render_search_bar(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
             .on_hover_ui(|ui| {
                 ui.label("Toggle visibility of editor-related entities");
             });
-        
+        ui.separator();
         ui.add_space(spacing);
         ui.weak("auto-expand: ");
         ui.checkbox(&mut data.expand_to_enabled, ())
             .on_hover_ui(|ui| {
                 ui.label("Auto-expand tree to show selected entities");
+            });
+        
+        ui.separator();
+        ui.add_space(spacing);
+        ui.weak("auto-scroll: ");
+        ui.checkbox(&mut data.scroll_to_enabled, ())
+            .on_hover_ui(|ui| {
+                ui.label("Auto-scroll to selected entities");
             });
     });
 }
@@ -68,7 +76,7 @@ fn render_entity_tree(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
 fn handle_empty_space_drop(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
     if data.drag_payload.is_some() && ui.input(|i| i.pointer.any_released()) {
         if data.drop_target.is_none() {
-            data.drop_target = Some(Entity::PLACEHOLDER); 
+            data.drop_target = Some(Entity::PLACEHOLDER);
         }
     }
 }
@@ -110,7 +118,7 @@ fn render_search_results(ui: &mut egui::Ui, data: &mut NodeTreeTabData, search_t
             entry.entity,
             &entry.name,
             &entry.entity_type,
-            &HashMap::new(), 
+            &HashMap::new(),
             data,
             search_term,
         );
@@ -170,7 +178,7 @@ fn render_tree_node(
     if visual_state.is_active_selected && data.should_scroll_to_selection {
         ui.scroll_to_rect(row_rect, Some(egui::Align::Center));
         data.should_scroll_to_selection = false;
-        
+
         bevy_granite_logging::log!(
             bevy_granite_logging::LogType::Editor,
             bevy_granite_logging::LogLevel::Info,

@@ -201,11 +201,22 @@ pub fn handle_external_selection_change(
             && !data.clicked_via_node_tree
             && data.tree_click_frames_remaining == 0
         {
+            // Handle auto-expand
             if data.expand_to_enabled {
                 expand_to_entity(&mut data.hierarchy, new_active);
-                // Delay scrolling by a couple frames to let expansion render
-                data.scroll_delay_frames = 2;
-                data.should_scroll_to_selection = false; // Will be set to true when delay expires
+            }
+            
+            // Handle scroll-to (with delay if we also expanded, immediate if just scrolling)
+            if data.scroll_to_enabled {
+                if data.expand_to_enabled {
+                    // Delay scrolling by a couple frames to let expansion render
+                    data.scroll_delay_frames = 2;
+                    data.should_scroll_to_selection = false; // Will be set to true when delay expires
+                } else {
+                    // Scroll immediately if not expanding
+                    data.should_scroll_to_selection = true;
+                    data.scroll_delay_frames = 0;
+                }
             } else {
                 data.should_scroll_to_selection = false;
                 data.scroll_delay_frames = 0;
