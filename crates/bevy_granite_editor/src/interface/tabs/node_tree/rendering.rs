@@ -41,6 +41,13 @@ fn render_search_bar(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
             .on_hover_ui(|ui| {
                 ui.label("Toggle visibility of editor-related entities");
             });
+        
+        ui.add_space(spacing);
+        ui.weak("expand to: ");
+        ui.checkbox(&mut data.expand_to_enabled, ())
+            .on_hover_ui(|ui| {
+                ui.label("Auto-expand tree to show selected entities");
+            });
     });
 }
 

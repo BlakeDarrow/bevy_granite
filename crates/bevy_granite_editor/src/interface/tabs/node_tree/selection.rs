@@ -201,14 +201,17 @@ pub fn handle_external_selection_change(
             && !data.clicked_via_node_tree
             && data.tree_click_frames_remaining == 0
         {
-            expand_to_entity(&mut data.hierarchy, new_active);
+            if data.expand_to_enabled {
+                expand_to_entity(&mut data.hierarchy, new_active);
+            }
             data.should_scroll_to_selection = true;
 
             log!(
                 LogType::Editor,
                 LogLevel::Info,
                 LogCategory::UI,
-                "External selection detected - expanding to entity {:?}",
+                "External selection detected - {} to entity {:?}",
+                if data.expand_to_enabled { "expanding" } else { "scrolling" },
                 new_active
             );
         } else {
