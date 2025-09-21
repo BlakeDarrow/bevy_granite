@@ -116,12 +116,12 @@ pub fn single_active(
     add_active.propagate(false);
     if active_selection.single().is_err() {
         for entity in &active_selection {
-            log(
-                LogType::Editor,
-                LogLevel::Info,
-                LogCategory::Input,
-                format!("Entity {} is no longer active", entity.index()),
-            );
+            //log(
+            //    LogType::Editor,
+            //    LogLevel::Info,
+            //    LogCategory::Input,
+            //    format!("Entity {} is no longer active", entity.index()),
+            //);
             if entity != add_active.target() {
                 commands.entity(entity).remove::<ActiveSelection>();
             }
