@@ -23,6 +23,7 @@ pub struct NodeTreeTabData {
     pub tree_click_frames_remaining: u8, // Frames to wait before allowing external expansion
     pub hierarchy: Vec<HierarchyEntry>,
     pub should_scroll_to_selection: bool,
+    pub scroll_delay_frames: u8, // Frames to wait before scrolling (to allow expansion to render)
     pub previous_active_selection: Option<Entity>,
     pub search_filter: String,
     pub drag_payload: Option<Vec<Entity>>, // Entities being dragged
@@ -45,6 +46,7 @@ impl Default for NodeTreeTabData {
             tree_click_frames_remaining: 0,
             hierarchy: Vec::new(),
             should_scroll_to_selection: false,
+            scroll_delay_frames: 0,
             previous_active_selection: None,
             search_filter: String::new(),
             drag_payload: None,

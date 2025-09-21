@@ -43,7 +43,7 @@ fn render_search_bar(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
             });
         
         ui.add_space(spacing);
-        ui.weak("expand to: ");
+        ui.weak("auto-expand: ");
         ui.checkbox(&mut data.expand_to_enabled, ())
             .on_hover_ui(|ui| {
                 ui.label("Auto-expand tree to show selected entities");
@@ -170,6 +170,14 @@ fn render_tree_node(
     if visual_state.is_active_selected && data.should_scroll_to_selection {
         ui.scroll_to_rect(row_rect, Some(egui::Align::Center));
         data.should_scroll_to_selection = false;
+        
+        bevy_granite_logging::log!(
+            bevy_granite_logging::LogType::Editor,
+            bevy_granite_logging::LogLevel::Info,
+            bevy_granite_logging::LogCategory::UI,
+            "Scrolling to entity rect: {:?}",
+            row_rect
+        );
     }
 
     styling::draw_row_background(ui, &row_rect, &visual_state, search_term);

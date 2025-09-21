@@ -203,17 +203,13 @@ pub fn handle_external_selection_change(
         {
             if data.expand_to_enabled {
                 expand_to_entity(&mut data.hierarchy, new_active);
+                // Delay scrolling by a couple frames to let expansion render
+                data.scroll_delay_frames = 2;
+                data.should_scroll_to_selection = false; // Will be set to true when delay expires
+            } else {
+                data.should_scroll_to_selection = false;
+                data.scroll_delay_frames = 0;
             }
-            data.should_scroll_to_selection = true;
-
-            log!(
-                LogType::Editor,
-                LogLevel::Info,
-                LogCategory::UI,
-                "External selection detected - {} to entity {:?}",
-                if data.expand_to_enabled { "expanding" } else { "scrolling" },
-                new_active
-            );
         } else {
             data.should_scroll_to_selection = false;
         }
@@ -224,6 +220,22 @@ pub fn handle_external_selection_change(
 pub fn update_tree_click_protection(data: &mut NodeTreeTabData) {
     if data.tree_click_frames_remaining > 0 {
         data.tree_click_frames_remaining -= 1;
+    }
+}
+
+/// Updates the scroll delay counter and activates scrolling when ready
+pub fn update_scroll_delay(data: &mut NodeTreeTabData) {
+    if data.scroll_delay_frames > 0 {
+        data.scroll_delay_frames -= 1;
+        if data.scroll_delay_frames == 0 {
+            data.should_scroll_to_selection = true;
+            log!(
+                LogType::Editor,
+                LogLevel::Info,
+                LogCategory::UI,
+                "Scroll delay expired - activating scroll to selection"
+            );
+        }
     }
 }
 

@@ -3,7 +3,7 @@ use super::{
     hierarchy::{detect_changes, update_hierarchy_data},
     selection::{
         handle_external_selection_change, process_selection_changes, update_tree_click_protection,
-        validation::is_valid_drop,
+        update_scroll_delay, validation::is_valid_drop,
     },
     RequestReparentEntityEvent,
 };
@@ -85,6 +85,7 @@ pub fn update_node_tree_tabs_system(
             handle_external_selection_change(data, previous_selection);
             process_selection_changes(data, &mut commands);
             update_tree_click_protection(data);
+            update_scroll_delay(data);
             handle_drag_drop_events(
                 data,
                 &mut reparent_event_writer,
