@@ -151,7 +151,8 @@ pub fn drag_transform_gizmo(
                 return;
             };
             let hit = camera_transform.translation() + (click_ray.direction * click_distance);
-            let delta_x = snap_gizmo(hit.x, gizmo_snap.transform_value) - current_world_pos.x;
+            let raw_delta_x = hit.x - current_world_pos.x;
+            let delta_x = snap_gizmo(raw_delta_x, gizmo_snap.transform_value);
             Vec3::new(delta_x, 0.0, 0.0)
         }
         (GizmoAxis::Y, TransformGizmo::Axis) => {
@@ -164,7 +165,8 @@ pub fn drag_transform_gizmo(
                 return;
             };
             let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
-            let delta_y = snap_gizmo(hit.y, gizmo_snap.transform_value) - current_world_pos.y;
+            let raw_delta_y = hit.y - current_world_pos.y;
+            let delta_y = snap_gizmo(raw_delta_y, gizmo_snap.transform_value);
             Vec3::new(0.0, delta_y, 0.0)
         }
         (GizmoAxis::Z, TransformGizmo::Axis) => {
@@ -175,7 +177,8 @@ pub fn drag_transform_gizmo(
                 return;
             };
             let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
-            let delta_z = snap_gizmo(hit.z, gizmo_snap.transform_value) - current_world_pos.z;
+            let raw_delta_z = hit.z - current_world_pos.z;
+            let delta_z = snap_gizmo(raw_delta_z, gizmo_snap.transform_value);
             Vec3::new(0.0, 0.0, delta_z)
         }
         (GizmoAxis::X, TransformGizmo::Plane) => {
@@ -186,8 +189,10 @@ pub fn drag_transform_gizmo(
                 return;
             };
             let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
-            let delta_y = snap_gizmo(hit.y, gizmo_snap.transform_value) - current_world_pos.y;
-            let delta_z = snap_gizmo(hit.z, gizmo_snap.transform_value) - current_world_pos.z;
+            let raw_delta_y = hit.y - current_world_pos.y;
+            let raw_delta_z = hit.z - current_world_pos.z;
+            let delta_y = snap_gizmo(raw_delta_y, gizmo_snap.transform_value);
+            let delta_z = snap_gizmo(raw_delta_z, gizmo_snap.transform_value);
             Vec3::new(0.0, delta_y, delta_z)
         }
         (GizmoAxis::Y, TransformGizmo::Plane) => {
@@ -198,8 +203,10 @@ pub fn drag_transform_gizmo(
                 return;
             };
             let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
-            let delta_x = snap_gizmo(hit.x, gizmo_snap.transform_value) - current_world_pos.x;
-            let delta_z = snap_gizmo(hit.z, gizmo_snap.transform_value) - current_world_pos.z;
+            let raw_delta_x = hit.x - current_world_pos.x;
+            let raw_delta_z = hit.z - current_world_pos.z;
+            let delta_x = snap_gizmo(raw_delta_x, gizmo_snap.transform_value);
+            let delta_z = snap_gizmo(raw_delta_z, gizmo_snap.transform_value);
             Vec3::new(delta_x, 0.0, delta_z)
         }
         (GizmoAxis::Z, TransformGizmo::Plane) => {
@@ -210,8 +217,10 @@ pub fn drag_transform_gizmo(
                 return;
             };
             let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
-            let delta_x = snap_gizmo(hit.x, gizmo_snap.transform_value) - current_world_pos.x;
-            let delta_y = snap_gizmo(hit.y, gizmo_snap.transform_value) - current_world_pos.y;
+            let raw_delta_x = hit.x - current_world_pos.x;
+            let raw_delta_y = hit.y - current_world_pos.y;
+            let delta_x = snap_gizmo(raw_delta_x, gizmo_snap.transform_value);
+            let delta_y = snap_gizmo(raw_delta_y, gizmo_snap.transform_value);
             Vec3::new(delta_x, delta_y, 0.0)
         }
         (GizmoAxis::All, _) => {
