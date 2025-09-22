@@ -21,8 +21,8 @@ use crate::{
 use bevy::{ecs::system::Commands, prelude::ResMut};
 use bevy_egui::egui;
 use bevy_granite_core::{
-    entities::SaveSettings, RequestDespawnBySource, RequestDespawnSerializableEntities,
-    RequestLoadEvent, RequestSaveEvent, UserInput,
+    absolute_asset_to_rel, entities::SaveSettings, RequestDespawnBySource,
+    RequestDespawnSerializableEntities, RequestLoadEvent, RequestSaveEvent, UserInput,
 };
 use bevy_granite_gizmos::selection::events::EntityEvent;
 use native_dialog::FileDialog;
@@ -74,7 +74,7 @@ pub fn top_bar_ui(
                         .unwrap()
                     {
                         events.load.write(RequestLoadEvent(
-                            path.display().to_string(),
+                            absolute_asset_to_rel(path.display().to_string()).to_string(),
                             SaveSettings::Runtime,
                             None,
                         ));

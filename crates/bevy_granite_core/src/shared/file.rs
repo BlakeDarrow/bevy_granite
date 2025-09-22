@@ -19,17 +19,21 @@ pub fn rel_asset_to_absolute(rel_string: &str) -> Cow<'static, str> {
 }
 
 pub fn absolute_asset_to_rel(abs_string: String) -> Cow<'static, str> {
-    let abs_path = Path::new(&abs_string);
+    let abs_path = Path::new(&abs_string).canonicalize().unwrap_or_else(|_| PathBuf::from(&abs_string));
 
-    if abs_path.is_absolute() {
-        let base_assets_path = FileAssetReader::get_base_path().join("assets");
+    let base_assets_path = FileAssetReader::get_base_path()
+        .join("assets")
+        .canonicalize()
+        .unwrap_or_else(|_| FileAssetReader::get_base_path().join("assets"));
 
-        if let Ok(rel_path) = abs_path.strip_prefix(&base_assets_path) {
-            rel_path.to_string_lossy().replace('\\', "/").into()
-        } else {
-            abs_string.replace('\\', "/").into()
-        }
+    if abs_path.starts_with(&base_assets_path) {
+        abs_path
+            .strip_prefix(&base_assets_path)
+            .unwrap()
+            .to_string_lossy()
+            .replace('\\', "/")
+            .into()
     } else {
-        abs_string.replace('\\', "/").into()
+        abs_path.to_string_lossy().replace('\\', "/").into()
     }
 }

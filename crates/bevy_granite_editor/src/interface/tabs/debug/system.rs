@@ -1,7 +1,6 @@
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::platform::collections::HashMap;
 use bevy::prelude::{Entity, Name, Query, Res, ResMut, With};
-use bevy_granite_core::shared::user_input;
 use bevy_granite_core::{AvailableEditableMaterials, IdentityData, SpawnSource, UserInput};
 use bevy_granite_gizmos::{ActiveSelection, Selected};
 

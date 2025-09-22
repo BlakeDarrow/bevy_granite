@@ -1,3 +1,4 @@
+use crate::absolute_asset_to_rel;
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -112,7 +113,7 @@ pub fn asset_file_browser_multiple(path: String, filter: Vec<&str>) -> Option<Ve
 
     for path in selected_paths {
         if path.starts_with(&assets_dir) {
-            valid_paths.push(path.to_string_lossy().to_string());
+            valid_paths.push(absolute_asset_to_rel(path.to_string_lossy().to_string()).to_string());
         } else {
             log!(
                 LogType::Editor,

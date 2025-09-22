@@ -3,10 +3,6 @@ use bevy::prelude::{EulerRot, Quat, Vec3};
 use bevy_egui::egui;
 use bevy_granite_core::TransformData;
 use bevy_granite_gizmos::GizmoAxis;
-use bevy_granite_logging::{
-    config::{LogCategory, LogLevel, LogType},
-    log,
-};
 use std::f32::consts::PI;
 
 // global_transform_data is serialized
