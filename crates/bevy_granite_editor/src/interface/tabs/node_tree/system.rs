@@ -17,7 +17,7 @@ use bevy::ecs::query::Has;
 use bevy::ecs::system::Commands;
 use bevy::{
     ecs::query::{Changed, Or},
-    prelude::{ChildOf, Entity, EventWriter, Name, Query, Res, ResMut, With},
+    prelude::{ChildOf, Entity, EventWriter, Name, Query, Res, ResMut, With, RemovedComponents},
 };
 use bevy_granite_core::{
     IdentityData, RequestDespawnBySource, RequestReloadEvent, SpawnSource, TreeHiddenEntity,
@@ -40,8 +40,9 @@ pub fn update_node_tree_tabs_system(
     )>,
     changed_hierarchy: Query<
         (Has<GizmoChildren>, Has<GizmoMesh>, Has<TreeHiddenEntity>),
-        Or<(Changed<Name>, Changed<IdentityData>, Changed<SpawnSource>)>,
+        Or<(Changed<Name>, Changed<IdentityData>, Changed<SpawnSource>, Changed<ChildOf>)>,
     >,
+    mut removed_child_of: RemovedComponents<ChildOf>,
     mut commands: Commands,
     mut editor_events: EditorEvents,
     mut reparent_event_writer: EventWriter<RequestReparentEntityEvent>,
@@ -54,7 +55,10 @@ pub fn update_node_tree_tabs_system(
             data.active_scene_file = editor_state.current_file.clone();
 
             // OPTIMIZATION: Only query once, not twice!
-            let has_changes = !changed_hierarchy.is_empty();
+            let has_changes = !changed_hierarchy.is_empty() || !removed_child_of.is_empty();
+            
+            // Clear the removed components iterator to prevent accumulation
+            for _ in removed_child_of.read() {}
             
             // Early exit if no changes detected
             if !has_changes && !data.hierarchy.is_empty() {
