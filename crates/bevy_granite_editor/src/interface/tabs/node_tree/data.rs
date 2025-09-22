@@ -45,7 +45,7 @@ pub struct VirtualScrollState {
     pub row_height: f32,
     pub visible_start: usize,
     pub visible_count: usize,
-    pub buffer_size: usize, // Extra rows to render above/below visible area
+    pub buffer_size: usize, 
     pub scroll_offset: f32,
 }
 
@@ -55,8 +55,8 @@ impl Default for VirtualScrollState {
             total_rows: 0,
             row_height: 20.0, // Will be calculated dynamically
             visible_start: 0,
-            visible_count: 0, // 0 = auto-calculate based on available height, any other value = fixed count
-            buffer_size: 10,   // Extra rows for smooth scrolling
+            visible_count: 0, // 0 = auto-calculate based on available height
+            buffer_size: 10,   
             scroll_offset: 0.0,
         }
     }
@@ -126,16 +126,16 @@ pub struct HierarchyEntry {
     pub entity_type: String,
     pub parent: Option<Entity>,
     pub is_expanded: bool,
-    pub is_dummy_parent: bool, // True if this is a file-based grouping dummy parent
-    pub is_preserve_disk: bool, // True if entity has SaveSettings::PreserveDiskFull
-    pub is_preserve_disk_transform: bool, // True if entity has SaveSettings::PreserveDiskTransform
+    pub is_dummy_parent: bool, 
+    pub is_preserve_disk: bool, 
+    pub is_preserve_disk_transform: bool, 
 }
 
 /// Events for node tree operations
 #[derive(Debug, Clone, Event)]
 pub struct RequestReparentEntityEvent {
-    pub entities: Vec<Entity>, // All entities to reparent (preserving internal relationships)
-    pub new_parent: Entity,    // The target parent entity
+    pub entities: Vec<Entity>,
+    pub new_parent: Entity, 
 }
 
 /// Visual state for rendering a single tree row

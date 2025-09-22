@@ -1,4 +1,4 @@
-use super::data::{NodeTreeTabData, RowVisualState, FlattenedTreeNode};
+use super::data::{FlattenedTreeNode, NodeTreeTabData, RowVisualState};
 use bevy::prelude::Entity;
 use bevy_egui::egui;
 use std::collections::HashMap;
@@ -44,7 +44,7 @@ fn render_search_bar(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
             .on_hover_ui(|ui| {
                 ui.label("Auto-expand tree to show selected entities");
             });
-        
+
         ui.separator();
         ui.add_space(spacing);
         ui.weak("auto-scroll: ");
@@ -73,7 +73,6 @@ fn render_virtual_tree(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
 
 /// Renders the hierarchical tree with virtual scrolling
 fn render_virtual_hierarchical_tree(ui: &mut egui::Ui, data: &mut NodeTreeTabData) {
-    // Update the flattened tree cache if dirty
     if data.tree_cache_dirty {
         rebuild_flattened_tree_cache(data);
         data.tree_cache_dirty = false;
@@ -82,12 +81,10 @@ fn render_virtual_hierarchical_tree(ui: &mut egui::Ui, data: &mut NodeTreeTabDat
     let available_height = ui.available_height();
     let font_id = egui::TextStyle::Button.resolve(ui.style());
     let row_height = ui.fonts(|f| f.row_height(&font_id)) + ui.spacing().button_padding.y * 2.0;
-    
-    // Update virtual scroll state
+
     data.virtual_scroll_state.row_height = row_height;
     data.virtual_scroll_state.total_rows = data.flattened_tree_cache.len();
-    
-    // Only auto-calculate visible_count if it's not manually configured (0 means auto)
+
     if data.virtual_scroll_state.visible_count == 0 {
         data.virtual_scroll_state.visible_count = (available_height / row_height).ceil() as usize;
     }
@@ -99,56 +96,51 @@ fn render_virtual_hierarchical_tree(ui: &mut egui::Ui, data: &mut NodeTreeTabDat
 
     handle_empty_space_drop(ui, data);
 
-    // Use a simpler virtual scrolling approach that works well with egui
     let scroll_area_id = egui::Id::new("node_tree_virtual_scroll");
-    
+
     egui::ScrollArea::vertical()
         .id_salt(scroll_area_id)
         .auto_shrink([false, true])
         .show(ui, |ui| {
-            // Note: Total content height is maintained by spacing above and below visible content
-            
-            // Get scroll position from egui's scroll area state
             let scroll_offset = ui.clip_rect().min.y - ui.max_rect().min.y;
             let current_scroll = scroll_offset.abs();
-            
-            // Calculate which rows should be visible
             let start_row = (current_scroll / row_height) as usize;
             let buffer = data.virtual_scroll_state.buffer_size;
             let visible_start = start_row.saturating_sub(buffer);
             let visible_end = (start_row + data.virtual_scroll_state.visible_count + buffer * 2)
                 .min(data.virtual_scroll_state.total_rows);
-            
+
             data.virtual_scroll_state.visible_start = visible_start;
             data.virtual_scroll_state.scroll_offset = current_scroll;
 
-            // Add spacing before visible content to maintain scroll position
             let top_spacing = visible_start as f32 * row_height;
             if top_spacing > 0.0 {
                 ui.add_space(top_spacing);
             }
 
-            // Render visible rows
             for i in visible_start..visible_end {
                 if let Some(node) = data.flattened_tree_cache.get(i).cloned() {
                     render_virtual_tree_node(ui, &node, data, i);
                 }
             }
 
-            // Add spacing after visible content to maintain total height
-            let bottom_spacing = (data.virtual_scroll_state.total_rows - visible_end) as f32 * row_height;
+            let bottom_spacing =
+                (data.virtual_scroll_state.total_rows - visible_end) as f32 * row_height;
             if bottom_spacing > 0.0 {
                 ui.add_space(bottom_spacing);
             }
-            
-            // Handle programmatic scrolling to selected entity
+
             if data.should_scroll_to_selection {
                 if let Some(selected_entity) = data.active_selection {
-                    if let Some(index) = data.flattened_tree_cache.iter().position(|node| node.entity == selected_entity) {
+                    if let Some(index) = data
+                        .flattened_tree_cache
+                        .iter()
+                        .position(|node| node.entity == selected_entity)
+                    {
                         let target_y = index as f32 * row_height;
                         let target_rect = egui::Rect::from_min_size(
                             egui::pos2(ui.min_rect().min.x, ui.min_rect().min.y + target_y),
-                            egui::vec2(ui.available_width(), row_height)
+                            egui::vec2(ui.available_width(), row_height),
                         );
                         ui.scroll_to_rect(target_rect, Some(egui::Align::Center));
                         data.should_scroll_to_selection = false;
@@ -162,7 +154,7 @@ fn render_virtual_hierarchical_tree(ui: &mut egui::Ui, data: &mut NodeTreeTabDat
 fn rebuild_flattened_tree_cache(data: &mut NodeTreeTabData) {
     let mut new_cache = Vec::new();
     let hierarchy_map = build_hierarchy_map(&data.hierarchy);
-    
+
     if let Some(root_entities) = hierarchy_map.get(&None) {
         for (entity, name, entity_type) in root_entities {
             flatten_tree_recursive(
@@ -176,7 +168,7 @@ fn rebuild_flattened_tree_cache(data: &mut NodeTreeTabData) {
             );
         }
     }
-    
+
     data.flattened_tree_cache = new_cache;
 }
 
@@ -193,9 +185,10 @@ fn flatten_tree_recursive(
     // Find the hierarchy entry for this entity
     let hierarchy_entry = hierarchy.iter().find(|entry| entry.entity == entity);
     if let Some(entry) = hierarchy_entry {
-        let has_children = hierarchy_map.get(&Some(entity)).map_or(false, |children| !children.is_empty());
-        
-        // Add this node to the flattened list
+        let has_children = hierarchy_map
+            .get(&Some(entity))
+            .map_or(false, |children| !children.is_empty());
+
         flattened.push(FlattenedTreeNode {
             entity,
             name: name.to_string(),
@@ -228,8 +221,6 @@ fn flatten_tree_recursive(
     }
 }
 
-
-
 /// Renders a single node in the virtual tree
 fn render_virtual_tree_node(
     ui: &mut egui::Ui,
@@ -253,7 +244,6 @@ fn render_virtual_tree_node(
     let ctrl_held = ui.input(|i| i.modifiers.ctrl || i.modifiers.command);
 
     ui.horizontal(|ui| {
-        // Add indentation based on depth
         let indent_size = node.depth as f32 * 20.0; // 20px per depth level
         ui.add_space(indent_size);
 
@@ -315,27 +305,22 @@ fn render_virtual_name_column(
     ctrl_held: bool,
     shift_held: bool,
 ) {
-    let (name_text, _type_text) = styling::create_highlighted_text(&node.name, &node.entity_type, "", ui);
+    let (name_text, _type_text) =
+        styling::create_highlighted_text(&node.name, &node.entity_type, "", ui);
     let name_button = styling::create_name_button(&name_text, visual_state);
-
     let button_response = ui.add(name_button);
-
-    // Create combined interaction area for click and drag
     let combined_response = ui.interact(
         button_response.rect,
         egui::Id::new(("virtual_tree_node", node.entity)),
         egui::Sense::click_and_drag(),
     );
 
-    // Handle context menu (right-click)
     super::context_menus::handle_context_menu(ui, node.entity, data, &combined_response);
 
-    // Handle selection clicks (but not for dummy parents)
     if combined_response.clicked() && !visual_state.is_dummy_parent {
         super::selection::handle_selection(node.entity, &node.name, data, ctrl_held, shift_held);
     }
 
-    // Handle drag and drop (but not for dummy parents)
     if !visual_state.is_dummy_parent {
         super::selection::handle_drag_drop(&combined_response, node.entity, data, "");
     }
@@ -349,18 +334,15 @@ fn render_virtual_type_column(
     verbose: bool,
 ) {
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        // Don't show anything for dummy parents (scene files)
         if visual_state.is_dummy_parent {
             return;
         }
 
         if verbose {
-            // Show entity ID in non-curated mode
             ui.weak(format!("{}", node.entity.index()));
             ui.weak(":");
         }
 
-        // Show entity type
         ui.label(&node.entity_type);
     });
 }
@@ -406,10 +388,9 @@ fn render_search_result_node(
     search_term: &str,
 ) {
     let visual_state = RowVisualState::from_hierarchy_entry(entry, data, false);
-
-    // Calculate row rect for background
     let available_rect = ui.available_rect_before_wrap();
-    let row_height = ui.spacing().button_padding.y * 2.0 + ui.text_style_height(&egui::TextStyle::Button);
+    let row_height =
+        ui.spacing().button_padding.y * 2.0 + ui.text_style_height(&egui::TextStyle::Button);
     let row_rect = egui::Rect::from_min_size(
         available_rect.min,
         egui::Vec2::new(available_rect.width(), row_height),
@@ -475,17 +456,12 @@ fn render_name_column(
     let (name_text, _type_text) =
         styling::create_highlighted_text(name, entity_type, search_term, ui);
     let name_button = styling::create_name_button(&name_text, visual_state);
-
     let button_response = ui.add(name_button);
-
-    // Create combined interaction area for click and drag
     let combined_response = ui.interact(
         button_response.rect,
         egui::Id::new(("tree_node", entity)),
         egui::Sense::click_and_drag(),
     );
-
-    // Handle context menu (right-click)
     super::context_menus::handle_context_menu(ui, entity, data, &combined_response);
 
     // Handle selection clicks (but not for dummy parents)
@@ -508,13 +484,11 @@ fn render_type_column(
     verbose: bool,
 ) {
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        // Don't show anything for dummy parents (scene files)
         if visual_state.is_dummy_parent {
             return;
         }
 
         if verbose {
-            // Show entity ID in non-curated mode
             ui.weak(format!("{}", entity.index()));
             ui.weak(":");
         }
@@ -524,14 +498,11 @@ fn render_type_column(
     });
 }
 
-
-
 /// Styling functions for visual elements
 pub mod styling {
     use super::*;
     use bevy_egui::egui;
 
-    /// Draws the background for a tree row based on its visual state
     pub fn draw_row_background(
         ui: &mut egui::Ui,
         row_rect: &egui::Rect,
@@ -539,7 +510,6 @@ pub mod styling {
         search_term: &str,
     ) {
         if visual_state.is_being_dragged {
-            // Being dragged - use a tinted version of the selection color
             let drag_color = ui.style().visuals.selection.bg_fill.gamma_multiply(0.7);
             ui.painter().rect_filled(
                 *row_rect,
@@ -547,7 +517,6 @@ pub mod styling {
                 drag_color,
             );
         } else if visual_state.is_invalid_drop_target && search_term.is_empty() {
-            // Invalid drop target - use error color
             let error_color = ui.style().visuals.error_fg_color.gamma_multiply(0.3);
             ui.painter().rect_filled(
                 *row_rect,
@@ -555,7 +524,6 @@ pub mod styling {
                 error_color,
             );
         } else if visual_state.is_valid_drop_target && search_term.is_empty() {
-            // Valid drop target - could add highlighting here
         } else if visual_state.is_active_selected {
             ui.painter().rect_filled(
                 *row_rect,

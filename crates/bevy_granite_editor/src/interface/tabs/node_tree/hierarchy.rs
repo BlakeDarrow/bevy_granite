@@ -25,11 +25,9 @@ pub fn detect_changes<'a>(
     let existing_entities: HashSet<Entity> =
         data.hierarchy.iter().map(|entry| entry.entity).collect();
 
-    // Check if entities changed OR if any existing entity had its data changed OR if parent relationships changed
     let entities_changed = current_entities != existing_entities;
     let data_changed = changed_hierarchy;
 
-    // Also check if any parent relationships changed by comparing current vs stored hierarchy
     let hierarchy_changed = if !entities_changed {
         hierarchy_query
             .into_iter()
@@ -38,11 +36,11 @@ pub fn detect_changes<'a>(
                     let current_parent = relation.map(|p| p.parent());
                     entry.parent != current_parent
                 } else {
-                    true // Entity not found in stored hierarchy
+                    true
                 }
             })
     } else {
-        false // entities_changed already covers this case
+        false
     };
 
     (entities_changed, data_changed, hierarchy_changed)
@@ -86,7 +84,10 @@ pub fn update_hierarchy_data<'a>(
             matches!(source.save_settings_ref(), SaveSettings::PreserveDiskFull)
         });
         let is_preserve_disk_transform = spawn_source.map_or(false, |source| {
-            matches!(source.save_settings_ref(), SaveSettings::PreserveDiskTransform)
+            matches!(
+                source.save_settings_ref(),
+                SaveSettings::PreserveDiskTransform
+            )
         });
 
         let entry = HierarchyEntry {
@@ -102,7 +103,6 @@ pub fn update_hierarchy_data<'a>(
             is_preserve_disk_transform,
         };
 
-        // Group ALL entities that have SpawnSource (regardless of SaveSettings mode)
         if let Some(spawn_source) = spawn_source {
             let file_path = spawn_source.str_ref().to_string();
             file_groups.entry(file_path).or_default().push(entity);
@@ -112,7 +112,8 @@ pub fn update_hierarchy_data<'a>(
     }
 
     // Create dummy parents and update hierarchy
-    let hierarchy_entries = create_file_grouped_hierarchy(real_entities, file_groups, existing_expanded);
+    let hierarchy_entries =
+        create_file_grouped_hierarchy(real_entities, file_groups, existing_expanded);
     data.hierarchy = hierarchy_entries;
 }
 
@@ -125,14 +126,11 @@ fn create_file_grouped_hierarchy(
     let mut hierarchy_entries: Vec<HierarchyEntry> = Vec::new();
     let mut dummy_parent_entities: HashMap<String, Entity> = HashMap::new();
 
-    // Create dummy parent entities for each file group
     for (file_path, entities) in &file_groups {
         if !entities.is_empty() {
-            // Create a stable dummy entity ID based on file path hash
             let dummy_entity = create_stable_dummy_entity(file_path);
             dummy_parent_entities.insert(file_path.clone(), dummy_entity);
 
-            // Create dummy parent entry
             let dummy_entry = HierarchyEntry {
                 entity: dummy_entity,
                 name: file_path.clone(),
@@ -151,7 +149,6 @@ fn create_file_grouped_hierarchy(
         }
     }
 
-    // Update real entities - set dummy parent for entities that are currently root-level
     for mut entry in real_entities {
         if let Some(spawn_source_path) = file_groups
             .iter()
@@ -168,7 +165,6 @@ fn create_file_grouped_hierarchy(
         hierarchy_entries.push(entry);
     }
 
-    // Sort hierarchy for consistent display
     sort_hierarchy(&mut hierarchy_entries);
     hierarchy_entries
 }
@@ -184,13 +180,11 @@ fn create_stable_dummy_entity(file_path: &str) -> Entity {
 
 /// Sorts the hierarchy for consistent display order
 fn sort_hierarchy(hierarchy_entries: &mut Vec<HierarchyEntry>) {
-    hierarchy_entries.sort_by(|a, b| {
-        match (a.is_dummy_parent, b.is_dummy_parent) {
-            (true, false) => std::cmp::Ordering::Less, // Dummy parents first
-            (false, true) => std::cmp::Ordering::Greater, // Real entities after
-            (true, true) => a.name.cmp(&b.name),       // Sort dummy parents by file path
-            (false, false) => a.entity.index().cmp(&b.entity.index()), // Sort real entities by entity index
-        }
+    hierarchy_entries.sort_by(|a, b| match (a.is_dummy_parent, b.is_dummy_parent) {
+        (true, false) => std::cmp::Ordering::Less,
+        (false, true) => std::cmp::Ordering::Greater,
+        (true, true) => a.name.cmp(&b.name),
+        (false, false) => a.entity.index().cmp(&b.entity.index()),
     });
 }
 
@@ -209,7 +203,6 @@ pub fn build_visual_order(hierarchy: &[HierarchyEntry]) -> Vec<Entity> {
         children.sort_by_key(|entity| entity.index());
     }
 
-    // Build expansion state map
     let expanded_map: HashMap<Entity, bool> = hierarchy
         .iter()
         .map(|entry| (entry.entity, entry.is_expanded))

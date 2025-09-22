@@ -54,17 +54,12 @@ pub fn update_node_tree_tabs_system(
             data.selected_entities = all_selected.iter().collect();
             data.active_scene_file = editor_state.current_file.clone();
 
-            // OPTIMIZATION: Only query once, not twice!
             let has_changes = !changed_hierarchy.is_empty() || !removed_child_of.is_empty();
-            
-            // Clear the removed components iterator to prevent accumulation
             for _ in removed_child_of.read() {}
             
-            // Early exit if no changes detected
             if !has_changes && !data.hierarchy.is_empty() {
-                // No changes, skip expensive processing
+                // No changes
             } else {
-                // Only iterate hierarchy_query ONCE
                 let filtered_entities: Vec<_> = if data.filtered_hierarchy {
                     hierarchy_query
                         .iter()
@@ -83,7 +78,6 @@ pub fn update_node_tree_tabs_system(
 
                 if entities_changed || data_changed || hierarchy_changed {
                     update_hierarchy_data(data, filtered_entities, hierarchy_changed);
-                    // Mark the virtual scrolling cache as dirty when hierarchy changes
                     data.tree_cache_dirty = true;
                 }
             }
@@ -110,7 +104,6 @@ fn handle_drag_drop_events(
     if let Some(dragged_entities) = data.drag_payload.clone() {
         if let Some(drop_target) = data.drop_target {
             if drop_target == Entity::PLACEHOLDER {
-                // Special case: drop on empty space = remove parents
                 log!(
                     LogType::Editor,
                     LogLevel::Info,
@@ -135,7 +128,6 @@ fn handle_drag_drop_events(
                 });
             }
 
-            // Clear drag state after processing
             data.drag_payload = None;
             data.drop_target = None;
         }
