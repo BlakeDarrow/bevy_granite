@@ -169,25 +169,33 @@ pub fn handle_drag_drop(
 }
 
 /// Expands the tree to show the path to a specific entity
-pub fn expand_to_entity(hierarchy: &mut Vec<HierarchyEntry>, target_entity: Entity) {
+pub fn expand_to_entity(data: &mut NodeTreeTabData, target_entity: Entity) {
     let mut ancestors = Vec::new();
-    let mut current_parent = hierarchy
+    let mut current_parent = data.hierarchy
         .iter()
         .find(|entry| entry.entity == target_entity)
         .and_then(|entry| entry.parent);
 
     while let Some(parent_entity) = current_parent {
         ancestors.push(parent_entity);
-        current_parent = hierarchy
+        current_parent = data.hierarchy
             .iter()
             .find(|entry| entry.entity == parent_entity)
             .and_then(|entry| entry.parent);
     }
 
+    let mut cache_needs_update = false;
     for ancestor in ancestors {
-        if let Some(entry) = hierarchy.iter_mut().find(|e| e.entity == ancestor) {
-            entry.is_expanded = true;
+        if let Some(entry) = data.hierarchy.iter_mut().find(|e| e.entity == ancestor) {
+            if !entry.is_expanded {
+                entry.is_expanded = true;
+                cache_needs_update = true;
+            }
         }
+    }
+
+    if cache_needs_update {
+        data.tree_cache_dirty = true;
     }
 }
 
@@ -203,7 +211,7 @@ pub fn handle_external_selection_change(
         {
             // Handle auto-expand
             if data.expand_to_enabled {
-                expand_to_entity(&mut data.hierarchy, new_active);
+                expand_to_entity(data, new_active);
             }
             
             // Handle scroll-to (with delay if we also expanded, immediate if just scrolling)

@@ -79,6 +79,8 @@ pub fn update_node_tree_tabs_system(
 
                 if entities_changed || data_changed || hierarchy_changed {
                     update_hierarchy_data(data, filtered_entities, hierarchy_changed);
+                    // Mark the virtual scrolling cache as dirty when hierarchy changes
+                    data.tree_cache_dirty = true;
                 }
             }
 

@@ -31,6 +31,63 @@ pub struct NodeTreeTabData {
     pub drop_target: Option<Entity>,       // Entity being dropped onto
     pub active_scene_file: Option<String>, // Currently active scene file path
     pub pending_context_actions: Vec<PendingContextAction>, // Actions from context menus
+    
+    // Virtual scrolling fields
+    pub virtual_scroll_state: VirtualScrollState,
+    pub flattened_tree_cache: Vec<FlattenedTreeNode>,
+    pub tree_cache_dirty: bool,
+}
+
+/// Virtual scrolling state for performance optimization
+#[derive(Debug, Clone, PartialEq)]
+pub struct VirtualScrollState {
+    pub total_rows: usize,
+    pub row_height: f32,
+    pub visible_start: usize,
+    pub visible_count: usize,
+    pub buffer_size: usize, // Extra rows to render above/below visible area
+    pub scroll_offset: f32,
+}
+
+impl Default for VirtualScrollState {
+    fn default() -> Self {
+        Self {
+            total_rows: 0,
+            row_height: 20.0, // Will be calculated dynamically
+            visible_start: 0,
+            visible_count: 0, // 0 = auto-calculate based on available height, any other value = fixed count
+            buffer_size: 10,   // Extra rows for smooth scrolling
+            scroll_offset: 0.0,
+        }
+    }
+}
+
+impl VirtualScrollState {
+    /// Sets a fixed number of visible rows (for testing/debugging virtual scrolling)
+    pub fn with_fixed_visible_count(mut self, count: usize) -> Self {
+        self.visible_count = count;
+        self
+    }
+    
+    /// Returns true if using auto-calculated visible count
+    pub fn is_auto_calculated(&self) -> bool {
+        self.visible_count == 0
+    }
+}
+
+/// A flattened representation of a tree node for virtual scrolling
+#[derive(Debug, Clone, PartialEq)]
+pub struct FlattenedTreeNode {
+    pub entity: Entity,
+    pub name: String,
+    pub entity_type: String,
+    pub parent: Option<Entity>,
+    pub depth: usize,
+    pub is_expanded: bool,
+    pub has_children: bool,
+    pub is_dummy_parent: bool,
+    pub is_preserve_disk: bool,
+    pub is_preserve_disk_transform: bool,
 }
 
 impl Default for NodeTreeTabData {
@@ -55,6 +112,9 @@ impl Default for NodeTreeTabData {
             drop_target: None,
             active_scene_file: None,
             pending_context_actions: Vec::new(),
+            virtual_scroll_state: VirtualScrollState::default(),
+            flattened_tree_cache: Vec::new(),
+            tree_cache_dirty: true,
         }
     }
 }
@@ -134,6 +194,48 @@ impl RowVisualState {
             is_dummy_parent: entry.is_dummy_parent,
             is_expanded: entry.is_expanded,
             has_children,
+            is_active_scene,
+        }
+    }
+
+    pub fn from_flattened_node(
+        node: &FlattenedTreeNode,
+        data: &NodeTreeTabData,
+    ) -> Self {
+        let is_selected = data.selected_entities.contains(&node.entity);
+        let is_active_selected = Some(node.entity) == data.active_selection;
+        let is_being_dragged = data
+            .drag_payload
+            .as_ref()
+            .map_or(false, |entities| entities.contains(&node.entity));
+        
+        let is_valid_drop_target = data.drag_payload.as_ref().map_or(false, |entities| {
+            !entities.contains(&node.entity) && super::validation::is_valid_drop(entities, node.entity, &data.hierarchy)
+        });
+        
+        let is_invalid_drop_target = data.drag_payload.as_ref().map_or(false, |entities| {
+            entities.contains(&node.entity)
+                || entities
+                    .iter()
+                    .any(|&dragged_entity| super::validation::is_descendant_of(node.entity, dragged_entity, &data.hierarchy))
+        });
+
+        let is_active_scene = node.is_dummy_parent && data
+            .active_scene_file
+            .as_ref()
+            .map_or(false, |active| active == &node.name);
+
+        Self {
+            is_selected,
+            is_active_selected,
+            is_being_dragged,
+            is_valid_drop_target,
+            is_invalid_drop_target,
+            is_preserve_disk: node.is_preserve_disk,
+            is_preserve_disk_transform: node.is_preserve_disk_transform,
+            is_dummy_parent: node.is_dummy_parent,
+            is_expanded: node.is_expanded,
+            has_children: node.has_children,
             is_active_scene,
         }
     }
