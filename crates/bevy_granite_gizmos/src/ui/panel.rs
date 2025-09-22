@@ -53,7 +53,7 @@ pub fn editor_gizmos_ui(
 
                     if matches!(active, GizmoType::Transform) {
                         ui.add_space(10.0);
-                        egui::ComboBox::new("GizmoMode", "Mode")
+                        egui::ComboBox::new("GizmoMode", "")
                             .selected_text(match mode {
                                 GizmoMode::Local => "Local",
                                 GizmoMode::Global => "Global",
@@ -66,6 +66,7 @@ pub fn editor_gizmos_ui(
                                     .selectable_value(&mut mode, GizmoMode::Global, "Global")
                                     .changed();
                             });
+
                         ui.label("Snap:");
                         changed |= ui
                             .add(
@@ -75,9 +76,10 @@ pub fn editor_gizmos_ui(
                             )
                             .changed();
                     }
+
                     if matches!(active, GizmoType::Rotate) {
                         ui.add_space(10.0);
-                        egui::ComboBox::new("GizmoMode", "Mode")
+                        egui::ComboBox::new("GizmoMode", "")
                             .selected_text(match mode {
                                 GizmoMode::Local => "Local",
                                 GizmoMode::Global => "Global",
@@ -90,6 +92,7 @@ pub fn editor_gizmos_ui(
                                     .selectable_value(&mut mode, GizmoMode::Global, "Global")
                                     .changed();
                             });
+                            
                         ui.label("Snap°:");
                         changed |= ui
                             .add(

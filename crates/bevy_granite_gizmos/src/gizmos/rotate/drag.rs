@@ -252,12 +252,15 @@ pub fn handle_rotate_dragging(
     targets: Query<&GizmoOf>,
     camera_query: Query<(&GlobalTransform, &Camera), With<GizmoCamera>>,
     mut objects: Query<&mut Transform, Without<GizmoCamera>>,
+    global_transforms: Query<&GlobalTransform>,
+    active_selection: Query<Entity, With<ActiveSelection>>,
+    other_selected: Query<Entity, (With<Selected>, Without<ActiveSelection>)>,
+    parents: Query<&ChildOf>,
     gizmo_snap: Res<GizmoSnap>,
     selected: Res<NewGizmoConfig>,
     gizmo_data: Query<(&GizmoAxis, Option<&GizmoConfig>)>,
     mut accrued: Local<Vec2>,
 ) {
-    // return if not dragging with primary button
     if event.button != PointerButton::Primary {
         return;
     }
@@ -327,71 +330,93 @@ pub fn handle_rotate_dragging(
         };
         return;
     };
-    let (pitch, roll, yaw) = rotation_delta.to_euler(bevy::math::EulerRot::XZY);
-    let Ok(mut transform) = objects.get_mut(**target) else {
-        log!(
-            LogType::Editor,
-            LogLevel::Error,
-            LogCategory::Debug,
-            "Target entity {:?} missing Transform for rotation drag",
-            **target
-        );
+    let mut all_selected_entities = Vec::new();
+    all_selected_entities.extend(active_selection.iter());
+    all_selected_entities.extend(other_selected.iter());
+
+    if all_selected_entities.is_empty() {
         return;
-    };
-    match gizmo_axis {
-        GizmoAxis::All => {
-            transform.rotate(rotation_delta);
+    }
+
+    let mut root_entities = Vec::new();
+    for &entity in &all_selected_entities {
+        let mut is_child_of_selected = false;
+        if let Ok(parent) = parents.get(entity) {
+            if all_selected_entities.contains(&parent.parent()) {
+                is_child_of_selected = true;
+            }
         }
+        if !is_child_of_selected {
+            root_entities.push(entity);
+        }
+    }
+
+    let origin = {
+        if let Some(active_entity) = active_selection.iter().next() {
+            if let Ok(active_global_transform) = global_transforms.get(active_entity) {
+                active_global_transform.translation()
+            } else {
+                return;
+            }
+        } else {
+            return;
+        }
+    };
+
+    let (pitch, roll, yaw) = rotation_delta.to_euler(bevy::math::EulerRot::XZY);
+
+    let final_rotation = match gizmo_axis {
+        GizmoAxis::All => rotation_delta,
         GizmoAxis::X => {
             let mut delta = pitch;
             if let Some(hit_distance) = click_ray.intersect_plane(
-                Vec3::new(transform.translation.x, 0., 0.),
+                Vec3::new(origin.x, 0., 0.),
                 InfinitePlane3d::new(Vec3::X),
             ) {
                 let hit_point = camera_transform.translation() + click_ray.direction * hit_distance;
-                let z_diff = transform.translation.z - hit_point.z;
-                let y_diff = transform.translation.y - hit_point.y;
+                let z_diff = origin.z - hit_point.z;
+                let y_diff = origin.y - hit_point.y;
                 delta += roll * z_diff.signum();
                 delta += yaw * y_diff.signum();
             }
-            if transform.translation.x > camera_transform.translation().x {
+            if origin.x > camera_transform.translation().x {
                 delta = -delta;
             }
-            transform.rotate_x(delta);
+            Quat::from_rotation_x(delta)
         }
         GizmoAxis::Y => {
             let mut delta = yaw;
             if let Some(hit_distance) = click_ray.intersect_plane(
-                Vec3::new(0., transform.translation.y, 0.),
+                Vec3::new(0., origin.y, 0.),
                 InfinitePlane3d::new(Vec3::Y),
             ) {
                 let hit_point = camera_transform.translation() + click_ray.direction * hit_distance;
-                let z_diff = transform.translation.z - hit_point.z;
-                let x_diff = transform.translation.x - hit_point.x;
+                let z_diff = origin.z - hit_point.z;
+                let x_diff = origin.x - hit_point.x;
                 delta += pitch * x_diff.signum();
                 delta += roll * z_diff.signum();
             }
-            if transform.translation.y > camera_transform.translation().y {
+            if origin.y > camera_transform.translation().y {
                 delta = -delta;
             }
-            transform.rotate_y(delta);
+            Quat::from_rotation_y(delta)
         }
         GizmoAxis::Z => {
             let mut delta = roll;
             if let Some(hit_distance) = click_ray.intersect_plane(
-                Vec3::new(0., 0., transform.translation.z),
+                Vec3::new(0., 0., origin.z),
                 InfinitePlane3d::new(Vec3::Z),
             ) {
                 let hit_point = camera_transform.translation() + click_ray.direction * hit_distance;
-                let y_diff = transform.translation.y - hit_point.y;
-                let x_diff = transform.translation.x - hit_point.x;
+                let y_diff = origin.y - hit_point.y;
+                let x_diff = origin.x - hit_point.x;
                 delta += yaw * y_diff.signum();
                 delta += pitch * x_diff.signum();
             }
-            if transform.translation.z > camera_transform.translation().z {
+            if origin.z > camera_transform.translation().z {
                 delta = -delta;
             }
-            transform.rotate_z(delta);
+            Quat::from_rotation_z(delta)
         }
         GizmoAxis::None => {
             log!(
@@ -399,7 +424,16 @@ pub fn handle_rotate_dragging(
                 LogLevel::Error,
                 LogCategory::Debug,
                 "Rotation Gizmo Axis None Should not happen",
-            )
+            );
+            Quat::IDENTITY
+        }
+    };
+    for &entity in &root_entities {
+        if let Ok(mut entity_transform) = objects.get_mut(entity) {
+            let relative_pos = entity_transform.translation - origin;
+            let rotated_relative_pos = final_rotation * relative_pos;
+            entity_transform.translation = origin + rotated_relative_pos;
+            entity_transform.rotation = final_rotation * entity_transform.rotation;
         }
     }
     *accrued = Vec2::ZERO;
@@ -421,132 +455,6 @@ pub fn test_click_trigger(click: Trigger<Pointer<Pressed>>, query: Query<&Name>)
         click.target.index(),
         click
     );
-}
-
-fn apply_independent_rotation(
-    queries: &mut ParamSet<(
-        CameraQuery,
-        ActiveSelectionQuery,
-        NonActiveSelectionQuery,
-        TransformQuery,
-        RotateGizmoQueryWTransform,
-        ChildrenQuery,
-        ParentQuery,
-    )>,
-    all_selected_entities: &[Entity],
-    rotation_delta: Quat,
-) {
-    // Phase 1a: Get original global transforms
-    let mut original_data = std::collections::HashMap::new();
-    {
-        let transform_query = queries.p3();
-        for &entity in all_selected_entities {
-            if let Ok((_, global_transform, _)) = transform_query.get(entity) {
-                let (scale, rotation, translation) =
-                    global_transform.to_scale_rotation_translation();
-                original_data.insert(entity, (scale, rotation, translation));
-            }
-        }
-    }
-
-    // Phase 1b: Get parent relationships
-    let mut parent_map = std::collections::HashMap::new();
-    {
-        let parent_query = queries.p6();
-        for &entity in all_selected_entities {
-            if let Ok(parent) = parent_query.get(entity) {
-                parent_map.insert(entity, parent.parent());
-            }
-        }
-    }
-
-    // Phase 2: Calculate what each entity's final local transform should be
-    let mut final_local_transforms = std::collections::HashMap::new();
-
-    for &entity in all_selected_entities {
-        if let Some((scale, rotation, translation)) = original_data.get(&entity) {
-            // Target: same global position, rotated rotation
-            let target_global_rotation = rotation_delta * *rotation;
-            let target_global_position = *translation; // STAY PUT!
-
-            if let Some(parent_entity) = parent_map.get(&entity) {
-                // Child entity - need parent's current state
-                let (parent_rotation, parent_translation) =
-                    if all_selected_entities.contains(parent_entity) {
-                        // Parent is selected, use its rotated state
-                        if let Some((_, parent_orig_rotation, parent_orig_translation)) =
-                            original_data.get(parent_entity)
-                        {
-                            (
-                                rotation_delta * *parent_orig_rotation,
-                                *parent_orig_translation,
-                            )
-                        } else {
-                            continue; // Skip if can't get parent data
-                        }
-                    } else {
-                        // Parent is NOT selected, get its current transform
-                        // We need to get this from a fresh query since it's not in original_data
-                        continue; // We'll handle this in a separate phase
-                    };
-
-                // Convert child's target global state to local relative to parent's state
-                let local_position =
-                    parent_rotation.inverse() * (target_global_position - parent_translation);
-                let local_rotation = parent_rotation.inverse() * target_global_rotation;
-
-                final_local_transforms.insert(entity, (local_position, local_rotation, *scale));
-            } else {
-                // Root entity - local = global
-                final_local_transforms
-                    .insert(entity, (*translation, target_global_rotation, *scale));
-            }
-        }
-    }
-
-    // Phase 2b: Handle children whose parents are NOT selected
-    {
-        let transform_query = queries.p3();
-        for &entity in all_selected_entities {
-            if final_local_transforms.contains_key(&entity) {
-                continue; // Already handled
-            }
-
-            if let Some((scale, rotation, translation)) = original_data.get(&entity) {
-                let target_global_rotation = rotation_delta * *rotation;
-                let target_global_position = *translation;
-
-                if let Some(parent_entity) = parent_map.get(&entity) {
-                    // Get parent's current transform
-                    if let Ok((_, parent_global, _)) = transform_query.get(*parent_entity) {
-                        let (_, parent_rotation, parent_translation) =
-                            parent_global.to_scale_rotation_translation();
-
-                        let local_position = parent_rotation.inverse()
-                            * (target_global_position - parent_translation);
-                        let local_rotation = parent_rotation.inverse() * target_global_rotation;
-
-                        final_local_transforms
-                            .insert(entity, (local_position, local_rotation, *scale));
-                    }
-                }
-            }
-        }
-    }
-
-    // Phase 3: Apply all transforms simultaneously
-    {
-        let mut transform_query = queries.p3();
-        for &entity in all_selected_entities {
-            if let Some((pos, rot, scale)) = final_local_transforms.get(&entity) {
-                if let Ok((mut transform, _, _)) = transform_query.get_mut(entity) {
-                    transform.translation = *pos;
-                    transform.rotation = *rot;
-                    transform.scale = *scale;
-                }
-            }
-        }
-    }
 }
 
 pub fn handle_rotate_reset(
