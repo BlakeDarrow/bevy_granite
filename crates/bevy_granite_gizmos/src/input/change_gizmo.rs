@@ -1,4 +1,4 @@
-use crate::gizmos::{NewGizmoType, NewGizmoConfig, GizmoType};
+use crate::gizmos::{NewGizmoType, GizmoType};
 use bevy::{
     ecs::system::{Res, ResMut},
     input::keyboard::KeyCode,

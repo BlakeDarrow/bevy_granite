@@ -1,6 +1,6 @@
 use super::{RequestDuplicateAllSelectionEvent, RequestDuplicateEntityEvent};
 use crate::{
-    gizmos::{GizmoChildren, Gizmos},
+    gizmos::{GizmoChildren},
     selection::Selected,
 };
 use bevy::{

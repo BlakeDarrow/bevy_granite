@@ -21,7 +21,7 @@ pub fn scale_gizmo_by_camera_distance_system(
         (&GlobalTransform, &mut Transform, Option<&mut GizmoConfig>),
         With<GizmoChildren>,
     >,
-    mut selected_gizmo: ResMut<NewGizmoType>,
+    selected_gizmo: Res<NewGizmoType>,
     mut default_config: ResMut<NewGizmoConfig>,
 ) {
     if !DISTANCE_SCALING_ENABLED {

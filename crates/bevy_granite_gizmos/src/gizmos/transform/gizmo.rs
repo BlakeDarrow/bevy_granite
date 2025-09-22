@@ -8,6 +8,7 @@ use bevy::{
     },
     render::mesh::Mesh3d,
 };
+use bevy_granite_core::TreeHiddenEntity;
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -70,6 +71,7 @@ pub fn spawn_transform_gizmo(
             ))
             .insert(Name::new("TransformGizmo"))
             .insert(TransformGizmoParent)
+            .insert(TreeHiddenEntity)
             .id();
 
         build_gizmo_sphere(

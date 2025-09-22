@@ -1,6 +1,6 @@
 use super::register_embedded_rotate_gizmo_mesh;
 use super::{
-    gizmo_changed_watcher, gizmo_events, handle_init_rotate_drag, handle_rotate_dragging,
+    gizmo_changed_watcher, gizmo_events, handle_init_rotate_drag, 
     handle_rotate_input, handle_rotate_reset, scale_gizmo_by_camera_distance_system,
     DespawnGizmoEvent, GizmoSnap, GizmoType, LastSelectedGizmo, NewGizmoConfig,
     PreviousTransformGizmo, RotateDraggingEvent, RotateInitDragEvent, RotateResetDragEvent,

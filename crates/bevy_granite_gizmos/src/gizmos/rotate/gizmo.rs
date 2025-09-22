@@ -9,6 +9,7 @@ use bevy::prelude::{
     ResMut, Resource, StandardMaterial, Transform, Vec3, Visibility, Without,
 };
 use bevy::render::mesh::Mesh3d;
+use bevy_granite_core::TreeHiddenEntity;
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -93,6 +94,7 @@ pub fn spawn_rotate_gizmo(
             .insert(Name::new("RotateGizmo"))
             .insert(RotateGizmo)
             .insert(RotateGizmoParent)
+            .insert(TreeHiddenEntity)
             .id();
 
         // commands.entity(gizmo_entity).insert(ParentTo(parent));

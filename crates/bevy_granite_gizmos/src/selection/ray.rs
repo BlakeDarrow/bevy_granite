@@ -3,7 +3,6 @@ use bevy::{
     picking::hover::PickingInteraction,
     prelude::{Entity, Name, Query, Resource, Vec3},
 };
-use bevy_granite_core::IconProxy;
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
