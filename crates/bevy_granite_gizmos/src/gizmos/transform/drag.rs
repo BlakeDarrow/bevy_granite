@@ -2,8 +2,8 @@ use super::TransformGizmo;
 use crate::{
     gizmos::{GizmoOf, GizmoSnap},
     input::GizmoAxis,
-    selection::{ActiveSelection, Selected},
-    GizmoCamera, RequestDuplicateEntityEvent,
+    selection::{ActiveSelection, Selected, RequestDuplicateAllSelectionEvent},
+    GizmoCamera,
 };
 use bevy::{
     asset::Assets,
@@ -13,13 +13,18 @@ use bevy::{
     },
     gizmos::{retained::Gizmo, GizmoAsset},
     picking::events::{Drag, DragStart, Pointer, Pressed},
-    prelude::{Entity, GlobalTransform, Query, Res, ResMut, Transform, Vec3, With, Without},
+    prelude::{Entity, GlobalTransform, Query, Res, ResMut, Resource, Transform, Vec3, With, Without},
 };
 use bevy_granite_core::UserInput;
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
 };
+
+#[derive(Resource, Default)]
+pub struct TransformDuplicationState {
+    pub just_duplicated: bool,
+}
 
 pub fn drag_transform_gizmo(
     event: Trigger<Pointer<Drag>>,
@@ -36,9 +41,14 @@ pub fn drag_transform_gizmo(
     gizmo_snap: Res<GizmoSnap>,
     gizmo_data: Query<(&GizmoAxis, &TransformGizmo)>,
     user_input: Res<UserInput>,
+    mut duplication_state: ResMut<TransformDuplicationState>,
 ) {
-    // Only drag with Primary Input drags
     if event.button != bevy::picking::pointer::PointerButton::Primary {
+        return;
+    }
+    
+    if duplication_state.just_duplicated {
+        duplication_state.just_duplicated = false;
         return;
     }
     let Ok((axis, typ)) = gizmo_data.get(event.target) else {
@@ -84,13 +94,11 @@ pub fn drag_transform_gizmo(
         return;
     };
 
-    // Get all selected entities (active + other selected)
     let mut all_selected_entities = Vec::new();
     all_selected_entities.extend(active_selection.iter());
     all_selected_entities.extend(other_selected.iter());
 
     // Filter out entities that are children of other selected entities
-    // (non-active children move with their parents automatically)
     let mut root_entities = Vec::new();
     for &entity in &all_selected_entities {
         let mut is_child_of_selected = false;
@@ -114,7 +122,6 @@ pub fn drag_transform_gizmo(
         return;
     }
 
-    // Get the current world position for calculations
     let current_world_pos = {
         let Ok(target_transform) = objects.get(*target) else {
             log! {
@@ -134,7 +141,6 @@ pub fn drag_transform_gizmo(
         }
     };
 
-    // Calculate the world delta based on the gizmo axis and type
     let world_delta = match (axis, typ) {
         (GizmoAxis::None, _) => Vec3::ZERO,
         (GizmoAxis::X, TransformGizmo::Axis) => {
@@ -252,7 +258,8 @@ pub fn dragstart_transform_gizmo(
     targets: Query<&GizmoOf>,
     gizmo_data: Query<(&GizmoAxis, &TransformGizmo)>,
     user_input: Res<UserInput>,
-    mut dispatch: EventWriter<RequestDuplicateEntityEvent>,
+    mut dispatch: EventWriter<RequestDuplicateAllSelectionEvent>,
+    mut duplication_state: ResMut<TransformDuplicationState>,
 ) {
     if user_input.mouse_middle.any || !user_input.shift_left.pressed {
         return;
@@ -260,13 +267,12 @@ pub fn dragstart_transform_gizmo(
     let Ok(_) = gizmo_data.get(event.target) else {
         return;
     };
-    let Ok(GizmoOf(target)) = targets.get(event.target) else {
+    let Ok(GizmoOf(_target)) = targets.get(event.target) else {
         return;
     };
     log!("Attempting Drag Duplicate");
-    dispatch.write(RequestDuplicateEntityEvent {
-        entity: target.clone(),
-    });
+    dispatch.write(RequestDuplicateAllSelectionEvent);
+    duplication_state.just_duplicated = true;
 }
 
 fn snap_gizmo(value: f32, inc: f32) -> f32 {

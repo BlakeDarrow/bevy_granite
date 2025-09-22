@@ -34,6 +34,7 @@ impl Plugin for GizmoPlugin {
                 transform_value: 0.,
                 rotate_value: 0.,
             })
+            .insert_resource(super::transform::drag::TransformDuplicationState::default())
             //
             // Events
             //
