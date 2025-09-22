@@ -299,6 +299,10 @@ pub fn draw_axis_lines(
     mut commands: Commands,
     origin: Query<&GlobalTransform>,
 ) {
+    if event.button != bevy::picking::pointer::PointerButton::Primary {
+        return;
+    }
+    
     let Ok((axis, root, transform)) = gizmo_data.get(event.target) else {
         return;
     };
