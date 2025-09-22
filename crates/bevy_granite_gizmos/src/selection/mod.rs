@@ -28,8 +28,9 @@ impl ActiveSelection {
                 let targets: Vec<_> = gizmos.entities().iter().copied().collect();
                 let mut commands = world.commands();
                 for target in targets {
-                    if let Ok(mut target_commands) = commands.get_entity(target) {
-                        target_commands.despawn();
+                    // Use try_despawn to avoid errors when entity doesn't exist
+                    if let Ok(mut entity_commands) = commands.get_entity(target) {
+                        entity_commands.try_despawn();
                     }
                 }
             }

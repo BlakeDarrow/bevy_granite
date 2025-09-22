@@ -12,7 +12,7 @@ pub fn cleanup_icon_entities_system(
     for (icon_entity, icon_comp) in icon_query.iter() {
         // If the target entity no longer exists, despawn the icon
         if target_query.get(icon_comp.target_entity).is_err() {
-            commands.entity(icon_entity).despawn();
+            commands.entity(icon_entity).try_despawn();
         }
     }
 }

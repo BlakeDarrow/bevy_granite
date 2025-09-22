@@ -396,7 +396,7 @@ pub fn cleanup_axis_line(
 ) {
     if user_input.mouse_left.just_released {
         for entity in query.iter() {
-            commands.entity(entity).despawn();
+            commands.entity(entity).try_despawn();
         }
     }
 }

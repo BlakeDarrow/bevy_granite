@@ -143,7 +143,7 @@ fn process_context_actions(
     for action in data.pending_context_actions.drain(..) {
         match action {
             PendingContextAction::DeleteEntity(entity) => {
-                commands.entity(entity).despawn();
+                commands.entity(entity).try_despawn();
             }
             PendingContextAction::SetActiveScene(scene_path) => {
                 events.set_active_world.write(SetActiveWorld(scene_path));

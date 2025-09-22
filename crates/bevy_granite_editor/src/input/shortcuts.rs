@@ -78,10 +78,10 @@ fn handle_shortcuts(
         for (entity, _, children) in query.iter() {
             if let Some(children) = children {
                 for &child in children.iter() {
-                    commands.entity(child).despawn();
+                    commands.entity(child).try_despawn();
                 }
             }
-            commands.entity(entity).despawn();
+            commands.entity(entity).try_despawn();
         }
     }
 

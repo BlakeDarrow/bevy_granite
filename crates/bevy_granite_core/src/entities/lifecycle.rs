@@ -36,7 +36,7 @@ pub fn despawn_entities_by_source_system(
 
         for (entity, entity_source) in serializable_query.iter() {
             if entity_source.0 == *source {
-                commands.entity(entity).despawn();
+                commands.entity(entity).try_despawn();
                 despawned_count += 1;
             }
         }
@@ -58,6 +58,6 @@ pub fn despawn_recursive_serializable_entities(
     serializable_query: &Query<Entity, With<IdentityData>>,
 ) {
     for entity in serializable_query.iter() {
-        commands.entity(entity).despawn();
+        commands.entity(entity).try_despawn();
     }
 }

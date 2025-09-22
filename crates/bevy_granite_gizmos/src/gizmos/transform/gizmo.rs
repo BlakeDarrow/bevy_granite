@@ -255,7 +255,7 @@ pub fn despawn_transform_gizmo(
     query: &mut Query<(Entity, &TransformGizmo, &Children)>,
 ) {
     for (entity, _, _) in query.iter() {
-        commands.entity(entity).despawn();
+        commands.entity(entity).try_despawn();
         log!(
             LogType::Editor,
             LogLevel::Info,
