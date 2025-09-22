@@ -15,7 +15,7 @@ use bevy_granite_logging::{
     log,
 };
 
-use crate::gizmos::{GizmoConfig, GizmoOf};
+use crate::gizmos::{GizmoConfig, GizmoOf, GizmoRoot};
 use crate::{gizmos::GizmoMesh, input::GizmoAxis};
 
 #[derive(Component)]
@@ -29,7 +29,7 @@ pub struct PreviousTransformGizmo {
     pub entity: Option<Entity>,
 }
 
-const GIZMO_SCALE: f32 = 0.45;
+const GIZMO_SCALE: f32 = 0.85;
 const ROTATE_INNER_RADIUS: f32 = 0.12 * GIZMO_SCALE; // middle sphere of gizmo (free rotate)
 const ROTATE_VISUAL_RADIUS: f32 = 0.64 * GIZMO_SCALE; // middle sphere of gizmo (visual)
 const RING_MESH_HASH: &str = "3f6f4c2a-6e36-4ccf-81c4-f343f83c5f80"; // constantly random - doesnt matter the value
@@ -197,6 +197,7 @@ fn build_free_sphere(
             GizmoMesh,
             ChildOf(parent),
             GizmoOf(target),
+            GizmoRoot(parent),
         ))
         .observe(super::drag::handle_rotate_dragging);
 }
@@ -243,6 +244,7 @@ fn build_axis_ring(
             GizmoMesh,
             GizmoOf(target),
             ChildOf(parent),
+            GizmoRoot(parent),
         ))
         .observe(super::drag::handle_rotate_dragging);
 }
