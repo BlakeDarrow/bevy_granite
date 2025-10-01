@@ -4,18 +4,22 @@
 
 This crate provides a way to interactively create, edit, save, and load Bevy data in 3D.
 
-```
-Caution: This is in early development and you will likely encounter bugs
-```
+
+> [!CAUTION]
+> Caution: This is in early development and you will likely encounter bugs
+
 
 ![Screenshot](./screenshots/Image_4.png)
 
 
-## Getting Starting
+# Start Here 
 
-Navigate to your projects Cargo.toml, or create a fresh rust project with cargo new.
+<details>
+<summary>Getting Started</summary>
 
-Be sure to use bevy 0.14 and link the bevy_granite plugin to my github repo. You can select alternate branches for more up-to-date releases. Also make sure you have the serde crate.
+
+Navigate to your projects Cargo.toml and add `bevy_granite`.
+
 ```rust
 [dependencies]
 bevy = "0.16.0"
@@ -31,29 +35,106 @@ There are 3 optional feature sets.
 
 ## Examples
 
-```ps
-cargo run --release --example dungeon
-```
+Next, check out the [examples](https://github.com/BlakeDarrow/bevy_granite/tree/main/examples) which showcase how you can setup a project. 
+*Dungeon* provides a simple entry point file with code ready to start editing. Just make sure you copy over the relevant assets subfolder folder or you will get errors.
 
-Check out the [examples](https://github.com/BlakeDarrow/bevy_granite/tree/main/examples).
+> [!NOTE]
+> If you clone this repo directly, you can use the example argument to launch straight into an example.
+> 
+> ```ps
+> cargo run --release --example dungeon
+> ```
 
-### Scene Format
+
+</details>
+
+# License
+
+Bevy Granite is free and open source. Except when noted, all assets are licensed under either:
+
+- MIT License (LICENSE-MIT or http://opensource.org/licenses/MIT)
+- Apache License, Version 2.0 (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
+
+# Contributing
+
+Any sort of contributions are welcome! Open a pull request and I will be sure to look at it. If you are unsure of what you can fix or add, open an issue and lets talk about it. Though again I will add our frist priorty should be upgrading past bevy 0.14.
+
+Any contributions by you, shall be dual licensed as above, without any additional terms or conditions.
+
+
+# Support Table
+
+| bevy | bevy_granite |
+| ---- | ------------ |
+| 0.16 | 0.2.0        |
+| 0.15 | None         |
+| 0.14 | 0.1.0        |
+
+
+# Features 
+<details>
+<summary>Features</summary>
+
+
+### Scene Serialization 
 
 An entity is stored as three main parts:
-- **identity**: Contains the entity’s name, uuid, and type/class (such as Camera, Light, OBJ). This class data contains everything necessary to rebuild this bundle and any other adjacently relevant data. Not everything is currently available in classes.
-- **transform**: Describes the entity’s position, rotation, and scale. This determines where the entity is located and how it is oriented in the world.
-- **components**: (Optional) Holds additional data or behaviors attached to the entity. This is where you extend the entity’s functionality via the `#[granite_component]` macro.
+- **Identity**: Contains the entity’s name, uuid, and type/class (such as Camera, Light, OBJ). This class data contains everything necessary to rebuild this bundle and any other adjacently relevant data. Not everything is currently available in classes.
+- **Transform**: Describes the entity’s position, rotation, and scale. This determines where the entity is located and how it is oriented in the world.
+- **Components**: (Optional) Holds additional data or behaviors attached to the entity. This is where you extend the entity’s functionality via the `#[granite_component]` macro.
 
-Check out the [assets](https://github.com/BlakeDarrow/bevy_granite/tree/main/assets/scenes) for scene examples.
+A scene file contains metadata and a list of serializable entity data. Check out the [assets/scenes](https://github.com/BlakeDarrow/bevy_granite/tree/main/assets/scenes) for scene examples.
+
+### Callable Events
+
+While comprehensive documentation is currently unavailable, here are some helpful events you can use to interact with the editor while I write said documentation:
+
+<details>
+<summary>Events</summary>
+
+#### Editor Control Events
+
+- `RequestEditorToggle` - Toggle the editor UI on/off
+- `RequestToggleCameraSync` - Toggle camera synchronization between editor and main camera
+
+#### Entity Selection Events
+- `RequestSelectEntityEvent` - Select an entity (additive for multi-selection)
+- `RequestDeselectEntityEvent` - Deselect a specific entity
+- `RequestDeselectAllEntitiesEvent` - Clear all entity selections
+- `RequestCameraEntityFrame` - Frame the UI camera to focus on active entity
+
+#### Entity Duplication Events
+- `RequestDuplicateEntityEvent` - Duplicate a specific entity
+- `RequestDuplicateAllSelectionEvent` - Duplicate all currently selected entities
+
+#### Entity Hierarchy Events
+- `RequestNewParent` - Request to set active as parent for selected entities
+- `RequestRemoveParents` - Remove parent relationships from selected entities
+- `RequestRemoveChildren` - Remove child relationships from selected entities
+
+#### World Management Events
+- `RequestSaveEvent` - Save the specific world
+- `RequestLoadEvent` - Load a world from specified path
+- `RequestReloadEvent` - Reload a world from specified path
+- `WorldLoadSuccessEvent` - Event sent when world loading completes successfully
+- `WorldSaveSuccessEvent` - Event sent when world saving completes successfully
+- `RequestDespawnSerializableEntities` - Event to despawn all serializable entities
+- `RequestDespawnBySource` - Event to despawn a specific source that is loaded
+
+
+</details>
 
 
 
-### UI Callable Events
+### Custom UI Callable Events
 
 With version 0.2.x, there is a new window that renders users buttons that are clickable. Create a struct that holds your events, and add `#[ui_callable_events]`. This will add all the events to the events window as clickable, and will dispatch said event in your struct.
 
 
-Make sure to call this UI registration before the plugin gets initialized your your app if your using this. `DebugEvents::register_ui();`.
+> [!IMPORTANT] 
+> Only Bevy Event unit structs are supported for UI button rendering.
+
+
 
 <details>
 <summary>Example</summary>
@@ -93,73 +174,25 @@ pub fn debug_callable_watcher(
 
 </details>
 
-## Documentation
-
-While comprehensive documentation is currently unavailable, here are some helpful events you can use to interact with the editor while I write said documentation:
-
-<details>
-<summary>Events</summary>
-
-### Editor Control Events
-
-- `RequestEditorToggle` - Toggle the editor UI on/off
-- `RequestToggleCameraSync` - Toggle camera synchronization between editor and main camera
-
-### Entity Selection Events
-- `RequestSelectEntityEvent` - Select an entity (additive for multi-selection)
-- `RequestDeselectEntityEvent` - Deselect a specific entity
-- `RequestDeselectAllEntitiesEvent` - Clear all entity selections
-- `RequestCameraEntityFrame` - Frame the UI camera to focus on active entity
-
-### Entity Duplication Events
-- `RequestDuplicateEntityEvent` - Duplicate a specific entity
-- `RequestDuplicateAllSelectionEvent` - Duplicate all currently selected entities
-
-### Entity Hierarchy Events
-- `RequestNewParent` - Request to set active as parent for selected entities
-- `RequestRemoveParents` - Remove parent relationships from selected entities
-- `RequestRemoveChildren` - Remove child relationships from selected entities
-
-### World Management Events
-- `RequestSaveEvent` - Save the specific world
-- `RequestLoadEvent` - Load a world from specified path
-- `RequestReloadEvent` - Reload a world from specified path
-- `WorldLoadSuccessEvent` - Event sent when world loading completes successfully
-- `WorldSaveSuccessEvent` - Event sent when world saving completes successfully
-- `RequestDespawnSerializableEntities` - Event to despawn all serializable entities
-- `RequestDespawnBySource` - Event to despawn a specific source that is loaded
+Make sure to call  UI registration before the plugin gets initialized in your app if your using this. `DebugEvents::register_ui();`.
 
 
 </details>
 
-## Feedback
+# Additional Info
 
 If you have any feedback, please reach out to me via a [GitHub issue](https://github.com/BlakeDarrow/bevy_granite/issues). I look forward to maintaining and improving this tool and am happy to hear y'alls opinions, but please keep it constructive.
 
-## Support Table
+#### Special Thanks
 
-This project was started when bevy 0.14 was just released, and I haven't upgraded since this. This is my top priorty to bring new bevy features into the editor.
+ - Noah
+ - Silas
+ - Ethan
+ - Max
 
-| bevy | bevy_granite |
-| ---- | ------------ |
-| 0.16 | 0.2.0        |
-| 0.15 | None         |
-| 0.14 | 0.1.0        |
+### Creator 
 
-## License
-
-Granite is free and open source. Except when noted, all assets are licensed under either:
-
-- MIT License (LICENSE-MIT or http://opensource.org/licenses/MIT)
-- Apache License, Version 2.0 (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
-
-## Contributing
-
-Any sort of contributions are welcome! Open a pull request and I will be sure to look at it. If you are unsure of what you can fix or add, open an issue and lets talk about it. Though again I will add our frist priorty should be upgrading past bevy 0.14.
-
-Any contributions by you, shall be dual licensed as above, without any additional terms or conditions.
-
-## Media
+- [@BlakeDarrow](https://www.youtube.com/@blakedarrow) on YouTube
 
 <details>
 <summary>Screenshots</summary>
@@ -170,14 +203,4 @@ Any contributions by you, shall be dual licensed as above, without any additiona
 
 </details>
 
-## Special Thanks
-
- - Noah
- - Silas
- - Ethan
- - Max
-
-## Creator 
-
-- [@BlakeDarrow](https://www.youtube.com/@blakedarrow) on YouTube
 
