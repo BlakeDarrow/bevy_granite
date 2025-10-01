@@ -52,6 +52,9 @@ Check out the [assets](https://github.com/BlakeDarrow/bevy_granite/tree/main/ass
 
 With version 0.2.x, there is a new window that renders users buttons that are clickable. Create a struct that holds your events, and add `#[ui_callable_events]`. This will add all the events to the events window as clickable, and will dispatch said event in your struct.
 
+
+Make sure to call this UI registration before the plugin gets initialized your your app if your using this. `DebugEvents::register_ui();`.
+
 <details>
 <summary>Example</summary>
 
