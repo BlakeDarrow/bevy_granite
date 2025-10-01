@@ -1,12 +1,12 @@
 
 
-# Granite Bevy Editor
+# Bevy Granite 
 
 This crate provides a way to interactively create, edit, save, and load Bevy data in 3D.
 
 
 > [!CAUTION]
-> Caution: This is in early development and you will likely encounter bugs
+> This is in early development and you will likely encounter bugs
 
 
 ![Screenshot](./screenshots/Image_4.png)
@@ -38,28 +38,15 @@ There are 3 optional feature sets.
 Next, check out the [examples](https://github.com/BlakeDarrow/bevy_granite/tree/main/examples) which showcase how you can setup a project. 
 *Dungeon* provides a simple entry point file with code ready to start editing. Just make sure you copy over the relevant assets subfolder folder or you will get errors.
 
-> [!NOTE]
 > If you clone this repo directly, you can use the example argument to launch straight into an example.
 > 
 > ```ps
 > cargo run --release --example dungeon
 > ```
 
+---
 
 </details>
-
-# License
-
-Bevy Granite is free and open source. Except when noted, all assets are licensed under either:
-
-- MIT License (LICENSE-MIT or http://opensource.org/licenses/MIT)
-- Apache License, Version 2.0 (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
-
-# Contributing
-
-Any sort of contributions are welcome! Open a pull request and I will be sure to look at it. If you are unsure of what you can fix or add, open an issue and lets talk about it. Though again I will add our frist priorty should be upgrading past bevy 0.14.
-
-Any contributions by you, shall be dual licensed as above, without any additional terms or conditions.
 
 
 # Support Table
@@ -135,7 +122,6 @@ With version 0.2.x, there is a new window that renders users buttons that are cl
 > Only Bevy Event unit structs are supported for UI button rendering.
 
 
-
 <details>
 <summary>Example</summary>
 
@@ -174,14 +160,34 @@ pub fn debug_callable_watcher(
 
 </details>
 
+
 Make sure to call  UI registration before the plugin gets initialized in your app if your using this. `DebugEvents::register_ui();`.
 
+---
 
 </details>
 
+
+# License
+
+Bevy Granite is free and open source. Except when noted, all assets are licensed under either:
+
+- MIT License (LICENSE-MIT or http://opensource.org/licenses/MIT)
+- Apache License, Version 2.0 (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
+
+**Any contributions by you, shall be dual licensed as above, without any additional terms or conditions.**
+
+
+# Contributors
+
+<a href="https://github.com/BlakeDarrow/bevy_granite/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=BlakeDarrow/bevy_granite" />
+</a>
+
+
 # Additional Info
 
-If you have any feedback, please reach out to me via a [GitHub issue](https://github.com/BlakeDarrow/bevy_granite/issues). I look forward to maintaining and improving this tool and am happy to hear y'alls opinions, but please keep it constructive.
+If you have any feedback, please reach out to me via a [GitHub issue](https://github.com/BlakeDarrow/bevy_granite/issues). I look forward to maintaining and improving this tool and am happy to hear y'alls opinions.
 
 #### Special Thanks
 
@@ -202,5 +208,4 @@ If you have any feedback, please reach out to me via a [GitHub issue](https://gi
 ![Screenshot](./screenshots/Image_3.png)
 
 </details>
-
 
