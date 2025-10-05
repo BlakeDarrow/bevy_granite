@@ -16,7 +16,7 @@ lazy_static = "1.5.0"
 
 [package]
 name = "bevy_granite"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "A 3d editor for the Bevy game engine."
 
