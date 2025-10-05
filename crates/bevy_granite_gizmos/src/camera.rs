@@ -83,7 +83,7 @@ pub fn add_gizmo_camera(
             })
             .insert(TreeHiddenEntity)
             .insert(GizmoCamera)
-            .insert(RenderLayers::layer(14)) // 14 is our UI/Gizmo layer.
+            .insert(RenderLayers::from_layers(&[0, 14])) // 14 is our UI/Gizmo layer.
             .id();
     }
 }

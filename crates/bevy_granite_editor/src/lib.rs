@@ -55,3 +55,8 @@ impl Plugin for BevyGraniteEditor {
         app.add_plugins(bevy_granite_expose::BevyGraniteExposePlugin); // this will register internal bevy components so they can be used in the editor
     }
 }
+
+/// Marker component for the camera used as the editor viewport
+/// IDK whats with egui it seems to eat the normal view of the camera
+#[derive(Component)]
+pub struct ViewPortCamera;

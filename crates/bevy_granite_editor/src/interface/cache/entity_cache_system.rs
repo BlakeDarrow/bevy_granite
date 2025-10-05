@@ -7,15 +7,15 @@ use bevy::{
     prelude::{Entity, Name, Transform, World},
     transform::components::GlobalTransform,
 };
-use bevy_granite_core::{ComponentEditor, IdentityData, TransformData};
+use bevy_granite_core::{entities::Unknown, ComponentEditor, IdentityData, TransformData};
 use bevy_granite_gizmos::{ActiveSelection, DragState};
 
 pub type EntityCacheQueryItem<'a> = (
     Entity,
-    &'a mut Name,
+    Option<&'a Name>,
     &'a mut Transform,
     &'a mut GlobalTransform,
-    &'a mut IdentityData,
+    Option<&'a mut IdentityData>,
     Option<&'a mut MeshMaterial3d<StandardMaterial>>,
     &'a ActiveSelection,
 );
@@ -54,6 +54,18 @@ pub fn update_entity_cache_system(world: &mut World) {
         // Use GlobalTransform for UI display (world position), but keep local transform for editing
         let global = global_transform.compute_transform();
 
+        let identity = if let Some(id) = identity_data {
+            id.clone()
+        } else {
+            IdentityData {
+                name: name
+                    .map(|n| n.to_string())
+                    .unwrap_or(format!("Entity {entity:?}")),
+                uuid: uuid::Uuid::new_v4(),
+                class: bevy_granite_core::GraniteTypes::Unknown(Unknown::default()),
+            }
+        };
+
         let new_data = EntityData {
             entity: Some(entity),
             global_transform: TransformData {
@@ -62,11 +74,7 @@ pub fn update_entity_cache_system(world: &mut World) {
                 scale: global.scale,          // World scale
             },
             material_handle: material_handle.cloned(),
-            identity: IdentityData {
-                name: name.to_string(),
-                uuid: identity_data.uuid,
-                class: identity_data.class.clone(),
-            },
+            identity,
             registered: EntityRegisteredData {
                 components: new_registered,
                 registered_add_request: None,

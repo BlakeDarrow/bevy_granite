@@ -1,5 +1,6 @@
 use crate::{editor_state::INPUT_CONFIG, viewport::camera::CameraTarget};
 use bevy::camera::visibility::RenderLayers;
+use bevy::camera::Viewport;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::{
     camera::Camera3d,
@@ -36,6 +37,20 @@ pub fn add_ui_camera(mut commands: Commands) {
         .insert(TreeHiddenEntity)
         .insert(bevy_granite_gizmos::GizmoCamera)
         .insert(RenderLayers::layer(14)) // 14 is our UI/Gizmo layer.
+        .with_child((
+            Camera3d::default(),
+            crate::ViewPortCamera,
+            Tonemapping::None,
+            Camera {
+                order: 3,
+                viewport: Some(Viewport {
+                    physical_position: (0, 0).into(),
+                    physical_size: (400, 400).into(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        ))
         .id();
 }
 

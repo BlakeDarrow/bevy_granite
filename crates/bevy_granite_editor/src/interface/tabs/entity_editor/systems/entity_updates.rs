@@ -26,7 +26,7 @@ use bevy::{
     },
 };
 use bevy_granite_core::{
-    entities::{editable::RequestEntityUpdateFromClass, GraniteType},
+    entities::{editable::RequestEntityUpdateFromClass, GraniteType, Unknown},
     AvailableEditableMaterials, ComponentEditor, EditableMaterial, EditableMaterialError,
     EditableMaterialField, IdentityData, StandardMaterialDef,
 };
@@ -120,10 +120,10 @@ pub fn update_entity_with_new_identity_system(
     {
         for (
             entity,
-            mut name,
+            name,
             _transform,
             _global_transform,
-            mut identity_data,
+            identity_data_ref,
             mut material_handle,
             _active,
         ) in query.iter_mut()
@@ -137,6 +137,18 @@ pub fn update_entity_with_new_identity_system(
                 );
                 continue;
             }
+
+            let mut identity_data = if let Some(data) = identity_data_ref.as_ref() {
+                data.as_ref().clone()
+            } else {
+                IdentityData {
+                    class: bevy_granite_core::GraniteTypes::Unknown(Unknown::default()),
+                    uuid: uuid::Uuid::new_v4(),
+                    name: name
+                        .map(|n| n.to_string())
+                        .unwrap_or(format!("Entity {:?}", entity)),
+                }
+            };
 
             // Only update materials when there are actual changes, not any change
             let needs_mat_update =
@@ -159,7 +171,9 @@ pub fn update_entity_with_new_identity_system(
 
             if needs_entity_name_update {
                 identity_data.name = update_data.name.clone();
-                *name = Name::new(update_data.name.clone());
+                commands
+                    .entity(entity)
+                    .insert(Name::new(update_data.name.clone()));
 
                 log!(
                     LogType::Editor,
@@ -226,6 +240,10 @@ pub fn update_entity_with_new_identity_system(
                         &mut material_handle_update_writer,
                     );
                 }
+            }
+
+            if let Some(mut data) = identity_data_ref {
+                *data = identity_data;
             }
         }
     }
