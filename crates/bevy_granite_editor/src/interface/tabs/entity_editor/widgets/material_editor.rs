@@ -639,11 +639,19 @@ fn display_text_field(
                     let current_dir = std::env::current_dir().unwrap();
                     let assets_dir = current_dir.join("assets");
                     let tex_path = assets_dir.join("textures");
-                    if let Some(path) = FileDialog::new()
+
+                    // Use textures dir if it exists or can be created, otherwise use current dir
+                    let dialog_path =
+                        if tex_path.exists() || std::fs::create_dir_all(&tex_path).is_ok() {
+                            tex_path
+                        } else {
+                            current_dir.clone()
+                        };
+
+                    if let Ok(Some(path)) = FileDialog::new()
                         .add_filter("Texture Files", &["png", "jpg", "jpeg"])
-                        .set_location(&tex_path)
+                        .set_location(&dialog_path)
                         .show_open_single_file()
-                        .unwrap()
                     {
                         let relative_path = if let Ok(rel_path) = path.strip_prefix(&assets_dir) {
                             rel_path.to_string_lossy().to_string().replace("\\", "/")
