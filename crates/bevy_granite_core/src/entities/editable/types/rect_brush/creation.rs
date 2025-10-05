@@ -4,19 +4,16 @@ use crate::{
     GraniteType, GraniteTypes, HasRuntimeData, IdentityData, NeedsTangents,
 };
 use bevy::{
-    asset::{AssetServer, Assets},
+    asset::{AssetServer, Assets, RenderAssetUsages},
     ecs::{
         bundle::Bundle,
         entity::Entity,
         system::{Commands, Res, ResMut},
     },
     math::{Vec2, Vec3},
+    mesh::{Indices, Mesh, Mesh3d, PrimitiveTopology},
     pbr::{MeshMaterial3d, StandardMaterial},
     prelude::Name,
-    render::{
-        mesh::{Indices, Mesh, Mesh3d, PrimitiveTopology},
-        render_asset::RenderAssetUsages,
-    },
     transform::components::Transform,
 };
 use uuid::Uuid;

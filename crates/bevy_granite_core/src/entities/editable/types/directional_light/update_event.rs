@@ -6,10 +6,10 @@ use bevy::{
     color::Color,
     ecs::{
         entity::Entity,
-        event::EventReader,
+        message::MessageReader,
         system::{Commands, Query},
     },
-    pbr::{DirectionalLight, VolumetricLight},
+    light::{DirectionalLight, VolumetricLight},
 };
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 
@@ -39,7 +39,7 @@ impl DirLight {
 /// Actually update the specific entity with the class data
 /// In the future im sure we will have FOV and what not
 pub fn update_directional_light_system(
-    mut reader: EventReader<UserUpdatedDirectionalLightEvent>,
+    mut reader: MessageReader<UserUpdatedDirectionalLightEvent>,
     mut query: Query<(Entity, &mut DirectionalLight)>,
     mut commands: Commands,
 ) {

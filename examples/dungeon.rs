@@ -36,7 +36,7 @@ fn main() {
         .run();
 }
 
-fn setup(mut open_event: EventWriter<RequestLoadEvent>) {
+fn setup(mut open_event: MessageWriter<RequestLoadEvent>) {
     open_event.write(RequestLoadEvent(
         STARTING_WORLD.to_string(),
         SaveSettings::Runtime,

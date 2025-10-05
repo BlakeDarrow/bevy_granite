@@ -10,7 +10,7 @@ impl Plugin for RectBrushPlugin {
             //
             // Event
             //
-            .add_event::<UserUpdatedRectBrushEvent>()
+            .add_message::<UserUpdatedRectBrushEvent>()
             //
             // Register
             //

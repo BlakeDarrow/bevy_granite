@@ -17,8 +17,8 @@ impl Plugin for SelectionPlugin {
             //
             // Events
             //
-            .add_event::<RequestDuplicateEntityEvent>()
-            .add_event::<RequestDuplicateAllSelectionEvent>()
+            .add_message::<RequestDuplicateEntityEvent>()
+            .add_message::<RequestDuplicateAllSelectionEvent>()
             //
             // Resources
             //

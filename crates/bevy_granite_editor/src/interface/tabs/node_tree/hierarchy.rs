@@ -175,7 +175,9 @@ fn create_stable_dummy_entity(file_path: &str) -> Entity {
     for byte in file_path.bytes() {
         hash = hash.wrapping_mul(33).wrapping_add(byte as u32);
     }
-    Entity::from_raw(u32::MAX - (hash % 1000000))
+    hash %= 1000000;
+    hash += 1; // Ensure non-zero to avoid Entity::from_raw_u32(u32::MAX)
+    Entity::from_raw_u32(u32::MAX - hash).expect("u32::Max - anything is valid entity")
 }
 
 /// Sorts the hierarchy for consistent display order

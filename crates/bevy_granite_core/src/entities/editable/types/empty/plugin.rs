@@ -8,7 +8,7 @@ impl Plugin for EmptyPlugin {
             //
             // Event
             //
-            .add_event::<UserUpdatedEmptyEvent>()
+            .add_message::<UserUpdatedEmptyEvent>()
             //
             // Register
             //

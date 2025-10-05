@@ -1,12 +1,14 @@
 use super::{ComponentEditor, EntitySaveReadyData, IdentityData, SceneData, SpawnSource};
 use crate::{
-    absolute_asset_to_rel, entities::SaveSettings, materials_from_folder_into_scene, rel_asset_to_absolute, shared::is_scene_version_compatible, AvailableEditableMaterials, GraniteType, TransformData
+    absolute_asset_to_rel, entities::SaveSettings, materials_from_folder_into_scene,
+    rel_asset_to_absolute, shared::is_scene_version_compatible, AvailableEditableMaterials,
+    GraniteType, TransformData,
 };
 use bevy::{
     ecs::{entity::Entity, system::ResMut, world::World},
+    mesh::Mesh,
     pbr::StandardMaterial,
     prelude::{AppTypeRegistry, AssetServer, Assets, Commands, Component, Reflect, Res},
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_granite_logging::{
@@ -73,7 +75,9 @@ pub fn deserialize_entities(
 
         // Tag entity with its source file
         let relative: Cow<'static, str> = absolute_asset_to_rel(abs_path.to_string());
-        commands.entity(entity).insert(SpawnSource::new(relative, save_settings.clone()));
+        commands
+            .entity(entity)
+            .insert(SpawnSource::new(relative, save_settings.clone()));
 
         // Store parent relationships for second pass
         if let Some(parent_guid) = save_data.parent {
@@ -348,7 +352,8 @@ fn spawn_entity_from_class_type(
     // Apply transform offset if provided and parent entity
     if let Some(offset) = transform_offset {
         if save_data.parent.is_none() {
-            modified_save_data.transform = offset_saved_transform(modified_save_data.transform, offset);
+            modified_save_data.transform =
+                offset_saved_transform(modified_save_data.transform, offset);
         }
     }
 

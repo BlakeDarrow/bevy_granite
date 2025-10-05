@@ -9,7 +9,7 @@ impl Plugin for Camera3DPlugin {
             //
             // Event
             //
-            .add_event::<UserUpdatedCamera3DEvent>()
+            .add_message::<UserUpdatedCamera3DEvent>()
             //
             // Register
             //

@@ -13,7 +13,7 @@ use crate::interface::{
 use bevy::ecs::{
     change_detection::DetectChanges,
     entity::Entity,
-    event::EventWriter,
+    message::MessageWriter,
     query::With,
     system::{Query, Res, ResMut},
 };
@@ -29,10 +29,10 @@ pub fn update_entity_editor_tab_system(
     type_names: Res<RegisteredTypeNames>,
     mut available_materials: ResMut<AvailableEditableMaterials>,
     mut active_entity: Query<Entity, With<ActiveSelection>>,
-    mut identity_updated_writer: EventWriter<UserUpdatedIdentityEvent>,
-    mut transform_updated_writer: EventWriter<UserUpdatedTransformEvent>,
-    mut component_updated_writer: EventWriter<UserUpdatedComponentsEvent>,
-    mut material_delete_writer: EventWriter<MaterialDeleteEvent>,
+    mut identity_updated_writer: MessageWriter<UserUpdatedIdentityEvent>,
+    mut transform_updated_writer: MessageWriter<UserUpdatedTransformEvent>,
+    mut component_updated_writer: MessageWriter<UserUpdatedComponentsEvent>,
+    mut material_delete_writer: MessageWriter<MaterialDeleteEvent>,
     global_component_editor: ResMut<ComponentEditor>,
 ) {
     for (_, tab) in right_dock.dock_state.iter_all_tabs_mut() {

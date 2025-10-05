@@ -1,10 +1,10 @@
 use super::register_embedded_rotate_gizmo_mesh;
 use super::{
-    gizmo_changed_watcher, gizmo_events, handle_init_rotate_drag, 
-    handle_rotate_input, handle_rotate_reset, scale_gizmo_by_camera_distance_system,
-    DespawnGizmoEvent, GizmoSnap, GizmoType, LastSelectedGizmo, NewGizmoConfig,
-    PreviousTransformGizmo, RotateDraggingEvent, RotateInitDragEvent, RotateResetDragEvent,
-    SpawnGizmoEvent, TransformDraggingEvent, TransformInitDragEvent, TransformResetDragEvent,
+    gizmo_changed_watcher, gizmo_events, handle_init_rotate_drag, handle_rotate_input,
+    handle_rotate_reset, scale_gizmo_by_camera_distance_system, DespawnGizmoEvent, GizmoSnap,
+    GizmoType, LastSelectedGizmo, NewGizmoConfig, PreviousTransformGizmo, RotateDraggingEvent,
+    RotateInitDragEvent, RotateResetDragEvent, SpawnGizmoEvent, TransformDraggingEvent,
+    TransformInitDragEvent, TransformResetDragEvent,
 };
 use crate::gizmos::{GizmoMode, NewGizmoType};
 use crate::is_gizmos_active;
@@ -38,14 +38,14 @@ impl Plugin for GizmoPlugin {
             //
             // Events
             //
-            .add_event::<RotateInitDragEvent>()
-            .add_event::<RotateDraggingEvent>()
-            .add_event::<RotateResetDragEvent>()
-            .add_event::<TransformInitDragEvent>()
-            .add_event::<TransformDraggingEvent>()
-            .add_event::<TransformResetDragEvent>()
-            .add_event::<SpawnGizmoEvent>()
-            .add_event::<DespawnGizmoEvent>()
+            .add_message::<RotateInitDragEvent>()
+            .add_message::<RotateDraggingEvent>()
+            .add_message::<RotateResetDragEvent>()
+            .add_message::<TransformInitDragEvent>()
+            .add_message::<TransformDraggingEvent>()
+            .add_message::<TransformResetDragEvent>()
+            .add_message::<SpawnGizmoEvent>()
+            .add_message::<DespawnGizmoEvent>()
             //
             // Schedule system
             //

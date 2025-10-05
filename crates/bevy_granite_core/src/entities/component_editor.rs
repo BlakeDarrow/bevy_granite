@@ -101,7 +101,7 @@ impl ComponentEditor {
         let type_registry = self.type_registry.read();
 
         for component_id in archetype.components() {
-            let component_info = world.components().get_info(component_id).unwrap();
+            let component_info = world.components().get_info(component_id.clone()).unwrap();
 
             if let Some(type_id) = component_info.type_id() {
                 if let Some(registration) = type_registry.get(type_id) {
@@ -186,7 +186,7 @@ impl ComponentEditor {
         let archetype = entity_ref.archetype();
 
         for component_id in archetype.components() {
-            let component_info = world.components().get_info(component_id).unwrap();
+            let component_info = world.components().get_info(component_id.clone()).unwrap();
 
             if let Some(type_id) = component_info.type_id() {
                 if let Some(registration) = type_registry.get(type_id) {
@@ -226,7 +226,13 @@ impl ComponentEditor {
         let mut error_count = 0;
 
         for (component_name, serialized_data) in serialized_components {
-            match self.process_single_component(world, entity, &component_name, &serialized_data, &type_registry) {
+            match self.process_single_component(
+                world,
+                entity,
+                &component_name,
+                &serialized_data,
+                &type_registry,
+            ) {
                 Ok(()) => {
                     success_count += 1;
                 }
@@ -265,14 +271,23 @@ impl ComponentEditor {
     ) -> Result<(), String> {
         let registration = {
             let type_registry_read = type_registry.read();
-            type_registry_read.get_with_type_path(component_name)
+            type_registry_read
+                .get_with_type_path(component_name)
                 .ok_or_else(|| format!("No registration found for component: {}", component_name))?
                 .clone()
         };
-        let clean_ron = self.extract_component_data(component_name, serialized_data)
+        let clean_ron = self
+            .extract_component_data(component_name, serialized_data)
             .ok_or_else(|| format!("Failed to extract component data for: {}", component_name))?;
 
-        self.deserialize_and_insert_component(world, entity, component_name, &clean_ron, &registration, type_registry)
+        self.deserialize_and_insert_component(
+            world,
+            entity,
+            component_name,
+            &clean_ron,
+            &registration,
+            type_registry,
+        )
     }
 
     /// Extract the data for a component using proper RON parsing
@@ -289,7 +304,7 @@ impl ComponentEditor {
         // Fallback to the existing JSON-based approach for backwards compatibility
         let parsed = ron::from_str::<HashMap<String, ron::Value>>(serialized_data).ok()?;
         let component_value = parsed.get(component_name)?;
-        
+
         log!(
             LogType::Game,
             LogLevel::Info,
@@ -415,12 +430,16 @@ impl ComponentEditor {
     }
 
     /// Try to extract component data directly from RON format
-    fn try_extract_ron_component(&self, component_name: &str, serialized_data: &str) -> Option<String> {
+    fn try_extract_ron_component(
+        &self,
+        component_name: &str,
+        serialized_data: &str,
+    ) -> Option<String> {
         let search_pattern = format!("\"{}\":", component_name);
         if let Some(start) = serialized_data.find(&search_pattern) {
             let after_colon = start + search_pattern.len();
             let remaining = &serialized_data[after_colon..];
-            
+
             // Skip whitespace and quotes
             let trimmed = remaining.trim_start();
             if trimmed.starts_with('"') {
@@ -449,7 +468,7 @@ impl ComponentEditor {
     /// Convert a RON Map to proper struct syntax
     fn convert_map_to_ron_struct(&self, map: &ron::Map) -> String {
         let mut fields = Vec::new();
-        
+
         for (key, value) in map.iter() {
             if let ron::Value::String(field_name) = key {
                 // Just serialize the value and clean up any RON wrapper types
@@ -458,38 +477,38 @@ impl ComponentEditor {
                 fields.push(format!("{}:{}", field_name, cleaned_value));
             }
         }
-        
+
         format!("({})", fields.join(","))
     }
 
     /// Convert a RON Seq to tuple format for tuple structs
     fn convert_seq_to_tuple(&self, seq: &Vec<ron::Value>) -> String {
         let mut values = Vec::new();
-        
+
         for value in seq.iter() {
             // Serialize each value and clean it up
             let serialized_value = ron::to_string(value).unwrap_or_default();
             let cleaned_value = self.clean_ron_value(&serialized_value);
             values.push(cleaned_value);
         }
-        
+
         format!("({})", values.join(","))
     }
 
     /// Clean up RON serialized values by removing wrapper types and converting arrays to tuples
     fn clean_ron_value(&self, ron_str: &str) -> String {
         let mut result = ron_str.to_string();
-        
+
         // Remove Float() wrappers
         while result.contains("Float(") {
             result = result.replace("Float(", "").replace(")", "");
         }
-        
+
         // Convert arrays [a,b,c] to tuples (a,b,c) for Vec3, Vec2, etc.
         if result.starts_with('[') && result.ends_with(']') {
-            result = format!("({})", &result[1..result.len()-1]);
+            result = format!("({})", &result[1..result.len() - 1]);
         }
-        
+
         // Handle nested maps recursively by parsing and reconverting
         if let Ok(parsed) = ron::from_str::<ron::Value>(&result) {
             match parsed {
@@ -499,7 +518,7 @@ impl ComponentEditor {
                 _ => {}
             }
         }
-        
+
         result
     }
 
@@ -514,18 +533,36 @@ impl ComponentEditor {
         type_registry: &AppTypeRegistry,
     ) -> Result<(), String> {
         let Ok(mut deserializer) = ron::de::Deserializer::from_str(clean_ron) else {
-            return Err(format!("Failed to create deserializer for component: {}", component_name));
+            return Err(format!(
+                "Failed to create deserializer for component: {}",
+                component_name
+            ));
         };
 
         // Strategy 1: Try ReflectDeserialize (for components with serde support)
         if let Some(reflect_deserialize) = registration.data::<ReflectDeserialize>() {
-            if let Ok(()) = self.try_reflect_deserialize(world, entity, component_name, &mut deserializer, reflect_deserialize, registration, type_registry) {
+            if let Ok(()) = self.try_reflect_deserialize(
+                world,
+                entity,
+                component_name,
+                &mut deserializer,
+                reflect_deserialize,
+                registration,
+                type_registry,
+            ) {
                 return Ok(());
             }
         }
 
         // Strategy 2: Fallback to TypedReflectDeserializer (for Bevy components with reflection only)
-        self.try_typed_reflection_deserialize(world, entity, component_name, clean_ron, registration, type_registry)
+        self.try_typed_reflection_deserialize(
+            world,
+            entity,
+            component_name,
+            clean_ron,
+            registration,
+            type_registry,
+        )
     }
 
     /// Try deserializing using ReflectDeserialize
@@ -541,12 +578,20 @@ impl ComponentEditor {
     ) -> Result<(), String> {
         match reflect_deserialize.deserialize(deserializer) {
             Ok(component_data) => {
-                self.insert_reflected_component(world, entity, component_name, &*component_data, registration, type_registry)?;
+                self.insert_reflected_component(
+                    world,
+                    entity,
+                    component_name,
+                    &*component_data,
+                    registration,
+                    type_registry,
+                )?;
                 Ok(())
             }
-            Err(e) => {
-                Err(format!("Failed to deserialize component {}: {:?}", component_name, e))
-            }
+            Err(e) => Err(format!(
+                "Failed to deserialize component {}: {:?}",
+                component_name, e
+            )),
         }
     }
 
@@ -561,15 +606,26 @@ impl ComponentEditor {
         type_registry: &AppTypeRegistry,
     ) -> Result<(), String> {
         let Ok(mut full_deserializer) = ron::de::Deserializer::from_str(clean_ron) else {
-            return Err(format!("Failed to create deserializer for typed reflection: {}", component_name));
+            return Err(format!(
+                "Failed to create deserializer for typed reflection: {}",
+                component_name
+            ));
         };
 
         let type_registry_read = type_registry.read();
-        let typed_deserializer = bevy::reflect::serde::TypedReflectDeserializer::new(registration, &type_registry_read);
+        let typed_deserializer =
+            bevy::reflect::serde::TypedReflectDeserializer::new(registration, &type_registry_read);
 
         match typed_deserializer.deserialize(&mut full_deserializer) {
             Ok(reflected_value) => {
-                self.insert_reflected_component(world, entity, component_name, &*reflected_value, registration, type_registry)?;
+                self.insert_reflected_component(
+                    world,
+                    entity,
+                    component_name,
+                    &*reflected_value,
+                    registration,
+                    type_registry,
+                )?;
                 log!(
                     LogType::Game,
                     LogLevel::Info,
@@ -579,9 +635,10 @@ impl ComponentEditor {
                 );
                 Ok(())
             }
-            Err(e) => {
-                Err(format!("Failed to deserialize component {} via typed reflection: {:?}", component_name, e))
-            }
+            Err(e) => Err(format!(
+                "Failed to deserialize component {} via typed reflection: {:?}",
+                component_name, e
+            )),
         }
     }
 

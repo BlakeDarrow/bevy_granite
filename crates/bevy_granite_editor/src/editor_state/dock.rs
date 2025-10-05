@@ -3,7 +3,7 @@ use crate::{
         BottomDockState, EditorSettingsTabData, SideDockState, SideTab
     }
 };
-use bevy::{asset::io::file::FileAssetReader, prelude::{EventReader, Res}};
+use bevy::{asset::io::file::FileAssetReader, prelude::{MessageReader, Res}};
 use bevy::window::WindowClosing;
 use crate::utils::{load_from_toml_file, save_to_toml_file};
 use bevy_granite_logging::{
@@ -26,7 +26,7 @@ pub struct DockLayoutStr {
 }
 
 pub fn save_dock_on_window_close_system(
-    mut window_close_events: EventReader<WindowClosing>,
+    mut window_close_events: MessageReader<WindowClosing>,
     editor_state: Res<EditorState>,
     side_dock_res: Res<SideDockState>,
     bottom_dock_res: Res<BottomDockState>,

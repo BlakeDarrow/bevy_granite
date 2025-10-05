@@ -1,6 +1,6 @@
 use bevy::{
     ecs::{
-        event::{EventReader, EventWriter},
+        message::{MessageReader, MessageWriter},
         query::With,
         system::{Query, ResMut},
     },
@@ -36,7 +36,7 @@ pub struct PopupState {
 }
 
 pub fn handle_popup_requests_system(
-    mut popup_reader: EventReader<PopupMenuRequestedEvent>,
+    mut popup_reader: MessageReader<PopupMenuRequestedEvent>,
     mut popup_state: ResMut<PopupState>,
 ) {
     for PopupMenuRequestedEvent { popup, mouse_pos } in popup_reader.read() {
@@ -56,7 +56,7 @@ pub fn show_active_popups_system(
     mut contexts: EguiContexts,
     mut popup_state: ResMut<PopupState>,
     events: EditorEvents,
-    entity_add_writer: EventWriter<UserRequestGraniteTypeViaPopup>,
+    entity_add_writer: MessageWriter<UserRequestGraniteTypeViaPopup>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     editor_state: ResMut<EditorState>,
 ) {

@@ -5,7 +5,7 @@ use bevy::{
 use bevy_granite_core::{
     entities::SaveSettings, RequestLoadEvent, RequestReloadEvent, RequestSaveEvent, UserInput,
 };
-use bevy_granite_gizmos::{selection::events::EntityEvent, Selected};
+use bevy_granite_gizmos::{selection::events::EntityEvents, Selected};
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 use native_dialog::FileDialog;
 
@@ -106,7 +106,7 @@ fn handle_shortcuts(
             LogCategory::Input,
             "(shortcut) Deselecting all entities"
         );
-        commands.trigger(EntityEvent::DeselectAll);
+        commands.trigger(EntityEvents::DeselectAll);
     }
 
     // Shft-A

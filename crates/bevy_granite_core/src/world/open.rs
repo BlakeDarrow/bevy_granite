@@ -14,8 +14,8 @@ pub fn open_world_reader(
     mut materials: ResMut<Assets<StandardMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
     mut available_materials: ResMut<AvailableEditableMaterials>,
-    mut world_open_reader: EventReader<RequestLoadEvent>,
-    mut world_load_success_writer: EventWriter<WorldLoadSuccessEvent>,
+    mut world_open_reader: MessageReader<RequestLoadEvent>,
+    mut world_load_success_writer: MessageWriter<WorldLoadSuccessEvent>,
 ) {
     if let Some(RequestLoadEvent(path, save_settings, translation)) =
         world_open_reader.read().next()

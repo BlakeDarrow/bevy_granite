@@ -14,18 +14,18 @@ use crate::{
     GizmoCamera,
 };
 use bevy::{
-    ecs::{observer::Trigger, query::Changed, system::Local},
+    camera::Camera,
+    ecs::{observer::On, query::Changed, system::Local},
     math::primitives::InfinitePlane3d,
     picking::{
-        events::{Drag, Pointer, Pressed},
+        events::{Drag, Pointer, Press},
         hover::PickingInteraction,
         pointer::PointerButton,
     },
     prelude::{
-        ChildOf, Entity, EventReader, EventWriter, GlobalTransform, Mut, Name, ParamSet, Quat,
+        ChildOf, Entity, GlobalTransform, MessageReader, MessageWriter, Mut, Name, ParamSet, Quat,
         Query, Res, ResMut, Transform, Vec2, Vec3, Visibility, With, Without,
     },
-    render::camera::Camera,
 };
 use bevy_granite_core::{CursorWindowPos, IconProxy, UserInput};
 use bevy_granite_logging::{
@@ -62,9 +62,9 @@ pub fn handle_rotate_input(
     selected_option: ResMut<NewGizmoType>,
     user_input: Res<UserInput>,
     selection_query: Query<Entity, With<ActiveSelection>>,
-    mut init_drag_event: EventWriter<RotateInitDragEvent>,
-    mut dragging_event: EventWriter<RotateDraggingEvent>,
-    mut drag_ended_event: EventWriter<RotateResetDragEvent>,
+    mut init_drag_event: MessageWriter<RotateInitDragEvent>,
+    mut dragging_event: MessageWriter<RotateDraggingEvent>,
+    mut drag_ended_event: MessageWriter<RotateResetDragEvent>,
 ) {
     if !user_input.mouse_left.any {
         return;
@@ -94,10 +94,10 @@ pub fn handle_rotate_input(
 }
 
 pub fn handle_init_rotate_drag(
-    mut events: EventReader<RotateInitDragEvent>,
+    mut events: MessageReader<RotateInitDragEvent>,
     mut drag_state: ResMut<DragState>,
     resources: (Res<CursorWindowPos>, Res<RaycastCursorPos>),
-    mut duplicate_event_writer: EventWriter<RequestDuplicateAllSelectionEvent>,
+    mut duplicate_event_writer: MessageWriter<RequestDuplicateAllSelectionEvent>,
     user_input: Res<UserInput>,
     mut gizmo_visibility_query: Query<(&GizmoAxis, Mut<Visibility>)>,
     mut queries: ParamSet<(
@@ -232,7 +232,7 @@ fn hide_unselected_axes(
 }
 
 pub fn handle_rotate_dragging(
-    event: Trigger<Pointer<Drag>>,
+    event: On<Pointer<Drag>>,
     targets: Query<&GizmoOf>,
     camera_query: Query<(&GlobalTransform, &Camera), With<GizmoCamera>>,
     mut objects: Query<&mut Transform, Without<GizmoCamera>>,
@@ -248,13 +248,13 @@ pub fn handle_rotate_dragging(
     if event.button != PointerButton::Primary {
         return;
     }
-    let Ok((gizmo_axis, config)) = gizmo_data.get(event.target) else {
+    let Ok((gizmo_axis, config)) = gizmo_data.get(event.entity) else {
         log!(
             LogType::Editor,
             LogLevel::Warning,
             LogCategory::Input,
             "Gizmo Axis data not found for Gizmo entity {:?}",
-            event.target
+            event.entity
         );
         return;
     };
@@ -288,12 +288,12 @@ pub fn handle_rotate_dragging(
 
     let delta_x = x_step.to_radians();
     let delta_y = y_step.to_radians();
-    let Ok(_target) = targets.get(event.target) else {
+    let Ok(_target) = targets.get(event.entity) else {
         log(
             LogType::Editor,
             LogLevel::Error,
             LogCategory::Debug,
-            format!("Rotaion Gizmo({})'s Target not found", event.target.index()),
+            format!("Rotaion Gizmo({})'s Target not found", event.entity.index()),
         );
         return;
     };
@@ -420,18 +420,18 @@ fn snap_roation(value: f32, inc: f32) -> f32 {
     }
 }
 
-pub fn test_click_trigger(click: Trigger<Pointer<Pressed>>, query: Query<&Name>) {
-    let name = query.get(click.target);
+pub fn test_click_trigger(click: On<Pointer<Press>>, query: Query<&Name>) {
+    let name = query.get(click.entity);
     println!(
         "Click on {:?} Triggered: {}\n, {:?}",
         name,
-        click.target.index(),
+        click.entity.index(),
         click
     );
 }
 
 pub fn handle_rotate_reset(
-    mut events: EventReader<RotateResetDragEvent>,
+    mut events: MessageReader<RotateResetDragEvent>,
     mut drag_state: ResMut<DragState>,
     selection_query: Query<Entity, With<ActiveSelection>>,
     transform_query: Query<(&mut Transform, &GlobalTransform, Entity), Without<GizmoCamera>>,

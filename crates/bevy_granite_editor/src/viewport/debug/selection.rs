@@ -7,7 +7,7 @@ use bevy::{
     gizmos::gizmos::Gizmos,
     math::Vec3,
     prelude::{Assets, Mesh, Res, With},
-    render::mesh::Mesh3d,
+    mesh::Mesh3d,
     transform::components::GlobalTransform,
 };
 use bevy_granite_core::IdentityData;

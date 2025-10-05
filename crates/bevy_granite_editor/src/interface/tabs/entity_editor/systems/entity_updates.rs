@@ -20,7 +20,7 @@ use bevy::{
 use bevy::{
     asset::Assets,
     ecs::{
-        event::{EventReader, EventWriter},
+        message::{MessageReader, MessageWriter},
         query::Without,
         system::{Query, Res, ResMut},
     },
@@ -49,7 +49,7 @@ use bevy_granite_logging::{
 // Request to change the entity transform, update the entity transform, and inverse the gizmo rotation
 // so it doesn't move with the new rotation
 pub fn update_entity_with_new_transform_system(
-    mut transform_updated_reader: EventReader<UserUpdatedTransformEvent>,
+    mut transform_updated_reader: MessageReader<UserUpdatedTransformEvent>,
     mut e_query: Query<
         (Entity, &mut Transform, &GlobalTransform, Option<&ChildOf>),
         (Without<GizmoChildren>, With<IdentityData>),
@@ -105,8 +105,8 @@ pub fn update_entity_with_new_transform_system(
 
 pub fn update_entity_with_new_identity_system(
     mut commands: Commands,
-    mut identity_updated_reader: EventReader<UserUpdatedIdentityEvent>,
-    mut material_handle_update_writer: EventWriter<MaterialHandleUpdateEvent>,
+    mut identity_updated_reader: MessageReader<UserUpdatedIdentityEvent>,
+    mut material_handle_update_writer: MessageWriter<MaterialHandleUpdateEvent>,
     mut request_writer: RequestEntityUpdateFromClass,
     mut query: Query<EntityCacheQueryItem>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -243,7 +243,7 @@ fn handle_material_update(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     available_obj_materials: &mut ResMut<AvailableEditableMaterials>,
     asset_server: &Res<AssetServer>,
-    material_handle_update_writer: &mut EventWriter<MaterialHandleUpdateEvent>,
+    material_handle_update_writer: &mut MessageWriter<MaterialHandleUpdateEvent>,
 ) {
     if !material.disk_changes && !needs_mat_update {
         log!(
@@ -410,7 +410,7 @@ fn handle_material_update(
 }
 
 pub fn update_entity_with_new_components_system(
-    mut components_updated_reader: EventReader<UserUpdatedComponentsEvent>,
+    mut components_updated_reader: MessageReader<UserUpdatedComponentsEvent>,
     mut commands: Commands,
 ) {
     for UserUpdatedComponentsEvent { entity, data } in components_updated_reader.read() {
@@ -471,7 +471,7 @@ fn handle_component_update(
 }
 
 pub fn handle_material_deletion_system(
-    mut material_delete_reader: EventReader<MaterialDeleteEvent>,
+    mut material_delete_reader: MessageReader<MaterialDeleteEvent>,
     available_materials: Res<AvailableEditableMaterials>,
     mut identity_query: Query<(Entity, &mut IdentityData)>,
     mut commands: Commands,

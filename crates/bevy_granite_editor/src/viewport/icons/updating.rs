@@ -1,17 +1,15 @@
 use super::IconEntity;
 use crate::editor_state::EditorState;
 use bevy::{
+    camera::visibility::Visibility,
     color::Color,
     math::Vec3,
     pbr::{MeshMaterial3d, StandardMaterial},
     prelude::{Assets, Entity, Query, Res, ResMut, Transform, With, Without},
-    render::view::Visibility,
     transform::components::GlobalTransform,
 };
 use bevy_granite_core::UICamera;
-use bevy_granite_gizmos::{
-    gizmos::NewGizmoType, ActiveSelection, DragState, GizmoType, Selected,
-};
+use bevy_granite_gizmos::{gizmos::NewGizmoType, ActiveSelection, DragState, GizmoType, Selected};
 
 pub fn update_icon_entities_system(
     mut icon_query: Query<

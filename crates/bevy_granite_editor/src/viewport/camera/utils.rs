@@ -1,13 +1,13 @@
 use crate::{editor_state::INPUT_CONFIG, viewport::camera::CameraTarget};
+use bevy::camera::visibility::RenderLayers;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::{
-    core_pipeline::core_3d::Camera3d,
+    camera::Camera3d,
     input::mouse::{MouseMotion, MouseWheel},
     prelude::{
-        Camera, Commands, EulerRot, EventReader, Local, Name, Quat, Query, Res, ResMut, Time,
+        Camera, Commands, EulerRot, Local, MessageReader, Name, Quat, Query, Res, ResMut, Time,
         Transform, Vec2, Vec3, With,
     },
-    render::view::RenderLayers,
 };
 use bevy_granite_core::{EditorIgnore, TreeHiddenEntity, UICamera, UserInput};
 
@@ -56,8 +56,8 @@ pub fn rotate_camera_towards(
 pub fn handle_movement(
     query: &mut Query<&mut Transform, With<UICamera>>,
     user_input: &Res<UserInput>,
-    mouse_motion_events: &mut EventReader<MouseMotion>,
-    mouse_wheel_events: &mut EventReader<MouseWheel>,
+    mouse_motion_events: &mut MessageReader<MouseMotion>,
+    mouse_wheel_events: &mut MessageReader<MouseWheel>,
     _target_pos: &mut ResMut<CameraTarget>,
     time: Res<Time>,
     mut movement_speed: Local<f32>,
@@ -122,7 +122,7 @@ pub fn handle_movement(
 
 pub fn handle_zoom(
     query: &mut Query<&mut Transform, With<UICamera>>,
-    mouse_wheel_events: &mut EventReader<MouseWheel>,
+    mouse_wheel_events: &mut MessageReader<MouseWheel>,
     target_pos: &mut ResMut<CameraTarget>,
 ) {
     let zoom_speed = INPUT_CONFIG.zoom_camera_sensitivity;

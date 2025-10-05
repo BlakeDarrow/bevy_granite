@@ -1,14 +1,13 @@
 use bevy::{
-    core_pipeline::core_3d::Camera3d,
+    camera::{visibility::RenderLayers, Camera, Camera3d},
     ecs::{
         component::Component,
         entity::Entity,
-        event::{Event, EventReader, EventWriter},
+        message::{Message, MessageReader, MessageWriter},
         query::{Added, With, Without},
         system::{Commands, Query},
     },
     prelude::Name,
-    render::{camera::Camera, view::RenderLayers},
     transform::components::Transform,
 };
 use bevy_granite_core::{MainCamera, TreeHiddenEntity, UICamera};
@@ -20,12 +19,12 @@ use bevy_granite_logging::{
 #[derive(Component)]
 pub struct GizmoCamera;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct MainCameraAdded;
 
 pub fn watch_for_main_camera_addition(
     main_camera_added: Query<Entity, Added<MainCamera>>,
-    mut event_writer: EventWriter<MainCameraAdded>,
+    mut event_writer: MessageWriter<MainCameraAdded>,
 ) {
     if !main_camera_added.is_empty() {
         event_writer.write(MainCameraAdded);
@@ -39,7 +38,7 @@ pub fn add_gizmo_camera(
         &mut Transform,
         (With<MainCamera>, Without<GizmoCamera>, Without<UICamera>),
     >,
-    mut main_camera_added: EventReader<MainCameraAdded>,
+    mut main_camera_added: MessageReader<MainCameraAdded>,
     mut commands: Commands,
 ) {
     for _event in main_camera_added.read() {

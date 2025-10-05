@@ -2,9 +2,9 @@ use crate::interface::popups::PopupType;
 use crate::interface::tabs::entity_editor::{
     EntityGlobalTransformData, EntityIdentityData, EntityRegisteredData,
 };
-use bevy::ecs::event::EventWriter;
+use bevy::ecs::message::MessageWriter;
 use bevy::ecs::system::SystemParam;
-use bevy::prelude::{Entity, Event, Vec2};
+use bevy::prelude::{Entity, Message, Vec2};
 use bevy_granite_core::RequestDespawnBySource;
 use bevy_granite_core::RequestDespawnSerializableEntities;
 use bevy_granite_core::{EditableMaterial, GraniteTypes};
@@ -12,61 +12,61 @@ use bevy_granite_core::{RequestLoadEvent, RequestReloadEvent, RequestSaveEvent};
 
 #[derive(SystemParam)]
 pub struct EditorEvents<'w> {
-    pub popup: EventWriter<'w, PopupMenuRequestedEvent>,
-    pub save: EventWriter<'w, RequestSaveEvent>,
-    pub reload: EventWriter<'w, RequestReloadEvent>,
-    pub load: EventWriter<'w, RequestLoadEvent>,
-    pub toggle_editor: EventWriter<'w, RequestEditorToggle>,
-    pub toggle_cam_sync: EventWriter<'w, RequestToggleCameraSync>,
-    pub frame: EventWriter<'w, RequestCameraEntityFrame>,
-    pub parent: EventWriter<'w, RequestNewParent>,
-    pub remove_parent: EventWriter<'w, RequestRemoveParents>,
-    pub remove_parent_entities: EventWriter<'w, RequestRemoveParentsFromEntities>,
-    pub remove_children: EventWriter<'w, RequestRemoveChildren>,
-    pub despawn_all: EventWriter<'w, RequestDespawnSerializableEntities>,
-    pub despawn_by_source: EventWriter<'w, RequestDespawnBySource>,
-    pub set_active_world: EventWriter<'w, SetActiveWorld>,
+    pub popup: MessageWriter<'w, PopupMenuRequestedEvent>,
+    pub save: MessageWriter<'w, RequestSaveEvent>,
+    pub reload: MessageWriter<'w, RequestReloadEvent>,
+    pub load: MessageWriter<'w, RequestLoadEvent>,
+    pub toggle_editor: MessageWriter<'w, RequestEditorToggle>,
+    pub toggle_cam_sync: MessageWriter<'w, RequestToggleCameraSync>,
+    pub frame: MessageWriter<'w, RequestCameraEntityFrame>,
+    pub parent: MessageWriter<'w, RequestNewParent>,
+    pub remove_parent: MessageWriter<'w, RequestRemoveParents>,
+    pub remove_parent_entities: MessageWriter<'w, RequestRemoveParentsFromEntities>,
+    pub remove_children: MessageWriter<'w, RequestRemoveChildren>,
+    pub despawn_all: MessageWriter<'w, RequestDespawnSerializableEntities>,
+    pub despawn_by_source: MessageWriter<'w, RequestDespawnBySource>,
+    pub set_active_world: MessageWriter<'w, SetActiveWorld>,
 }
 
 // Internal Events
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserUpdatedComponentsEvent {
     pub entity: Entity,
     pub data: EntityRegisteredData,
 }
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserUpdatedIdentityEvent {
     pub entity: Entity,
     pub data: EntityIdentityData,
 }
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserUpdatedTransformEvent {
     pub entity: Entity,
     pub data: EntityGlobalTransformData,
 }
 
 // Need to change this to the actual data struct instead. No need to have both structs
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserRequestGraniteTypeViaPopup {
     pub class: GraniteTypes,
 }
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserRequestedRelationShipEvent;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct SetActiveWorld(pub String);
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct PopupMenuRequestedEvent {
     pub popup: PopupType,
     pub mouse_pos: Vec2,
 }
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct MaterialHandleUpdateEvent {
     pub skip_entity: Entity, // Requestor
     pub path: String,        // Path of updated EditableMaterial
@@ -74,32 +74,32 @@ pub struct MaterialHandleUpdateEvent {
     pub material: EditableMaterial,
 }
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct MaterialDeleteEvent {
     pub path: String,
 }
 
 // User callable events
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct RequestEditorToggle;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct RequestCameraEntityFrame;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct RequestToggleCameraSync;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct RequestNewParent;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct RequestRemoveParents;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct RequestRemoveParentsFromEntities {
     pub entities: Vec<Entity>,
 }
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct RequestRemoveChildren;

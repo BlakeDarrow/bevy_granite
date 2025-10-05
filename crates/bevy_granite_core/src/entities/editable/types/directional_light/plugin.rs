@@ -10,7 +10,7 @@ impl Plugin for DirLightPlugin {
             //
             // Event
             //
-            .add_event::<UserUpdatedDirectionalLightEvent>()
+            .add_message::<UserUpdatedDirectionalLightEvent>()
             //
             // Register
             //

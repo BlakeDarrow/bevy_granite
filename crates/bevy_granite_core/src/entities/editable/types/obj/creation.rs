@@ -5,15 +5,15 @@ use crate::{
     IdentityData, MaterialNameSource, NeedsTangents, PromptData, PromptImportSettings,
 };
 use bevy::{
-    asset::{AssetServer, Assets, Handle},
+    asset::{AssetPath, AssetServer, Assets, Handle},
     ecs::{
         bundle::Bundle,
         entity::Entity,
         system::{Commands, Res, ResMut},
     },
+    mesh::{Mesh, Mesh3d},
     pbr::{MeshMaterial3d, StandardMaterial},
     prelude::Name,
-    render::mesh::{Mesh, Mesh3d},
     transform::components::Transform,
 };
 use bevy_granite_logging::{
@@ -157,7 +157,9 @@ impl OBJ {
             create_material_from,
         );
 
-        let mesh_handle: Handle<Mesh> = asset_server.load(self.mesh_path.as_ref());
+        let path = self.mesh_path.to_string();
+
+        let mesh_handle: Handle<Mesh> = asset_server.load(path);
 
         commands
             .spawn(Self::get_bundle(

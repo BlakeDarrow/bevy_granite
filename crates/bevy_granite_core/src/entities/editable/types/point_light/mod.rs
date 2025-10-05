@@ -1,19 +1,19 @@
-use crate::{ClassCategory, PromptData};
 use crate::{
     entities::editable::{GraniteType, RequestEntityUpdateFromClass},
     entities::EntitySaveReadyData,
     AvailableEditableMaterials,
 };
+use crate::{ClassCategory, PromptData};
 use bevy::{
     asset::{AssetServer, Assets},
     ecs::{
         entity::Entity,
-        event::Event,
+        message::Message,
         system::{Commands, Res, ResMut},
     },
+    mesh::Mesh,
     pbr::StandardMaterial,
     prelude::Reflect,
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_egui::egui;
@@ -28,7 +28,7 @@ pub use plugin::*;
 pub use update_event::*;
 
 /// Internal event thats called when user edits UI point light variable
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserUpdatedPointLightEvent {
     pub entity: Entity,
     pub data: PointLightData,
@@ -62,7 +62,7 @@ impl GraniteType for PointLightData {
     fn type_abv(&self) -> String {
         "P.Light".to_string()
     }
-    
+
     fn category(&self) -> ClassCategory {
         ClassCategory::Light
     }
@@ -70,7 +70,7 @@ impl GraniteType for PointLightData {
     fn get_embedded_icon_bytes(&self) -> Option<&'static [u8]> {
         Some(include_bytes!("PointLight.png"))
     }
-    
+
     fn get_icon_filename(&self) -> Option<&'static str> {
         Some("PointLight.png")
     }

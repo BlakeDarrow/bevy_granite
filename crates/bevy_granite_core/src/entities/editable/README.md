@@ -38,14 +38,14 @@ In `types/your_type/update_event.rs`:
 ```rust
 use bevy::prelude::*;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct UpdateYourTypeEvent {
     pub entity: Entity,
     pub new_data: YourType,
 }
 
 pub fn update_your_type_system(
-    mut events: EventReader<UpdateYourTypeEvent>,
+    mut events: MessageReader<UpdateYourTypeEvent>,
     mut query: Query<&mut YourType>, // and any related bevy info you need
 ) {
     // Handle type update events
@@ -63,7 +63,7 @@ pub struct YourTypePlugin;
 
 impl Plugin for YourTypePlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<UpdateYourTypeEvent>()
+        app.add_message::<UpdateYourTypeEvent>()
            .register_type::<YourType>
            .add_systems(Update, update_your_type_system);
     }
@@ -106,8 +106,8 @@ impl GraniteTypes {
 In `editable/mod.rs`, add your update event to the `RequestEntityUpdateFromClass` SystemParam:
 
 ```rust
-// Add EventWriter for your type
-pub your_type_writer: EventWriter<'w, UpdateYourTypeEvent>,
+// Add MessageWriter for your type
+pub your_type_writer: MessageWriter<'w, UpdateYourTypeEvent>,
 ```
 
 ## Step 8: Export Your Type

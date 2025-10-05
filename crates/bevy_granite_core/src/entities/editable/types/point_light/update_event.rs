@@ -4,8 +4,8 @@ use crate::{
 };
 use bevy::{
     color::Color,
-    ecs::{entity::Entity, event::EventReader, system::Query},
-    pbr::PointLight,
+    ecs::{entity::Entity, message::MessageReader, system::Query},
+    light::PointLight,
 };
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 
@@ -33,7 +33,7 @@ impl PointLightData {
 }
 
 pub fn update_point_light_system(
-    mut reader: EventReader<UserUpdatedPointLightEvent>,
+    mut reader: MessageReader<UserUpdatedPointLightEvent>,
     mut query: Query<(Entity, &mut PointLight)>,
 ) {
     for UserUpdatedPointLightEvent {

@@ -4,9 +4,9 @@ use crate::{
     HasRuntimeData, IdentityData,
 };
 use bevy::{
+    camera::visibility::Visibility,
     ecs::{bundle::Bundle, entity::Entity, system::Commands},
     prelude::Name,
-    render::view::Visibility,
     transform::components::Transform,
 };
 use uuid::Uuid;

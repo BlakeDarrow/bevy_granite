@@ -11,12 +11,12 @@ use bevy::{
     asset::{AssetServer, Assets},
     ecs::{
         entity::Entity,
-        event::Event,
+        message::Message,
         system::{Commands, Res, ResMut},
     },
+    mesh::Mesh,
     pbr::StandardMaterial,
     prelude::Reflect,
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_egui::egui;
@@ -31,7 +31,7 @@ pub use plugin::*;
 pub use update_event::*;
 
 /// Internal event thats called when user edits UI OBJ variables
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserUpdatedOBJEvent {
     pub entity: Entity,
     pub data: OBJ,

@@ -1,8 +1,5 @@
 use super::{RequestDuplicateAllSelectionEvent, RequestDuplicateEntityEvent};
-use crate::{
-    gizmos::{GizmoChildren},
-    selection::Selected,
-};
+use crate::{gizmos::GizmoChildren, selection::Selected};
 use bevy::{
     asset::Assets,
     ecs::{
@@ -10,10 +7,12 @@ use bevy::{
         query::With,
         system::{Commands, Query},
     },
-    prelude::{AppTypeRegistry, ChildOf, Children, EventReader, ReflectComponent, Res, World},
-    render::mesh::{Mesh, Mesh3d},
+    mesh::{Mesh, Mesh3d},
+    prelude::{AppTypeRegistry, ChildOf, Children, MessageReader, ReflectComponent, Res, World},
 };
-use bevy_granite_core::{entities::GraniteType, EditorIgnore, HasRuntimeData, IconProxy, IdentityData};
+use bevy_granite_core::{
+    entities::GraniteType, EditorIgnore, HasRuntimeData, IconProxy, IdentityData,
+};
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -22,7 +21,7 @@ use uuid::Uuid;
 
 pub fn duplicate_entity_system(
     mut commands: Commands,
-    mut duplicate_event_reader: EventReader<RequestDuplicateEntityEvent>,
+    mut duplicate_event_reader: MessageReader<RequestDuplicateEntityEvent>,
     type_registry: Res<AppTypeRegistry>,
 ) {
     for event in duplicate_event_reader.read() {
@@ -49,7 +48,7 @@ pub fn duplicate_entity_system(
 
 pub fn duplicate_all_selection_system(
     mut commands: Commands,
-    mut duplicate_event_reader: EventReader<RequestDuplicateAllSelectionEvent>,
+    mut duplicate_event_reader: MessageReader<RequestDuplicateAllSelectionEvent>,
     type_registry: Res<AppTypeRegistry>,
     selected: Query<Entity, With<Selected>>,
 ) {
@@ -164,8 +163,9 @@ fn collect_entity_info(world: &World, entity: Entity) -> Option<EntityInfo> {
     let component_type_ids: Vec<std::any::TypeId> = entity_ref
         .archetype()
         .components()
+        .iter()
         .filter_map(|component_id| {
-            let component_info = world.components().get_info(component_id)?;
+            let component_info = world.components().get_info(component_id.clone())?;
 
             log!(
                 LogType::Editor,
@@ -344,7 +344,9 @@ fn log_copied_components(world: &World, entity: Entity) {
     let mut component_names = Vec::new();
     if let Ok(entity_ref) = world.get_entity(entity) {
         for archetype_component_id in entity_ref.archetype().components() {
-            if let Some(component_info) = world.components().get_info(archetype_component_id) {
+            if let Some(component_info) =
+                world.components().get_info(archetype_component_id.clone())
+            {
                 component_names.push(component_info.name());
             }
         }

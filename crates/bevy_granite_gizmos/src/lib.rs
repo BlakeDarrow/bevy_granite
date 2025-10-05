@@ -14,12 +14,12 @@ mod ui;
 // Re-export
 pub use camera::GizmoCamera;
 pub use gizmos::{
-    despawn_rotate_gizmo, GizmoChildren, GizmoMesh, GizmoSnap, GizmoType, RotateGizmo,
-    NewGizmoConfig, TransformGizmo,
+    despawn_rotate_gizmo, GizmoChildren, GizmoMesh, GizmoSnap, GizmoType, NewGizmoConfig,
+    RotateGizmo, TransformGizmo,
 };
 pub use input::{watch_gizmo_change, DragState, GizmoAxis};
 pub use selection::{
-    ActiveSelection, EntityEvent, RequestDuplicateAllSelectionEvent, RequestDuplicateEntityEvent,
+    ActiveSelection, EntityEvents, RequestDuplicateAllSelectionEvent, RequestDuplicateEntityEvent,
     Selected,
 };
 
@@ -58,7 +58,7 @@ impl Plugin for BevyGraniteGizmos {
             .add_plugins(SelectionPlugin)
             .add_plugins(UIPlugin)
             .add_plugins(InputPlugin) // Optional
-            .add_event::<MainCameraAdded>()
+            .add_message::<MainCameraAdded>()
             //
             .add_systems(
                 Update,

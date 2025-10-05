@@ -8,13 +8,13 @@ use bevy::{
     asset::Assets,
     ecs::entity::Entity,
     input::mouse::{MouseMotion, MouseWheel},
+    mesh::{Mesh, Mesh3d},
     prelude::{
-        EventReader, Local, Query, Res, ResMut, Resource, Time, Transform, Vec2, Vec3, Window,
+        Local, MessageReader, Query, Res, ResMut, Resource, Time, Transform, Vec2, Vec3, Window,
         With, Without,
     },
-    render::mesh::{Mesh, Mesh3d},
     transform::components::GlobalTransform,
-    window::{CursorGrabMode, PrimaryWindow},
+    window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 use bevy_granite_core::{MainCamera, UICamera, UserInput};
 use bevy_granite_gizmos::{ActiveSelection, DragState, Selected};
@@ -81,7 +81,7 @@ pub fn sync_cameras_system(
 
 // Whether or not we want control of main camera
 pub fn camera_sync_toggle_system(
-    mut toggle_event_writer: EventReader<RequestToggleCameraSync>,
+    mut toggle_event_writer: MessageReader<RequestToggleCameraSync>,
     mut sync: ResMut<CameraSyncState>,
     ui_camera_query: Query<&Transform, With<UICamera>>,
 ) {
@@ -107,7 +107,7 @@ pub fn camera_frame_system(
     transform_query: Query<&GlobalTransform, Without<UICamera>>,
     mut camera_query: Query<&mut Transform, With<UICamera>>,
     mut camera_target: ResMut<CameraTarget>,
-    mut frame_reader: EventReader<RequestCameraEntityFrame>,
+    mut frame_reader: MessageReader<RequestCameraEntityFrame>,
     _user_input: Res<UserInput>,
     selected_query: Query<Entity, With<Selected>>,
     active_query: Query<Entity, With<ActiveSelection>>,
@@ -248,9 +248,9 @@ pub fn camera_frame_system(
 // FIX:
 // use new UserInput
 pub fn mouse_button_iter(
-    mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
-    mut mouse_motion_events: EventReader<MouseMotion>,
-    mut mouse_wheel_events: EventReader<MouseWheel>,
+    mut primary_window: Query<(&mut Window, &mut CursorOptions), With<PrimaryWindow>>,
+    mut mouse_motion_events: MessageReader<MouseMotion>,
+    mut mouse_wheel_events: MessageReader<MouseWheel>,
     mut query: Query<&mut Transform, With<UICamera>>,
     mut input_state: ResMut<InputState>,
     time: Res<Time>,
@@ -263,16 +263,16 @@ pub fn mouse_button_iter(
         return;
     }
 
-    if let Ok(mut window) = primary_window.single_mut() {
+    if let Ok((mut window, mut cursor_options)) = primary_window.single_mut() {
         if user_input.mouse_right.just_pressed {
-            window.cursor_options.visible = false;
-            window.cursor_options.grab_mode = CursorGrabMode::Locked;
+            cursor_options.visible = false;
+            cursor_options.grab_mode = CursorGrabMode::Locked;
             input_state.initial_cursor_pos = window.cursor_position();
         }
 
         if user_input.mouse_right.just_released {
-            window.cursor_options.visible = true;
-            window.cursor_options.grab_mode = CursorGrabMode::None;
+            cursor_options.visible = true;
+            cursor_options.grab_mode = CursorGrabMode::None;
             if let Some(pos) = input_state.initial_cursor_pos {
                 window.set_cursor_position(Some(pos));
             }
@@ -308,7 +308,7 @@ pub fn mouse_button_iter(
 fn handle_pan_or_rotation(
     query: &mut Query<&mut Transform, With<UICamera>>,
     user_input: &Res<UserInput>,
-    mouse_motion_events: &mut EventReader<MouseMotion>,
+    mouse_motion_events: &mut MessageReader<MouseMotion>,
     target_pos: &mut ResMut<CameraTarget>,
     delta_time: f32,
 ) {

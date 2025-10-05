@@ -2,20 +2,20 @@ use crate::{editor_state::EditorState, interface::UserRequestGraniteTypeViaPopup
 use bevy::{
     asset::{AssetServer, Assets},
     ecs::{
-        event::EventReader,
+        message::MessageReader,
         system::{Commands, Res, ResMut},
     },
+    mesh::Mesh,
     pbr::StandardMaterial,
     prelude::Resource,
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_granite_core::{
-    entities::{SaveSettings, GraniteType, SpawnSource},
+    entities::{GraniteType, SaveSettings, SpawnSource},
     shared::asset_file_browser_multiple,
     AvailableEditableMaterials, GraniteTypes, PromptData, PromptImportSettings,
 };
-use bevy_granite_gizmos::selection::events::EntityEvent;
+use bevy_granite_gizmos::selection::events::EntityEvents;
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 use std::collections::VecDeque;
 
@@ -36,7 +36,7 @@ pub struct PendingEntitySpawn {
 
 // Popup to queues entity spawns. Handles single and multiple
 pub fn new_entity_via_popup_system(
-    mut entity_add_reader: EventReader<UserRequestGraniteTypeViaPopup>,
+    mut entity_add_reader: MessageReader<UserRequestGraniteTypeViaPopup>,
     mut spawn_queue: ResMut<EntitySpawnQueue>,
     editor_state: Res<EditorState>,
     mut commands: Commands,
@@ -62,7 +62,7 @@ pub fn new_entity_via_popup_system(
             if let Some(files) = asset_file_browser_multiple(base_dir, filter) {
                 let batch_size = files.len();
                 if batch_size > 1 {
-                    commands.trigger(EntityEvent::DeselectAll);
+                    commands.trigger(EntityEvents::DeselectAll);
                 }
                 spawn_queue.current_batch_size = batch_size;
 
@@ -127,14 +127,15 @@ pub fn process_entity_spawn_queue_system(
         );
 
         // Tag entity with spawn source
-        commands
-            .entity(entity)
-            .insert(SpawnSource::new(pending.source.clone(), SaveSettings::Runtime));
+        commands.entity(entity).insert(SpawnSource::new(
+            pending.source.clone(),
+            SaveSettings::Runtime,
+        ));
 
         let additive = pending.batch_size > 1;
         let remaining = spawn_queue.pending.len();
 
-        commands.trigger(EntityEvent::Select {
+        commands.trigger(EntityEvents::Select {
             target: entity,
             additive,
         });

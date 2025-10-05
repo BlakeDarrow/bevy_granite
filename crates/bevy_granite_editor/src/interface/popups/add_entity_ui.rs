@@ -4,7 +4,7 @@ use crate::{
     },
     UI_CONFIG,
 };
-use bevy::{ecs::event::EventWriter, prelude::Vec2};
+use bevy::{ecs::message::MessageWriter, prelude::Vec2};
 use bevy_egui::{
     egui::{self, Window},
     EguiContexts,
@@ -16,7 +16,7 @@ use bevy_granite_core::{ClassCategory, GraniteType, GraniteTypes};
 pub fn add_entity_ui(
     contexts: &mut EguiContexts,
     position: Vec2,
-    mut entity_add_request: EventWriter<UserRequestGraniteTypeViaPopup>,
+    mut entity_add_request: MessageWriter<UserRequestGraniteTypeViaPopup>,
 ) -> bool {
     let mut should_close = false;
 

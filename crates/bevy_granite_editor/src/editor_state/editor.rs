@@ -4,13 +4,13 @@ use crate::{
 };
 
 use crate::utils::{load_from_toml_file, save_to_toml_file};
-use bevy::ecs::event::EventReader;
+use bevy::ecs::message::MessageReader;
 use bevy::{asset::io::file::FileAssetReader, prelude::ResMut};
 use bevy_granite_core::{
     absolute_asset_to_rel,
     events::{
-        RequestDespawnBySource, RequestDespawnSerializableEntities, 
-        WorldLoadSuccessEvent, WorldSaveSuccessEvent,
+        RequestDespawnBySource, RequestDespawnSerializableEntities, WorldLoadSuccessEvent,
+        WorldSaveSuccessEvent,
     },
 };
 use bevy_granite_logging::{
@@ -20,18 +20,18 @@ use bevy_granite_logging::{
 
 use crate::interface::RequestEditorToggle;
 use bevy::prelude::Commands;
-use bevy_granite_gizmos::{selection::events::EntityEvent, GizmoVisibilityState};
+use bevy_granite_gizmos::{selection::events::EntityEvents, GizmoVisibilityState};
 
 // editor.rs
 // This has functions related to saving the editor settings
 // Currently the settings data is coming directly from the right Tab settings.
 
 pub fn update_active_world_system(
-    mut open_success_reader: EventReader<WorldLoadSuccessEvent>,
-    mut world_save_success_reader: EventReader<WorldSaveSuccessEvent>,
-    mut entities_despawned_reader: EventReader<RequestDespawnSerializableEntities>,
-    mut entities_despawned_by_source_reader: EventReader<RequestDespawnBySource>,
-    mut set_active_world_reader: EventReader<SetActiveWorld>,
+    mut open_success_reader: MessageReader<WorldLoadSuccessEvent>,
+    mut world_save_success_reader: MessageReader<WorldSaveSuccessEvent>,
+    mut entities_despawned_reader: MessageReader<RequestDespawnSerializableEntities>,
+    mut entities_despawned_by_source_reader: MessageReader<RequestDespawnBySource>,
+    mut set_active_world_reader: MessageReader<SetActiveWorld>,
     mut editor_state: ResMut<EditorState>,
 ) {
     for RequestDespawnSerializableEntities in entities_despawned_reader.read() {
@@ -105,14 +105,14 @@ pub fn update_active_world_system(
 }
 
 pub fn update_editor_vis_system(
-    mut toggle_reader: EventReader<RequestEditorToggle>,
+    mut toggle_reader: MessageReader<RequestEditorToggle>,
     mut editor_state: ResMut<EditorState>,
     mut gizmo_state: ResMut<GizmoVisibilityState>,
     mut commands: Commands,
 ) {
     for RequestEditorToggle in toggle_reader.read() {
         // have to do it manually as watchers wont run when not active
-        commands.trigger(EntityEvent::DeselectAll);
+        commands.trigger(EntityEvents::DeselectAll);
 
         editor_state.active = !editor_state.active;
         gizmo_state.active = editor_state.active;

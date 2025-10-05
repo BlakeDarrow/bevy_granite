@@ -1,26 +1,26 @@
-use bevy::prelude::{Entity, Event};
 use super::GizmoType;
+use bevy::prelude::{Entity, Message};
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct RotateInitDragEvent;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct RotateDraggingEvent;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct RotateResetDragEvent;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct TransformInitDragEvent;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct TransformDraggingEvent;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct TransformResetDragEvent;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct SpawnGizmoEvent(pub Entity);
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct DespawnGizmoEvent(pub GizmoType);

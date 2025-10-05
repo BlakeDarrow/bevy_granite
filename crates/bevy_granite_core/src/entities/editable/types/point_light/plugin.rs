@@ -9,7 +9,7 @@ impl Plugin for PointLightPlugin {
             //
             // Event
             //
-            .add_event::<UserUpdatedPointLightEvent>()
+            .add_message::<UserUpdatedPointLightEvent>()
             //
             // Register
             //

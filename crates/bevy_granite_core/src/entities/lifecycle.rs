@@ -5,11 +5,11 @@ use bevy_granite_logging::{
     log,
 };
 
-use bevy::prelude::{Commands, Entity, EventReader, Query, With};
+use bevy::prelude::{Commands, Entity, MessageReader, Query, With};
 
 /// If entity has IdentityData, it is despawned
 pub fn despawn_entities_system(
-    mut despawn_watcher: EventReader<RequestDespawnSerializableEntities>,
+    mut despawn_watcher: MessageReader<RequestDespawnSerializableEntities>,
     mut commands: Commands,
     serializable_query: Query<Entity, With<IdentityData>>,
 ) {
@@ -27,7 +27,7 @@ pub fn despawn_entities_system(
 
 /// Despawn entities that have a specific SpawnSource
 pub fn despawn_entities_by_source_system(
-    mut despawn_watcher: EventReader<RequestDespawnBySource>,
+    mut despawn_watcher: MessageReader<RequestDespawnBySource>,
     mut commands: Commands,
     serializable_query: Query<(Entity, &SpawnSource), With<IdentityData>>,
 ) {

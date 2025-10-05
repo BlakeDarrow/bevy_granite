@@ -8,10 +8,10 @@ use bevy::{
         entity::Entity,
         system::{Commands, Res, ResMut},
     },
-    ecs::{event::EventWriter, system::SystemParam},
+    ecs::{message::MessageWriter, system::SystemParam},
+    mesh::Mesh,
     pbr::StandardMaterial,
     prelude::{Image, Reflect},
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_egui::egui;
@@ -33,12 +33,12 @@ pub use types::*;
 
 #[derive(SystemParam)]
 pub struct RequestEntityUpdateFromClass<'w> {
-    pub camera_3d: EventWriter<'w, UserUpdatedCamera3DEvent>,
-    pub directional_light: EventWriter<'w, UserUpdatedDirectionalLightEvent>,
-    pub point_light: EventWriter<'w, UserUpdatedPointLightEvent>,
-    pub rectangle_brush: EventWriter<'w, UserUpdatedRectBrushEvent>,
-    pub obj: EventWriter<'w, UserUpdatedOBJEvent>,
-    pub empty: EventWriter<'w, UserUpdatedEmptyEvent>,
+    pub camera_3d: MessageWriter<'w, UserUpdatedCamera3DEvent>,
+    pub directional_light: MessageWriter<'w, UserUpdatedDirectionalLightEvent>,
+    pub point_light: MessageWriter<'w, UserUpdatedPointLightEvent>,
+    pub rectangle_brush: MessageWriter<'w, UserUpdatedRectBrushEvent>,
+    pub obj: MessageWriter<'w, UserUpdatedOBJEvent>,
+    pub empty: MessageWriter<'w, UserUpdatedEmptyEvent>,
 }
 
 // ---------------------------------------------------------------------------------------

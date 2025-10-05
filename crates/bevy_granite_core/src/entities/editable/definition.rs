@@ -4,14 +4,14 @@ use crate::{
     AvailableEditableMaterials, ClassCategory, RequiredMaterialData, RequiredMaterialDataMut,
 };
 use bevy::{
-    asset::{AssetId, AssetServer, Assets, Handle},
+    asset::{AssetServer, Assets, Handle, RenderAssetUsages},
     ecs::{
         entity::Entity,
         system::{Commands, Res, ResMut},
     },
+    mesh::Mesh,
     pbr::StandardMaterial,
     prelude::Image,
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_egui::egui;
@@ -60,11 +60,14 @@ pub trait GraniteType {
     }
 
     /// Generate icon handle ID from type name
-    fn icon_handle_id(&self) -> AssetId<Image> {
+    fn icon_handle(&self) -> Handle<Image> {
         let mut hasher = DefaultHasher::new();
         self.type_name().hash(&mut hasher);
-        let id = hasher.finish() as u128;
-        AssetId::<Image>::from(Uuid::from_u128(id))
+        let lower = hasher.finish() as u128;
+        hasher.write("granite_editor_icon".as_bytes());
+        let raw = (hasher.finish() as u128) << 64 | lower;
+        let id = raw & 0xFFFFFFFFFFFF4FFFBFFFFFFFFFFFFFFF | 0x40008000000000000000; // Make this a valid V4 uuid
+        Handle::Uuid(Uuid::from_u128(id), Default::default())
     }
 
     /// Register embedded icon - default implementation provided, only registers if icon data exists
@@ -79,11 +82,11 @@ pub trait GraniteType {
                 bevy::image::CompressedImageFormats::all(),
                 true,
                 bevy::image::ImageSampler::Default,
-                bevy::render::render_asset::RenderAssetUsages::RENDER_WORLD,
+                RenderAssetUsages::RENDER_WORLD,
             )
             .unwrap_or_else(|e| panic!("Failed to load embedded {}: {e}", filename));
 
-            let handle: Handle<Image> = Handle::Weak(self.icon_handle_id());
+            let handle: Handle<Image> = self.icon_handle();
             images.insert(handle.id(), image);
         }
     }
@@ -91,7 +94,7 @@ pub trait GraniteType {
     /// Get icon handle - returns None if no icon
     fn get_icon_handle(&self) -> Option<Handle<Image>> {
         if self.get_embedded_icon_bytes().is_some() {
-            Some(Handle::Weak(self.icon_handle_id()))
+            Some(self.icon_handle())
         } else {
             None
         }

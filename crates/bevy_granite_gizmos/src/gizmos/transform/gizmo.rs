@@ -1,12 +1,13 @@
 use bevy::{
     ecs::hierarchy::{ChildOf, Children},
-    pbr::{MeshMaterial3d, NotShadowCaster, NotShadowReceiver},
+    light::{NotShadowCaster, NotShadowReceiver},
+    mesh::Mesh3d,
+    pbr::MeshMaterial3d,
     prelude::{
         AlphaMode, Assets, Color, Commands, Component, Cone, Cylinder, Entity, GlobalTransform,
         Mesh, Meshable, Name, Quat, Query, ResMut, Resource, Sphere, StandardMaterial, Transform,
         Vec3, Visibility, Without,
     },
-    render::mesh::Mesh3d,
 };
 use bevy_granite_core::TreeHiddenEntity;
 use bevy_granite_logging::{

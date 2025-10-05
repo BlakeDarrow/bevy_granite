@@ -1,4 +1,4 @@
-use bevy::ecs::{event::EventWriter, system::ResMut};
+use bevy::ecs::{message::MessageWriter, system::ResMut};
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -21,7 +21,7 @@ use crate::interface::{
 pub fn update_components_from_cache(
     components_data: &mut EntityRegisteredData,
     cache: &mut ResMut<EntityUIDataCache>,
-    components_updated_writer: &mut EventWriter<UserUpdatedComponentsEvent>,
+    components_updated_writer: &mut MessageWriter<UserUpdatedComponentsEvent>,
 ) {
     // Always update UI when entity changes
     if cache.dirty.entity_dirty {
@@ -57,7 +57,7 @@ pub fn update_components_from_cache(
 pub fn update_transform_from_cache(
     global_transform_data: &mut EntityGlobalTransformData,
     cache: &mut ResMut<EntityUIDataCache>,
-    transform_updated_writer: &mut EventWriter<UserUpdatedTransformEvent>,
+    transform_updated_writer: &mut MessageWriter<UserUpdatedTransformEvent>,
 ) {
     if cache.dirty.entity_dirty {
         global_transform_data.clear();
@@ -89,7 +89,7 @@ pub fn update_transform_from_cache(
 pub fn update_identity_from_cache(
     identity_data: &mut EntityIdentityData,
     cache: &mut ResMut<EntityUIDataCache>,
-    identity_updated_writer: &mut EventWriter<UserUpdatedIdentityEvent>,
+    identity_updated_writer: &mut MessageWriter<UserUpdatedIdentityEvent>,
 ) {
     if cache.dirty.identity_dirty && !identity_data.name_changed {
         identity_data.name = cache.data.identity.name.to_string();
@@ -114,7 +114,7 @@ pub fn update_identity_from_cache(
 pub fn send_component_events_from_ui_change(
     registered_data: &mut EntityRegisteredData,
     cache: &mut ResMut<EntityUIDataCache>,
-    components_updated_writer: &mut EventWriter<UserUpdatedComponentsEvent>,
+    components_updated_writer: &mut MessageWriter<UserUpdatedComponentsEvent>,
 ) {
     if let Some(entity) = cache.data.entity {
         components_updated_writer.write(UserUpdatedComponentsEvent {
@@ -132,7 +132,7 @@ pub fn send_component_events_from_ui_change(
 pub fn send_transform_events_from_ui_change(
     global_transform_data: &mut EntityGlobalTransformData,
     cache: &mut ResMut<EntityUIDataCache>,
-    transform_updated_writer: &mut EventWriter<UserUpdatedTransformEvent>,
+    transform_updated_writer: &mut MessageWriter<UserUpdatedTransformEvent>,
 ) {
     if global_transform_data.transform_data_changed {
         if let Some(entity) = cache.data.entity {
@@ -150,7 +150,7 @@ pub fn send_transform_events_from_ui_change(
 pub fn send_identity_events_from_ui_change(
     identity_data: &mut EntityIdentityData,
     cache: &mut ResMut<EntityUIDataCache>,
-    identity_updated_writer: &mut EventWriter<UserUpdatedIdentityEvent>,
+    identity_updated_writer: &mut MessageWriter<UserUpdatedIdentityEvent>,
 ) {
     if identity_data.name_changed || identity_data.class_data_changed {
         if let Some(entity) = cache.data.entity {

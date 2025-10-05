@@ -1,16 +1,16 @@
 use crate::entities::editable::{GraniteType, RequestEntityUpdateFromClass};
 use crate::{entities::EntitySaveReadyData, AvailableEditableMaterials};
+use bevy::ecs::message::Message;
 use bevy::{
     asset::{AssetServer, Assets},
     color::Color,
     ecs::{
         entity::Entity,
-        event::Event,
         system::{Commands, Res, ResMut},
     },
+    mesh::Mesh,
     pbr::StandardMaterial,
     prelude::Reflect,
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_egui::egui;
@@ -27,7 +27,7 @@ pub use plugin::*;
 pub use update_event::*;
 
 /// Internal event thats called when user edits UI camera variable
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserUpdatedCamera3DEvent {
     pub entity: Entity,
     pub data: Camera3D,
@@ -92,19 +92,19 @@ impl GraniteType for Camera3D {
     fn type_name(&self) -> String {
         "Camera 3D".to_string()
     }
-    
+
     fn type_abv(&self) -> String {
         "3D Cam".to_string()
     }
-    
+
     fn category(&self) -> ClassCategory {
         ClassCategory::Gameplay
     }
-    
+
     fn get_embedded_icon_bytes(&self) -> Option<&'static [u8]> {
         Some(include_bytes!("Camera.png"))
     }
-    
+
     fn get_icon_filename(&self) -> Option<&'static str> {
         Some("Camera.png")
     }

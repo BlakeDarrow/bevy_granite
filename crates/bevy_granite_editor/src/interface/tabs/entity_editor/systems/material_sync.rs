@@ -1,6 +1,6 @@
 use crate::interface::events::MaterialHandleUpdateEvent;
 use bevy::{
-    ecs::{entity::Entity, event::EventReader, system::Query},
+    ecs::{entity::Entity, message::MessageReader, system::Query},
     prelude::ResMut,
 };
 use bevy_granite_core::{entities::GraniteType, AvailableEditableMaterials, IdentityData};
@@ -10,7 +10,7 @@ use bevy_granite_logging::{
 };
 
 pub fn update_material_handle_system(
-    mut material_handle_update_reader: EventReader<MaterialHandleUpdateEvent>,
+    mut material_handle_update_reader: MessageReader<MaterialHandleUpdateEvent>,
     mut _available_materials: ResMut<AvailableEditableMaterials>,
     mut identity_query: Query<(Entity, &mut IdentityData)>,
 ) {

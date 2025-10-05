@@ -3,16 +3,14 @@ use crate::entities::editable::RequestEntityUpdateFromClass;
 use super::{RectBrush, UserUpdatedRectBrushEvent};
 use bevy::{
     asset::Assets,
+    camera::primitives::{Aabb, MeshAabb},
     ecs::{
-        event::EventReader,
+        message::MessageReader,
         system::{Query, ResMut},
     },
-    render::mesh::{Mesh3d, MeshAabb},
+    mesh::Mesh3d,
 };
-use bevy::{
-    prelude::Entity,
-    render::{mesh::Mesh, primitives::Aabb},
-};
+use bevy::{mesh::Mesh, prelude::Entity};
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 
 impl RectBrush {
@@ -37,7 +35,7 @@ impl RectBrush {
 }
 
 pub fn update_rectangle_brush_system(
-    mut reader: EventReader<UserUpdatedRectBrushEvent>,
+    mut reader: MessageReader<UserUpdatedRectBrushEvent>,
     mut query: Query<(Entity, &Mesh3d)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut aabbs: Query<&mut Aabb>,

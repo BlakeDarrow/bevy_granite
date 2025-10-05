@@ -1,5 +1,5 @@
+use bevy::mesh::{Mesh3d, VertexAttributeValues};
 use bevy::prelude::{Assets, Entity, Mesh, Query, Vec3};
-use bevy::render::mesh::{Mesh3d, VertexAttributeValues};
 use bevy::transform::components::GlobalTransform;
 use bevy_granite_core::{ClassCategory, GraniteType, IdentityData};
 

@@ -8,9 +8,9 @@ use bevy::{
         entity::Entity,
         system::{Commands, Res, ResMut},
     },
+    mesh::Mesh,
     pbr::StandardMaterial,
     prelude::Reflect,
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_egui::egui;

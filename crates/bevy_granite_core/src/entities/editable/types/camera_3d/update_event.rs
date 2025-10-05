@@ -3,13 +3,13 @@ use crate::{
     entities::editable::RequestEntityUpdateFromClass, Camera3D, GraniteTypes, IdentityData,
 };
 use bevy::{
+    camera::Camera,
     ecs::{
         entity::Entity,
-        event::EventReader,
+        message::MessageReader,
         system::{Commands, Query},
     },
-    pbr::{FogVolume, VolumetricFog as VolumetricFogSettings},
-    render::camera::Camera,
+    light::{FogVolume, VolumetricFog as VolumetricFogSettings},
 };
 
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
@@ -38,7 +38,7 @@ impl Camera3D {
 /// Actually update the specific entity with the class data
 /// In the future im sure we will have FOV and what not
 pub fn update_camera_3d_system(
-    mut reader: EventReader<UserUpdatedCamera3DEvent>,
+    mut reader: MessageReader<UserUpdatedCamera3DEvent>,
     mut query: Query<(Entity, &mut Camera, &mut IdentityData)>,
     mut commands: Commands,
 ) {

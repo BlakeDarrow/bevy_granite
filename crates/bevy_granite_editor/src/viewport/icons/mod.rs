@@ -8,7 +8,7 @@ use bevy::{
     image::Image,
     pbr::{MeshMaterial3d, StandardMaterial},
     prelude::{Bundle, Name},
-    render::mesh::Mesh3d,
+    mesh::Mesh3d,
 };
 use bevy_granite_core::{GraniteType, GraniteTypes, IconEntity};
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};

@@ -1,17 +1,20 @@
 use crate::{
-    entities::{editable::{GraniteType, RequestEntityUpdateFromClass}, EntitySaveReadyData},
+    entities::{
+        editable::{GraniteType, RequestEntityUpdateFromClass},
+        EntitySaveReadyData,
+    },
     AvailableEditableMaterials, ClassCategory, PromptData,
 };
 use bevy::{
     asset::{AssetServer, Assets},
     ecs::{
         entity::Entity,
-        event::Event,
+        message::Message,
         system::{Commands, Res, ResMut},
     },
+    mesh::Mesh,
     pbr::StandardMaterial,
     reflect::Reflect,
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_egui::egui;
@@ -27,7 +30,7 @@ pub use update_event::*;
 
 // We have no event here as there isnt data that can be edited via UI
 /// Internal event thats called when user edits UI directional light variable
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserUpdatedEmptyEvent {
     pub entity: Entity,
     pub data: Empty,

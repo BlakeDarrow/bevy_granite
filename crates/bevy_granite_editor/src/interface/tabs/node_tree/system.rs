@@ -17,7 +17,7 @@ use bevy::ecs::query::Has;
 use bevy::ecs::system::Commands;
 use bevy::{
     ecs::query::{Changed, Or},
-    prelude::{ChildOf, Entity, EventWriter, Name, Query, Res, ResMut, With, RemovedComponents},
+    prelude::{ChildOf, Entity, MessageWriter, Name, Query, Res, ResMut, With, RemovedComponents},
 };
 use bevy_granite_core::{
     IdentityData, RequestDespawnBySource, RequestReloadEvent, SpawnSource, TreeHiddenEntity,
@@ -45,7 +45,7 @@ pub fn update_node_tree_tabs_system(
     mut removed_child_of: RemovedComponents<ChildOf>,
     mut commands: Commands,
     mut editor_events: EditorEvents,
-    mut reparent_event_writer: EventWriter<RequestReparentEntityEvent>,
+    mut reparent_event_writer: MessageWriter<RequestReparentEntityEvent>,
 ) {
     for (_, tab) in right_dock.dock_state.iter_all_tabs_mut() {
         if let SideTab::NodeTree { ref mut data, .. } = tab {
@@ -98,8 +98,8 @@ pub fn update_node_tree_tabs_system(
 
 fn handle_drag_drop_events(
     data: &mut crate::interface::tabs::NodeTreeTabData,
-    reparent_event_writer: &mut EventWriter<RequestReparentEntityEvent>,
-    remove_parents_event_writer: &mut EventWriter<RequestRemoveParentsFromEntities>,
+    reparent_event_writer: &mut MessageWriter<RequestReparentEntityEvent>,
+    remove_parents_event_writer: &mut MessageWriter<RequestRemoveParentsFromEntities>,
 ) {
     if let Some(dragged_entities) = data.drag_payload.clone() {
         if let Some(drop_target) = data.drop_target {

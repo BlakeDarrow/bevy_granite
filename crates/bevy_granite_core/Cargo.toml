@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 toml = { workspace = true }
-bevy = { workspace = true, features = ["bevy_pbr", "png"] }
+bevy = { workspace = true, features = ["bevy_pbr", "png", "reflect_auto_register"] }
 bevy-inspector-egui = { workspace = true }
 bevy_egui = { workspace = true }
 bevy_obj = { workspace = true }

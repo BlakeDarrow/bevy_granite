@@ -3,14 +3,14 @@ use crate::{
     entities::{despawn_recursive_serializable_entities, IdentityData, SaveSettings},
     events::{RequestLoadEvent, RequestReloadEvent},
 };
-use bevy::prelude::{Commands, Entity, EventReader, EventWriter, Query, With};
+use bevy::prelude::{Commands, Entity, MessageReader, MessageWriter, Query, With};
 
 /// Despawns all entities then loads the world
 pub fn reload_world_system(
-    mut relead_watcher: EventReader<RequestReloadEvent>,
+    mut relead_watcher: MessageReader<RequestReloadEvent>,
     mut commands: Commands,
     serializable_query: Query<Entity, With<IdentityData>>,
-    mut load_world_writter: EventWriter<RequestLoadEvent>,
+    mut load_world_writter: MessageWriter<RequestLoadEvent>,
 ) {
     for RequestReloadEvent(path) in relead_watcher.read() {
         despawn_recursive_serializable_entities(&mut commands, &serializable_query);

@@ -7,7 +7,7 @@ use crate::{
 use bevy::{
     asset::io::file::FileAssetReader,
     ecs::entity::Entity,
-    prelude::{ChildOf, Commands, EventReader, EventWriter, Query, ResMut, Resource, World},
+    prelude::{ChildOf, Commands, MessageReader, MessageWriter, Query, ResMut, Resource, World},
     transform::components::Transform,
 };
 use bevy_granite_logging::{
@@ -43,8 +43,8 @@ pub struct SaveWorldRequestData {
 /// Is runtime collector for registered type components
 pub fn save_request_system(
     mut save_request: ResMut<SaveWorldRequestData>,
-    mut event_writer: EventWriter<CollectRuntimeDataEvent>,
-    mut event_reader: EventReader<RequestSaveEvent>,
+    mut event_writer: MessageWriter<CollectRuntimeDataEvent>,
+    mut event_reader: MessageReader<RequestSaveEvent>,
     query: Query<(
         Entity,
         &IdentityData,
@@ -135,7 +135,7 @@ pub fn save_request_system(
 pub fn collect_components_system(
     mut commands: Commands,
     runtime_query: Query<(Entity, &HasRuntimeData, &SpawnSource)>,
-    mut event_reader: EventReader<CollectRuntimeDataEvent>,
+    mut event_reader: MessageReader<CollectRuntimeDataEvent>,
 ) {
     for CollectRuntimeDataEvent(spawn_source) in event_reader.read() {
         log!(
@@ -209,9 +209,9 @@ pub fn collect_components_system(
 
 /// Component data is ready, we can save the world
 pub fn save_data_ready_system(
-    mut event_reader: EventReader<RuntimeDataReadyEvent>,
+    mut event_reader: MessageReader<RuntimeDataReadyEvent>,
     mut save_request_data: ResMut<SaveWorldRequestData>,
-    mut saved_event_writer: EventWriter<WorldSaveSuccessEvent>,
+    mut saved_event_writer: MessageWriter<WorldSaveSuccessEvent>,
 ) {
     for RuntimeDataReadyEvent(source) in event_reader.read() {
         log!(

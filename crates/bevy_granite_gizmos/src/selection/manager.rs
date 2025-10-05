@@ -1,6 +1,6 @@
-use crate::selection::{events::EntityEvent, ActiveSelection, Selected};
+use crate::selection::{events::EntityEvents, ActiveSelection, Selected};
 use bevy::{
-    ecs::{observer::Trigger, world::OnAdd},
+    ecs::{lifecycle::Add, observer::On},
     prelude::{Component, Entity, Query, Res, With},
 };
 use bevy::{
@@ -36,14 +36,14 @@ pub struct ParentTo(pub Entity);
 
 // this is incharge of setting entities into the selected state
 pub fn select_entity(
-    event: Trigger<EntityEvent>,
+    event: On<EntityEvents>,
     mut commands: Commands,
     current: Query<Entity, With<Selected>>,
     active_selection: Query<(), With<ActiveSelection>>,
 ) {
     let (first, add, others) = match event.event() {
-        EntityEvent::Select { target, additive } => (*target, *additive, None),
-        EntityEvent::SelectRange { range, additive } => {
+        EntityEvents::Select { target, additive } => (*target, *additive, None),
+        EntityEvents::SelectRange { range, additive } => {
             let Some(first) = range.first() else {
                 log! {
                     LogType::Editor,
@@ -83,22 +83,28 @@ pub fn select_entity(
 
 // Used when we get a single entity deselected
 pub fn deselect_entity(
-    event: Trigger<EntityEvent>,
+    event: On<EntityEvents>,
     mut commands: Commands,
     selection: Query<Entity, With<Selected>>,
 ) {
     match event.event() {
-        EntityEvent::Deselect { target } => {
-            commands.entity(*target).remove::<(ActiveSelection, Selected)>();
+        EntityEvents::Deselect { target } => {
+            commands
+                .entity(*target)
+                .remove::<(ActiveSelection, Selected)>();
         }
-        EntityEvent::DeselectRange { range } => {
+        EntityEvents::DeselectRange { range } => {
             for entity in range {
-                commands.entity(*entity).remove::<(ActiveSelection, Selected)>();
+                commands
+                    .entity(*entity)
+                    .remove::<(ActiveSelection, Selected)>();
             }
         }
-        EntityEvent::DeselectAll => {
+        EntityEvents::DeselectAll => {
             for entity in selection.iter() {
-                commands.entity(entity).remove::<(ActiveSelection, Selected)>();
+                commands
+                    .entity(entity)
+                    .remove::<(ActiveSelection, Selected)>();
             }
         }
         _ => {}
@@ -108,14 +114,13 @@ pub fn deselect_entity(
 /// when an entity gets ActiveSelection added to it we check if there is already an entity with ActiveSelection
 /// if there is, we remove it for the other entity
 pub fn single_active(
-    mut add_active: Trigger<OnAdd, ActiveSelection>,
+    add_active: On<Add, ActiveSelection>,
     active_selection: Query<Entity, With<ActiveSelection>>,
     mut commands: Commands,
 ) {
-    add_active.propagate(false);
     if active_selection.single().is_err() {
         for entity in &active_selection {
-            if entity != add_active.target() {
+            if entity != add_active.entity {
                 commands.entity(entity).remove::<ActiveSelection>();
             }
         }
@@ -123,7 +128,7 @@ pub fn single_active(
 }
 
 pub fn handle_picking_selection(
-    mut on_click: Trigger<Pointer<Click>>,
+    mut on_click: On<Pointer<Click>>,
     mut commands: Commands,
     ignored: Query<&EditorIgnore>,
     icon_proxy_query: Query<&IconProxy>,
@@ -132,14 +137,14 @@ pub fn handle_picking_selection(
     if on_click.button != bevy::picking::pointer::PointerButton::Primary {
         return;
     }
-    match ignored.get(on_click.target()) {
+    match ignored.get(on_click.entity) {
         Ok(to_ignore) => {
             if to_ignore.contains(EditorIgnore::PICKING) {
                 return;
             }
         }
         Err(QueryEntityError::EntityDoesNotExist(_)) => {
-            log!("Entity does not exist: {}", on_click.target().index());
+            log!("Entity does not exist: {}", on_click.entity.index());
             return;
         }
         Err(_) => {}
@@ -147,8 +152,8 @@ pub fn handle_picking_selection(
     if user_input.mouse_over_egui {
         return;
     }
-    
-    if on_click.target().index() == 0 {
+
+    if on_click.entity.index() == 0 {
         log!(
             LogType::Editor,
             LogLevel::Info,
@@ -156,12 +161,12 @@ pub fn handle_picking_selection(
             "Clicked on empty space, deselecting all entities"
         );
         on_click.propagate(false);
-        commands.trigger(EntityEvent::DeselectAll);
+        commands.trigger(EntityEvents::DeselectAll);
         return;
     }
-    
+
     on_click.propagate(false);
-    let mut entity = on_click.target();
+    let mut entity = on_click.entity;
 
     // redirect to icon target
     if let Ok(icon_proxy) = icon_proxy_query.get(entity) {
@@ -175,7 +180,7 @@ pub fn handle_picking_selection(
         entity = icon_proxy.target_entity;
     }
 
-    commands.trigger(EntityEvent::Select {
+    commands.trigger(EntityEvents::Select {
         target: entity,
         additive: user_input.shift_left.any,
     });

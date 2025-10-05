@@ -6,7 +6,7 @@ use crate::{
 use bevy::{
     color::Color,
     ecs::{bundle::Bundle, entity::Entity, system::Commands},
-    pbr::PointLight,
+    light::PointLight,
     prelude::Name,
     transform::components::Transform,
 };

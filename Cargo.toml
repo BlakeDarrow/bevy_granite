@@ -3,20 +3,20 @@ members = ["crates/*"]
 resolver = "2"
 
 [workspace.dependencies]
-bevy = { version = "0.16.1", default-features = false }
-bevy-inspector-egui = "0.33"
-bevy_obj = "0.16.1"
-bevy_egui = "0.36"
+bevy = { version = "0.17.2", default-features = false }
+bevy-inspector-egui = "0.34.0"
+bevy_obj = "0.17.0"
+bevy_egui = "0.37.0"
 toml = "0.8.22"
 uuid = "1.17.0"
-serde = "1.0.215"
+serde = "1.0"
 native-dialog = "0.7.0"
 ron = "0.8.1"
 lazy_static = "1.5.0"
 
 [package]
 name = "bevy_granite"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "A 3d editor for the Bevy game engine."
 

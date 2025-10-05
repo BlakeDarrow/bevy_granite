@@ -1,7 +1,7 @@
 use super::data::{HierarchyEntry, NodeTreeTabData};
 use super::hierarchy::build_visual_order;
 use bevy::prelude::Entity;
-use bevy_granite_gizmos::selection::events::EntityEvent;
+use bevy_granite_gizmos::selection::events::EntityEvents;
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 
 /// Validation functions for drag and drop operations
@@ -84,7 +84,7 @@ pub fn process_selection_changes(
                 if let Some(prev_active) = data.active_selection {
                     perform_range_selection(prev_active, new_selection, data, commands);
                 } else {
-                    commands.trigger(EntityEvent::Select {
+                    commands.trigger(EntityEvents::Select {
                         target: new_selection,
                         additive: false,
                     });
@@ -95,11 +95,11 @@ pub fn process_selection_changes(
                 // Toggle selection
                 let already_selected = data.selected_entities.contains(&new_selection);
                 if already_selected {
-                    commands.trigger(EntityEvent::Deselect {
+                    commands.trigger(EntityEvents::Deselect {
                         target: new_selection,
                     });
                 } else {
-                    commands.trigger(EntityEvent::Select {
+                    commands.trigger(EntityEvents::Select {
                         target: new_selection,
                         additive: true,
                     });
@@ -108,7 +108,7 @@ pub fn process_selection_changes(
                 data.active_selection = Some(new_selection);
             } else {
                 // Normal selection
-                commands.trigger(EntityEvent::Select {
+                commands.trigger(EntityEvents::Select {
                     target: new_selection,
                     additive: false,
                 });
@@ -277,13 +277,13 @@ fn perform_range_selection(
         let min_idx = start_idx.min(end_idx);
         let max_idx = start_idx.max(end_idx);
 
-        commands.trigger(EntityEvent::Select {
+        commands.trigger(EntityEvents::Select {
             target: start_entity,
             additive: true,
         });
 
         for i in min_idx..=max_idx {
-            commands.trigger(EntityEvent::Select {
+            commands.trigger(EntityEvents::Select {
                 target: visual_order[i],
                 additive: true,
             });

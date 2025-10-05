@@ -2,18 +2,20 @@ use super::TransformGizmo;
 use crate::{
     gizmos::{GizmoOf, GizmoSnap},
     input::GizmoAxis,
-    selection::{ActiveSelection, Selected, RequestDuplicateAllSelectionEvent},
+    selection::{ActiveSelection, RequestDuplicateAllSelectionEvent, Selected},
     GizmoCamera,
 };
 use bevy::{
     asset::Assets,
     ecs::{
-        component::Component, event::EventWriter, hierarchy::ChildOf, observer::Trigger,
+        component::Component, hierarchy::ChildOf, message::MessageWriter, observer::On,
         system::Commands,
     },
     gizmos::{retained::Gizmo, GizmoAsset},
-    picking::events::{Drag, DragStart, Pointer, Pressed},
-    prelude::{Entity, GlobalTransform, Query, Res, ResMut, Resource, Transform, Vec3, With, Without},
+    picking::events::{Drag, DragStart, Pointer, Press},
+    prelude::{
+        Entity, GlobalTransform, Query, Res, ResMut, Resource, Transform, Vec3, With, Without,
+    },
 };
 use bevy_granite_core::UserInput;
 use bevy_granite_logging::{
@@ -27,12 +29,9 @@ pub struct TransformDuplicationState {
 }
 
 pub fn drag_transform_gizmo(
-    event: Trigger<Pointer<Drag>>,
+    event: On<Pointer<Drag>>,
     targets: Query<&GizmoOf>,
-    camera_query: Query<
-        (Entity, &GlobalTransform, &bevy::render::camera::Camera),
-        With<GizmoCamera>,
-    >,
+    camera_query: Query<(Entity, &GlobalTransform, &bevy::camera::Camera), With<GizmoCamera>>,
     mut objects: Query<&mut Transform>,
     global_transforms: Query<&GlobalTransform>,
     parents: Query<&ChildOf>,
@@ -46,18 +45,18 @@ pub fn drag_transform_gizmo(
     if event.button != bevy::picking::pointer::PointerButton::Primary {
         return;
     }
-    
+
     if duplication_state.just_duplicated {
         duplication_state.just_duplicated = false;
         return;
     }
-    let Ok((axis, typ)) = gizmo_data.get(event.target) else {
+    let Ok((axis, typ)) = gizmo_data.get(event.entity) else {
         log!(
             LogType::Editor,
             LogLevel::Warning,
             LogCategory::Input,
             "Gizmo Axis data not found for Gizmo entity {:?}",
-            event.target
+            event.entity
         );
         return;
     };
@@ -72,13 +71,13 @@ pub fn drag_transform_gizmo(
         return;
     };
 
-    let Ok(GizmoOf(target)) = targets.get(event.target) else {
+    let Ok(GizmoOf(target)) = targets.get(event.entity) else {
         log! {
             LogType::Editor,
             LogLevel::Error,
             LogCategory::Input,
             "Gizmo target not found for entity {:?}",
-            event.target
+            event.entity
         };
         return;
     };
@@ -254,7 +253,7 @@ pub fn drag_transform_gizmo(
             }
         }
     }
-    
+
     if user_input.ctrl_left.any {
         if let Ok(mut camera_transform) = objects.get_mut(c_entity) {
             camera_transform.translation += world_delta;
@@ -263,20 +262,20 @@ pub fn drag_transform_gizmo(
 }
 
 pub fn dragstart_transform_gizmo(
-    event: Trigger<Pointer<DragStart>>,
+    event: On<Pointer<DragStart>>,
     targets: Query<&GizmoOf>,
     gizmo_data: Query<(&GizmoAxis, &TransformGizmo)>,
     user_input: Res<UserInput>,
-    mut dispatch: EventWriter<RequestDuplicateAllSelectionEvent>,
+    mut dispatch: MessageWriter<RequestDuplicateAllSelectionEvent>,
     mut duplication_state: ResMut<TransformDuplicationState>,
 ) {
     if user_input.mouse_middle.any || !user_input.shift_left.pressed {
         return;
     }
-    let Ok(_) = gizmo_data.get(event.target) else {
+    let Ok(_) = gizmo_data.get(event.entity) else {
         return;
     };
-    let Ok(GizmoOf(_target)) = targets.get(event.target) else {
+    let Ok(GizmoOf(_target)) = targets.get(event.entity) else {
         return;
     };
     log!("Attempting Drag Duplicate");
@@ -293,7 +292,7 @@ fn snap_gizmo(value: f32, inc: f32) -> f32 {
 }
 
 pub fn draw_axis_lines(
-    event: Trigger<Pointer<Pressed>>,
+    event: On<Pointer<Press>>,
     gizmo_data: Query<(&GizmoAxis, &GizmoOf, &TransformGizmo), With<TransformGizmo>>,
     mut bevy_gizmo: ResMut<Assets<GizmoAsset>>,
     mut commands: Commands,
@@ -302,8 +301,8 @@ pub fn draw_axis_lines(
     if event.button != bevy::picking::pointer::PointerButton::Primary {
         return;
     }
-    
-    let Ok((axis, root, transform)) = gizmo_data.get(event.target) else {
+
+    let Ok((axis, root, transform)) = gizmo_data.get(event.entity) else {
         return;
     };
     if let GizmoAxis::All = axis {

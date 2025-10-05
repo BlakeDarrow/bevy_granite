@@ -2,12 +2,12 @@ use bevy::{
     asset::{AssetServer, Assets},
     ecs::{
         entity::Entity,
-        event::Event,
+        message::Message,
         system::{Commands, Res, ResMut},
     },
+    mesh::Mesh,
     pbr::StandardMaterial,
     prelude::Reflect,
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_egui::egui;
@@ -18,17 +18,17 @@ pub mod plugin;
 pub mod ui;
 pub mod update_event;
 
-use crate::{ClassCategory, PromptData};
 use crate::{
     entities::editable::{GraniteType, RequestEntityUpdateFromClass},
     entities::EntitySaveReadyData,
     AvailableEditableMaterials,
 };
+use crate::{ClassCategory, PromptData};
 pub use plugin::*;
 pub use update_event::*;
 
 /// Internal event thats called when user edits UI directional light variable
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserUpdatedDirectionalLightEvent {
     pub entity: Entity,
     pub data: DirLight,
@@ -71,7 +71,7 @@ impl GraniteType for DirLight {
     fn get_embedded_icon_bytes(&self) -> Option<&'static [u8]> {
         Some(include_bytes!("DirectionalLight.png"))
     }
-    
+
     fn get_icon_filename(&self) -> Option<&'static str> {
         Some("DirectionalLight.png")
     }

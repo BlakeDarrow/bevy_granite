@@ -1,14 +1,14 @@
-use bevy::asset::{weak_handle, Handle};
+use bevy::asset::Handle;
 use bevy::ecs::hierarchy::ChildOf;
+use bevy::light::{NotShadowCaster, NotShadowReceiver};
+use bevy::mesh::Mesh3d;
 use bevy::pbr::MeshMaterial3d;
-use bevy::pbr::{NotShadowCaster, NotShadowReceiver};
 use bevy::picking::Pickable;
 use bevy::prelude::{AlphaMode, Meshable, Quat, Sphere};
 use bevy::prelude::{
     Assets, Children, Color, Commands, Component, Entity, GlobalTransform, Mesh, Name, Query,
     ResMut, Resource, StandardMaterial, Transform, Vec3, Visibility, Without,
 };
-use bevy::render::mesh::Mesh3d;
 use bevy_granite_core::TreeHiddenEntity;
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
@@ -32,7 +32,7 @@ pub struct PreviousTransformGizmo {
 const GIZMO_SCALE: f32 = 0.85;
 const ROTATE_INNER_RADIUS: f32 = 0.12 * GIZMO_SCALE; // middle sphere of gizmo (free rotate)
 const ROTATE_VISUAL_RADIUS: f32 = 0.64 * GIZMO_SCALE; // middle sphere of gizmo (visual)
-const RING_MESH_HASH: &str = "3f6f4c2a-6e36-4ccf-81c4-f343f83c5f80"; // constantly random - doesnt matter the value
+const RING_MESH_HASH: uuid::Uuid = uuid::uuid!("3f6f4c2a-6e36-4ccf-81c4-f343f83c5f80"); // constantly random - doesnt matter the value
 
 pub fn register_embedded_rotate_gizmo_mesh(mut meshes: ResMut<Assets<Mesh>>) {
     let handle = get_mesh_handle();
@@ -44,7 +44,7 @@ pub fn register_embedded_rotate_gizmo_mesh(mut meshes: ResMut<Assets<Mesh>>) {
 }
 
 pub fn get_mesh_handle() -> Handle<Mesh> {
-    weak_handle!(RING_MESH_HASH)
+    Handle::Uuid(RING_MESH_HASH, Default::default())
 }
 pub fn spawn_rotate_gizmo(
     parent: Entity,

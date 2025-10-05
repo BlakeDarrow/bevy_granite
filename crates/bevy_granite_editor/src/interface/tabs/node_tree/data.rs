@@ -1,4 +1,7 @@
-use bevy::prelude::{Entity, Event};
+use bevy::{
+    ecs::message::Message,
+    prelude::{Entity, Event},
+};
 
 /// Pending actions from context menus to be processed by the system
 #[derive(Debug, Clone, PartialEq)]
@@ -13,8 +16,8 @@ pub enum PendingContextAction {
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeTreeTabData {
     pub filtered_hierarchy: bool, // whether the hierarchy shows all entities or hides editor related ones
-    pub expand_to_enabled: bool, // whether to auto-expand to selected entities
-    pub scroll_to_enabled: bool, // whether to auto-scroll to selected entities
+    pub expand_to_enabled: bool,  // whether to auto-expand to selected entities
+    pub scroll_to_enabled: bool,  // whether to auto-scroll to selected entities
     pub active_selection: Option<Entity>,
     pub selected_entities: Vec<Entity>,
     pub new_selection: Option<Entity>,
@@ -31,7 +34,7 @@ pub struct NodeTreeTabData {
     pub drop_target: Option<Entity>,       // Entity being dropped onto
     pub active_scene_file: Option<String>, // Currently active scene file path
     pub pending_context_actions: Vec<PendingContextAction>, // Actions from context menus
-    
+
     // Virtual scrolling fields
     pub virtual_scroll_state: VirtualScrollState,
     pub flattened_tree_cache: Vec<FlattenedTreeNode>,
@@ -45,7 +48,7 @@ pub struct VirtualScrollState {
     pub row_height: f32,
     pub visible_start: usize,
     pub visible_count: usize,
-    pub buffer_size: usize, 
+    pub buffer_size: usize,
     pub scroll_offset: f32,
 }
 
@@ -56,7 +59,7 @@ impl Default for VirtualScrollState {
             row_height: 20.0, // Will be calculated dynamically
             visible_start: 0,
             visible_count: 0, // 0 = auto-calculate based on available height
-            buffer_size: 10,   
+            buffer_size: 10,
             scroll_offset: 0.0,
         }
     }
@@ -68,7 +71,7 @@ impl VirtualScrollState {
         self.visible_count = count;
         self
     }
-    
+
     /// Returns true if using auto-calculated visible count
     pub fn is_auto_calculated(&self) -> bool {
         self.visible_count == 0
@@ -126,16 +129,16 @@ pub struct HierarchyEntry {
     pub entity_type: String,
     pub parent: Option<Entity>,
     pub is_expanded: bool,
-    pub is_dummy_parent: bool, 
-    pub is_preserve_disk: bool, 
-    pub is_preserve_disk_transform: bool, 
+    pub is_dummy_parent: bool,
+    pub is_preserve_disk: bool,
+    pub is_preserve_disk_transform: bool,
 }
 
 /// Events for node tree operations
-#[derive(Debug, Clone, Event)]
+#[derive(Debug, Clone, Message)]
 pub struct RequestReparentEntityEvent {
     pub entities: Vec<Entity>,
-    pub new_parent: Entity, 
+    pub new_parent: Entity,
 }
 
 /// Visual state for rendering a single tree row
@@ -166,22 +169,28 @@ impl RowVisualState {
             .drag_payload
             .as_ref()
             .map_or(false, |entities| entities.contains(&entry.entity));
-        
+
         let is_valid_drop_target = data.drag_payload.as_ref().map_or(false, |entities| {
-            !entities.contains(&entry.entity) && super::validation::is_valid_drop(entities, entry.entity, &data.hierarchy)
-        });
-        
-        let is_invalid_drop_target = data.drag_payload.as_ref().map_or(false, |entities| {
-            entities.contains(&entry.entity)
-                || entities
-                    .iter()
-                    .any(|&dragged_entity| super::validation::is_descendant_of(entry.entity, dragged_entity, &data.hierarchy))
+            !entities.contains(&entry.entity)
+                && super::validation::is_valid_drop(entities, entry.entity, &data.hierarchy)
         });
 
-        let is_active_scene = entry.is_dummy_parent && data
-            .active_scene_file
-            .as_ref()
-            .map_or(false, |active| active == &entry.name);
+        let is_invalid_drop_target = data.drag_payload.as_ref().map_or(false, |entities| {
+            entities.contains(&entry.entity)
+                || entities.iter().any(|&dragged_entity| {
+                    super::validation::is_descendant_of(
+                        entry.entity,
+                        dragged_entity,
+                        &data.hierarchy,
+                    )
+                })
+        });
+
+        let is_active_scene = entry.is_dummy_parent
+            && data
+                .active_scene_file
+                .as_ref()
+                .map_or(false, |active| active == &entry.name);
 
         Self {
             is_selected,
@@ -198,32 +207,35 @@ impl RowVisualState {
         }
     }
 
-    pub fn from_flattened_node(
-        node: &FlattenedTreeNode,
-        data: &NodeTreeTabData,
-    ) -> Self {
+    pub fn from_flattened_node(node: &FlattenedTreeNode, data: &NodeTreeTabData) -> Self {
         let is_selected = data.selected_entities.contains(&node.entity);
         let is_active_selected = Some(node.entity) == data.active_selection;
         let is_being_dragged = data
             .drag_payload
             .as_ref()
             .map_or(false, |entities| entities.contains(&node.entity));
-        
+
         let is_valid_drop_target = data.drag_payload.as_ref().map_or(false, |entities| {
-            !entities.contains(&node.entity) && super::validation::is_valid_drop(entities, node.entity, &data.hierarchy)
-        });
-        
-        let is_invalid_drop_target = data.drag_payload.as_ref().map_or(false, |entities| {
-            entities.contains(&node.entity)
-                || entities
-                    .iter()
-                    .any(|&dragged_entity| super::validation::is_descendant_of(node.entity, dragged_entity, &data.hierarchy))
+            !entities.contains(&node.entity)
+                && super::validation::is_valid_drop(entities, node.entity, &data.hierarchy)
         });
 
-        let is_active_scene = node.is_dummy_parent && data
-            .active_scene_file
-            .as_ref()
-            .map_or(false, |active| active == &node.name);
+        let is_invalid_drop_target = data.drag_payload.as_ref().map_or(false, |entities| {
+            entities.contains(&node.entity)
+                || entities.iter().any(|&dragged_entity| {
+                    super::validation::is_descendant_of(
+                        node.entity,
+                        dragged_entity,
+                        &data.hierarchy,
+                    )
+                })
+        });
+
+        let is_active_scene = node.is_dummy_parent
+            && data
+                .active_scene_file
+                .as_ref()
+                .map_or(false, |active| active == &node.name);
 
         Self {
             is_selected,

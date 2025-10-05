@@ -45,7 +45,7 @@ pub use entities::{
     GraniteEditorSerdeEntity, GraniteType, GraniteTypes, HasRuntimeData, IdentityData, MainCamera,
     MaterialNameSource, NeedsTangents, PointLightData, PromptData, PromptImportSettings, RectBrush,
     ReflectedComponent, SaveSettings, SpawnSource, TransformData, TreeHiddenEntity, UICamera,
-    VolumetricFog, OBJ
+    VolumetricFog, OBJ,
 };
 pub use events::{
     CollectRuntimeDataEvent, RequestDespawnBySource, RequestDespawnSerializableEntities,
@@ -85,15 +85,15 @@ impl Plugin for BevyGraniteCore {
             //
             // Events
             //
-            .add_event::<RequestLoadEvent>()
-            .add_event::<WorldLoadSuccessEvent>()
-            .add_event::<RequestDespawnSerializableEntities>()
-            .add_event::<RequestDespawnBySource>()
-            .add_event::<WorldSaveSuccessEvent>()
-            .add_event::<RequestSaveEvent>()
-            .add_event::<CollectRuntimeDataEvent>()
-            .add_event::<RuntimeDataReadyEvent>()
-            .add_event::<RequestReloadEvent>()
+            .add_message::<RequestLoadEvent>()
+            .add_message::<WorldLoadSuccessEvent>()
+            .add_message::<RequestDespawnSerializableEntities>()
+            .add_message::<RequestDespawnBySource>()
+            .add_message::<WorldSaveSuccessEvent>()
+            .add_message::<RequestSaveEvent>()
+            .add_message::<CollectRuntimeDataEvent>()
+            .add_message::<RuntimeDataReadyEvent>()
+            .add_message::<RequestReloadEvent>()
             //
             // Resources
             //

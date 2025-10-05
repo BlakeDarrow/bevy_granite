@@ -1,15 +1,14 @@
 use super::IconEntity;
 use crate::{editor_state::EditorState, viewport::config::VisualizationConfig};
 use bevy::{
-    pbr::{MeshMaterial3d, NotShadowCaster, NotShadowReceiver, StandardMaterial},
+    camera::visibility::RenderLayers,
+    light::{NotShadowCaster, NotShadowReceiver},
+    mesh::{Indices, Mesh3d},
+    pbr::{MeshMaterial3d, StandardMaterial},
     prelude::{
         Assets, Commands, Entity, Handle, Image, Mesh, Name, Query, Res, ResMut, Transform, Without,
     },
-    render::{
-        alpha::AlphaMode,
-        mesh::{Indices, Mesh3d},
-        view::RenderLayers,
-    },
+    render::alpha::AlphaMode,
 };
 use bevy_granite_core::{GraniteType, IconProxy, IdentityData, TreeHiddenEntity};
 

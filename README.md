@@ -139,8 +139,8 @@ pub struct DebugEvents {
 }
 
 pub fn debug_callable_watcher(
-    mut despawn: EventReader<DebugRequestRemovePlayer>,
-    mut spawn: EventReader<DebugRequestPlayer>,
+    mut despawn: MessageReader<DebugRequestRemovePlayer>,
+    mut spawn: MessageReader<DebugRequestPlayer>,
     mut commands: Commands,
     mut player_start: Query<(&GlobalTransform, &mut PlayerSpawner)>,
     mut world_state: ResMut<WorldState>,

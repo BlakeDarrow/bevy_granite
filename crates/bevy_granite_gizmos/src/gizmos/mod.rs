@@ -1,7 +1,7 @@
 use bevy::{
-    ecs::{component::Component, entity::Entity, resource::Resource},
+    camera::visibility::RenderLayers,
+    ecs::{component::Component, entity::Entity, lifecycle::HookContext, resource::Resource},
     prelude::{Deref, DerefMut},
-    render::view::RenderLayers,
 };
 
 pub mod distance_scaling;
@@ -146,10 +146,10 @@ pub struct GizmoOf(pub Entity);
 pub struct GizmoRoot(pub Entity);
 
 impl GizmoOf {
-    fn on_add(mut world: bevy::ecs::world::DeferredWorld, ctx: bevy::ecs::component::HookContext) {
+    fn on_add(mut world: bevy::ecs::world::DeferredWorld, ctx: HookContext) {
         let mut ignore = world
             .get_mut::<EditorIgnore>(ctx.entity)
-            .expect("EditorIgnore is required componet");
+            .expect("EditorIgnore is required component");
         ignore.insert(EditorIgnore::GIZMO | EditorIgnore::PICKING);
     }
 

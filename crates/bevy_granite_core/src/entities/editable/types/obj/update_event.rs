@@ -2,9 +2,13 @@ use super::UserUpdatedOBJEvent;
 use crate::{entities::editable::RequestEntityUpdateFromClass, NeedsTangents, OBJ};
 use bevy::{
     asset::AssetServer,
-    ecs::{entity::Entity, event::EventReader, system::{Commands, Res}},
+    ecs::{
+        entity::Entity,
+        message::MessageReader,
+        system::{Commands, Res},
+    },
+    mesh::Mesh3d,
     prelude::Query,
-    render::mesh::Mesh3d,
 };
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 
@@ -30,7 +34,7 @@ impl OBJ {
 }
 
 pub fn update_obj_system(
-    mut reader: EventReader<UserUpdatedOBJEvent>,
+    mut reader: MessageReader<UserUpdatedOBJEvent>,
     mesh_query: Query<&Mesh3d>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -52,9 +56,10 @@ pub fn update_obj_system(
         if *reload_mesh {
             if let Ok(_mesh3d) = mesh_query.get(*requested_entity) {
                 // Force reload the asset by path
-                asset_server.reload(new_obj_data.mesh_path.as_ref());
+                let path = new_obj_data.mesh_path.to_string();
+                asset_server.reload(path);
                 commands.entity(*requested_entity).insert(NeedsTangents);
-                
+
                 log!(
                     LogType::Editor,
                     LogLevel::Info,

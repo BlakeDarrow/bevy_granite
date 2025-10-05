@@ -4,10 +4,9 @@ use crate::{
     HasRuntimeData, IdentityData,
 };
 use bevy::{
-    core_pipeline::core_3d::Camera3d,
+    camera::{Camera, Camera3d},
     ecs::{bundle::Bundle, entity::Entity, system::Commands},
     prelude::Name,
-    render::camera::Camera,
     transform::components::Transform,
 };
 use uuid::Uuid;
@@ -56,8 +55,8 @@ impl Camera3D {
             commands.spawn(Self::get_bundle(self.clone(), identity.clone(), transform));
 
         if self.has_volumetric_fog {
-            let mut fog = bevy::pbr::VolumetricFog::default();
-            let mut fog_volume = bevy::pbr::FogVolume::default();
+            let mut fog = bevy::light::VolumetricFog::default();
+            let mut fog_volume = bevy::light::FogVolume::default();
 
             if let Some(fog_settings) = &self.volumetric_fog_settings {
                 fog.ambient_color = fog_settings.ambient_color;

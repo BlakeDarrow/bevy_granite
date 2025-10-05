@@ -9,7 +9,7 @@ impl Plugin for OBJPlugin {
             //
             // Event
             //
-            .add_event::<UserUpdatedOBJEvent>()
+            .add_message::<UserUpdatedOBJEvent>()
             //
             // Register
             //

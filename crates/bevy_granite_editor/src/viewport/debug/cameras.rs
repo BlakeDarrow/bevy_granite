@@ -1,11 +1,11 @@
 use super::DebugRenderer;
 use crate::editor_state::EditorState;
 use bevy::{
+    camera::Camera,
     color::Color,
     ecs::{entity::Entity, system::Query},
     gizmos::gizmos::Gizmos,
     prelude::{Res, With, Without},
-    render::camera::Camera,
     transform::components::GlobalTransform,
 };
 use bevy_granite_core::MainCamera;

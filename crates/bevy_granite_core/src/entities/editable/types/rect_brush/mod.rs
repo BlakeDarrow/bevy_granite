@@ -1,21 +1,25 @@
 use crate::{
     assets::EditableMaterial,
-    entities::{editable::{
-        GraniteType, RequestEntityUpdateFromClass, RequiredMaterialData, RequiredMaterialDataMut,
-    }, EntitySaveReadyData, PromptData},
+    entities::{
+        editable::{
+            GraniteType, RequestEntityUpdateFromClass, RequiredMaterialData,
+            RequiredMaterialDataMut,
+        },
+        EntitySaveReadyData, PromptData,
+    },
     AvailableEditableMaterials, ClassCategory, MaterialData,
 };
 use bevy::{
     asset::{AssetServer, Assets},
     ecs::{
         entity::Entity,
-        event::Event,
+        message::Message,
         system::{Commands, Res, ResMut},
     },
     math::{Vec2, Vec3},
+    mesh::Mesh,
     pbr::StandardMaterial,
     prelude::Reflect,
-    render::mesh::Mesh,
     transform::components::Transform,
 };
 use bevy_egui::egui;
@@ -30,7 +34,7 @@ pub use plugin::*;
 pub use update_event::*;
 
 /// Internal event thats called when user edits UI RectBrush variables
-#[derive(Event)]
+#[derive(Message)]
 pub struct UserUpdatedRectBrushEvent {
     pub entity: Entity,
     pub data: RectBrush,
@@ -64,7 +68,10 @@ impl RectBrush {
 
 impl Default for RectBrush {
     fn default() -> Self {
-        let (path, name) = (Self::internal_material_path(), "Rectangle Brush".to_string());
+        let (path, name) = (
+            Self::internal_material_path(),
+            "Rectangle Brush".to_string(),
+        );
 
         // Create a material with the internal defaults for rectangle brush
         let mut brush_material = EditableMaterial::get_new_unnamed_base_color();

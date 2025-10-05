@@ -8,7 +8,7 @@ use crate::interface::{
 use bevy::{
     ecs::{
         entity::Entity,
-        event::EventReader,
+        message::MessageReader,
         query::{With, Without},
         system::{Commands, Query},
     },
@@ -16,11 +16,11 @@ use bevy::{
     transform::commands::BuildChildrenTransformExt,
 };
 use bevy_granite_core::IconProxy;
-use bevy_granite_gizmos::{selection::events::EntityEvent, ActiveSelection, Selected};
+use bevy_granite_gizmos::{selection::events::EntityEvents, ActiveSelection, Selected};
 use bevy_granite_logging::*;
 
 pub fn parent_from_node_tree_system(
-    mut parent_request: EventReader<RequestReparentEntityEvent>,
+    mut parent_request: MessageReader<RequestReparentEntityEvent>,
     mut commands: Commands,
 ) {
     for request in parent_request.read() {
@@ -59,7 +59,7 @@ pub fn parent_from_node_tree_system(
 }
 
 pub fn parent_system(
-    mut parent_request: EventReader<RequestNewParent>,
+    mut parent_request: MessageReader<RequestNewParent>,
     active_selection: Query<Entity, With<ActiveSelection>>,
     selection: Query<Entity, (With<Selected>, Without<ActiveSelection>)>,
     mut commands: Commands,
@@ -89,7 +89,7 @@ pub fn parent_system(
 }
 
 pub fn parent_removal_system(
-    mut parent_request: EventReader<RequestRemoveParents>,
+    mut parent_request: MessageReader<RequestRemoveParents>,
     active_selection: Query<Entity, (With<ActiveSelection>, With<ChildOf>)>,
     selection: Query<Entity, (With<Selected>, With<ChildOf>)>,
     mut commands: Commands,
@@ -113,7 +113,7 @@ pub fn parent_removal_system(
 }
 
 pub fn parent_removal_from_entities_system(
-    mut parent_request: EventReader<RequestRemoveParentsFromEntities>,
+    mut parent_request: MessageReader<RequestRemoveParentsFromEntities>,
     mut commands: Commands,
 ) {
     for request in parent_request.read() {
@@ -140,7 +140,7 @@ pub fn parent_removal_from_entities_system(
 }
 
 pub fn child_removal_system(
-    mut child_request: EventReader<RequestRemoveChildren>,
+    mut child_request: MessageReader<RequestRemoveChildren>,
     selection: Query<Entity, (With<Selected>, With<Children>)>,
     active_selection: Query<Entity, (With<ActiveSelection>, With<ChildOf>)>,
     children_query: Query<&Children>,
@@ -170,7 +170,7 @@ pub fn child_removal_system(
 
         // Gizmo has weird issue where it stays in place when children are removed
         // so we deselect all entities to ensure it updates correctly
-        commands.trigger(EntityEvent::DeselectAll);
+        commands.trigger(EntityEvents::DeselectAll);
 
         log!(
             LogType::Editor,
