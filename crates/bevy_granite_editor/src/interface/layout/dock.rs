@@ -9,6 +9,7 @@ use crate::{
         },
         EditorEvents, SettingsTab,
     },
+    viewport::{EditorViewportCamera, ViewportCameraState},
 };
 
 use bevy::{
@@ -18,9 +19,13 @@ use bevy::{
         system::{Commands, Query, Single},
     },
     prelude::{Res, ResMut},
+    core_pipeline::core_3d::Camera3d,
+    ecs::system::Commands,
+    prelude::{Entity, Name, Res, ResMut, With, Without},
+    render::camera::RenderTarget,
 };
 use bevy_egui::{egui, EguiContexts};
-use bevy_granite_core::UserInput;
+use bevy_granite_core::{UICamera, UserInput};
 use egui_dock::DockArea;
 use serde::{Deserialize, Serialize};
 
@@ -59,7 +64,24 @@ pub fn dock_ui_system(
     user_input: Res<UserInput>,
     mut commands: Commands,
     mut view_port: Query<&mut Camera, With<crate::ViewPortCamera>>,
+    camera_query: Query<
+        (Entity, Option<&Name>, &Camera),
+        (With<Camera3d>, Without<UICamera>, Without<EditorViewportCamera>),
+    >, // some changes from #78
+    viewport_camera_state: Res<ViewportCameraState>,
 ) {
+    let mut camera_options: Vec<(Entity, String)> = camera_query
+        .iter()
+        .filter(|(_, _, camera)| matches!(camera.target, RenderTarget::Window(_)))
+        .map(|(entity, name, _)| {
+            let label = name
+                .map(|n| n.as_str().to_string())
+                .unwrap_or_else(|| format!("Camera {}", entity.index()));
+            (entity, label)
+        })
+        .collect();
+    camera_options.sort_by(|a, b| a.1.cmp(&b.1));
+
     let ctx = contexts.ctx_mut().expect("Egui context to exist");
     let screen_rect = ctx.screen_rect();
     let screen_width = screen_rect.width();
@@ -82,6 +104,8 @@ pub fn dock_ui_system(
                     &user_input,
                     &editor_state,
                     &mut commands,
+                    &camera_options,
+                    viewport_camera_state.as_ref(),
                 );
             });
         });

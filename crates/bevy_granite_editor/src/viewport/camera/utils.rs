@@ -1,7 +1,11 @@
-use crate::{editor_state::INPUT_CONFIG, viewport::camera::CameraTarget};
+
 use bevy::camera::visibility::RenderLayers;
 use bevy::camera::Viewport;
-use bevy::core_pipeline::tonemapping::Tonemapping;
+use crate::{
+    editor_state::INPUT_CONFIG,
+    viewport::camera::{CameraTarget, EditorViewportCamera, ViewportCameraState},
+}; // from #78
+use bevy::{core_pipeline::tonemapping::Tonemapping, picking::Pickable};
 use bevy::{
     camera::Camera3d,
     input::mouse::{MouseMotion, MouseWheel},
@@ -12,6 +16,36 @@ use bevy::{
 };
 use bevy_granite_core::{EditorIgnore, TreeHiddenEntity, UICamera, UserInput};
 
+pub fn add_editor_camera(
+    mut commands: Commands,
+    mut viewport_camera_state: ResMut<ViewportCameraState>,
+) {
+    let transform = Transform::from_xyz(2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y);
+
+    let editor_camera = commands
+        .spawn((
+            transform,
+            Camera3d::default(),
+            Name::new("Editor Viewport Camera"),
+            Tonemapping::None,
+            Pickable {
+                should_block_lower: false,
+                is_hoverable: false,
+            },
+            EditorIgnore::PICKING,
+        ))
+        .insert(Camera {
+            order: 0,
+            ..Default::default()
+        })
+        .insert(EditorViewportCamera)
+        .insert(TreeHiddenEntity)
+        .id();
+
+    viewport_camera_state.set_editor_camera(editor_camera);
+    viewport_camera_state.clear_override();
+}
+
 pub fn add_ui_camera(mut commands: Commands) {
     let context = bevy_egui::EguiContext::default();
 
@@ -21,7 +55,7 @@ pub fn add_ui_camera(mut commands: Commands) {
             Camera3d::default(),
             Name::new("UI Camera"),
             Tonemapping::None, // need this so bevy rendering doesnt break without tonemapping_luts
-            bevy::picking::Pickable {
+            Pickable {
                 // this is so it does not block any other objects
                 should_block_lower: false,
                 is_hoverable: false,

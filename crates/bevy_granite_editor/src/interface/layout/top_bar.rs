@@ -3,7 +3,7 @@ use crate::{
     interface::{
         events::{
             PopupMenuRequestedEvent, RequestCameraEntityFrame, RequestEditorToggle,
-            RequestToggleCameraSync, SetActiveWorld,
+            RequestToggleCameraSync, RequestViewportCameraOverride, SetActiveWorld,
         },
         panels::{
             bottom_panel::{BottomDockState, BottomTab},
@@ -16,9 +16,10 @@ use crate::{
         },
         EditorEvents, NodeTreeTabData,
     },
+    viewport::ViewportCameraState,
     UI_CONFIG,
 };
-use bevy::{ecs::system::Commands, prelude::ResMut};
+use bevy::{ecs::{entity::Entity, system::Commands}, prelude::ResMut};
 use bevy_egui::egui;
 use bevy_granite_core::{
     absolute_asset_to_rel, entities::SaveSettings, RequestDespawnBySource,
@@ -35,7 +36,19 @@ pub fn top_bar_ui(
     user_input: &UserInput,
     editor_state: &EditorState,
     commands: &mut Commands,
+    camera_options: &[(Entity, String)],
+    viewport_camera_state: &ViewportCameraState,
 ) {
+    let active_camera_label = if viewport_camera_state.is_using_editor() {
+        "Editor Camera".to_string()
+    } else {
+        camera_options
+            .iter()
+            .find(|(entity, _)| Some(*entity) == viewport_camera_state.active_override)
+            .map(|(_, label)| label.clone())
+            .unwrap_or_else(|| "Unknown Camera".to_string())
+    };
+
     let spacing = UI_CONFIG.spacing;
 
     ui.vertical(|ui| {
@@ -285,6 +298,37 @@ pub fn top_bar_ui(
             if ui.button("Toggle Camera Control (F3) ").clicked() {
                 events.toggle_cam_sync.write(RequestToggleCameraSync);
             }
+
+            ui.separator();
+            ui.label(format!("Viewing: {}", active_camera_label));
+            ui.menu_button("Viewport Camera", |ui| {
+                let using_editor = viewport_camera_state.is_using_editor();
+                if ui
+                    .selectable_label(using_editor, "Editor Camera")
+                    .clicked()
+                    && !using_editor
+                {
+                    events
+                        .viewport_camera
+                        .write(RequestViewportCameraOverride { camera: None });
+                    ui.close();
+                }
+
+                if camera_options.is_empty() {
+                    ui.label("No scene cameras targeting the primary window");
+                } else {
+                    for (entity, label) in camera_options.iter() {
+                        let is_active =
+                            viewport_camera_state.active_override == Some(*entity);
+                        if ui.selectable_label(is_active, label).clicked() && !is_active {
+                            events.viewport_camera.write(RequestViewportCameraOverride {
+                                camera: Some(*entity),
+                            });
+                            ui.close();
+                        }
+                    }
+                }
+            });
 
             ui.separator();
             if ui.button("Frame Active (F) ").clicked() {
