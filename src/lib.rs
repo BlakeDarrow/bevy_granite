@@ -51,7 +51,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! bevy_granite = { version = "0.2.1", default-features = false, features = ["core"] }
+//! bevy_granite = { version = "0.2.2", default-features = false, features = ["core"] }
 //! ```
 
 use bevy::app::{PluginGroup, PluginGroupBuilder};

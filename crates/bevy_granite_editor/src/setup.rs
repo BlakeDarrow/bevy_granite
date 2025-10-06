@@ -21,7 +21,7 @@ $$ |  $$ |$$ |     $$  __$$ |$$ |  $$ |$$ |  $$ |$$\ $$   ____|
  \______/ \__|      \_______|\__|  \__|\__|   \____/  \_______|
 "#;
 
-    text += "\n\nBlake Darrow - 2024, 2025\nVersion: 0.2.1\n\n";
+    text += "\n\nBlake Darrow - 2024, 2025\nVersion: 0.2.2\n\n";
 
     log!(
         LogType::Editor,

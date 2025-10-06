@@ -7,8 +7,18 @@ pub mod plugin;
 pub mod state;
 
 pub use camera::{
-    add_ui_camera, camera_frame_system, camera_sync_toggle_system, mouse_button_iter,
-    sync_cameras_system, CameraSyncState, CameraTarget, InputState,
+    add_editor_camera,
+    add_ui_camera,
+    camera_frame_system,
+    camera_sync_toggle_system,
+    enforce_viewport_camera_state,
+    mouse_button_iter,
+    sync_cameras_system,
+    CameraSyncState,
+    CameraTarget,
+    EditorViewportCamera,
+    InputState,
+    ViewportCameraState,
 };
 pub use state::ViewportState;
 

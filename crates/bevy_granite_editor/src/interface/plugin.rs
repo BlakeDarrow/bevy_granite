@@ -3,7 +3,7 @@ use super::{
     events::{
         MaterialDeleteEvent, MaterialHandleUpdateEvent, PopupMenuRequestedEvent,
         RequestCameraEntityFrame, RequestEditorToggle, RequestNewParent, RequestRemoveChildren,
-        RequestRemoveParents, RequestToggleCameraSync, SetActiveWorld,
+        RequestRemoveParents, RequestToggleCameraSync, RequestViewportCameraOverride, SetActiveWorld,
         UserRequestGraniteTypeViaPopup, UserUpdatedComponentsEvent, UserUpdatedIdentityEvent,
         UserUpdatedTransformEvent,
     },
@@ -43,6 +43,7 @@ impl Plugin for InterfacePlugin {
             .add_event::<RequestEditorToggle>()
             .add_event::<RequestCameraEntityFrame>()
             .add_event::<RequestToggleCameraSync>()
+            .add_event::<RequestViewportCameraOverride>()
             .add_event::<RequestNewParent>()
             .add_event::<RequestRemoveChildren>()
             .add_event::<RequestRemoveParents>()
@@ -105,3 +106,4 @@ impl Plugin for InterfacePlugin {
             .add_systems(Update, send_queued_events_system.run_if(is_editor_active));
     }
 }
+
