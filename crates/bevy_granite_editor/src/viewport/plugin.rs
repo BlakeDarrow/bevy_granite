@@ -1,6 +1,17 @@
 use super::camera::{
-    add_ui_camera, camera_frame_system, camera_sync_toggle_system, mouse_button_iter,
-    sync_cameras_system, CameraSyncState, CameraTarget, InputState,
+    add_editor_camera,
+    add_ui_camera,
+    camera_frame_system,
+    camera_sync_toggle_system,
+    enforce_viewport_camera_state,
+    handle_viewport_camera_override_requests,
+    mouse_button_iter,
+    restore_runtime_camera_state,
+    sync_cameras_system,
+    CameraSyncState,
+    CameraTarget,
+    InputState,
+    ViewportCameraState,
 };
 use crate::{
     setup::is_editor_active,
@@ -15,7 +26,7 @@ use crate::{
 };
 use bevy::{
     app::{PostUpdate, Startup},
-    ecs::schedule::{ApplyDeferred, IntoScheduleConfigs},
+    ecs::schedule::{common_conditions::not, ApplyDeferred, IntoScheduleConfigs},
     gizmos::{
         config::{DefaultGizmoConfigGroup, GizmoConfig},
         AppGizmoBuilder,
@@ -35,6 +46,7 @@ impl Plugin for ViewportPlugin {
             .insert_resource(CameraTarget::default())
             .insert_resource(CameraSyncState::default())
             .insert_resource(InputState::default()) // FIX: Use UserInput
+            .insert_resource(ViewportCameraState::default())
             //
             // Debug gizmo groups/config
             //
@@ -63,6 +75,7 @@ impl Plugin for ViewportPlugin {
             .add_systems(
                 Startup,
                 (
+                    add_editor_camera,
                     add_ui_camera,
                     ApplyDeferred,
                     bevy_egui::update_ui_size_and_scale_system,
@@ -78,6 +91,16 @@ impl Plugin for ViewportPlugin {
                     camera_sync_toggle_system,
                 )
                     .run_if(is_editor_active),
+            )
+            .add_systems(
+                Update,
+                (handle_viewport_camera_override_requests, enforce_viewport_camera_state)
+                    .chain()
+                    .run_if(is_editor_active),
+            )
+            .add_systems(
+                Update,
+                restore_runtime_camera_state.run_if(not(is_editor_active)),
             )
             // No run if here because this will hide the gizmos if editor is not active
             .add_systems(Update, update_icon_entities_system)

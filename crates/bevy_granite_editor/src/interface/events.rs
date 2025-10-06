@@ -18,6 +18,7 @@ pub struct EditorEvents<'w> {
     pub load: EventWriter<'w, RequestLoadEvent>,
     pub toggle_editor: EventWriter<'w, RequestEditorToggle>,
     pub toggle_cam_sync: EventWriter<'w, RequestToggleCameraSync>,
+    pub viewport_camera: EventWriter<'w, RequestViewportCameraOverride>,
     pub frame: EventWriter<'w, RequestCameraEntityFrame>,
     pub parent: EventWriter<'w, RequestNewParent>,
     pub remove_parent: EventWriter<'w, RequestRemoveParents>,
@@ -89,6 +90,11 @@ pub struct RequestCameraEntityFrame;
 
 #[derive(Event)]
 pub struct RequestToggleCameraSync;
+
+#[derive(Event)]
+pub struct RequestViewportCameraOverride {
+    pub camera: Option<Entity>,
+}
 
 #[derive(Event)]
 pub struct RequestNewParent;

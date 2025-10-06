@@ -1,8 +1,9 @@
+use bevy::core_pipeline::core_3d::Camera3d;
 use crate::{
     editor_state::INPUT_CONFIG,
     entities::bounds::get_entity_bounds_world,
-    interface::events::{RequestCameraEntityFrame, RequestToggleCameraSync},
-    viewport::camera::{handle_movement, handle_zoom, rotate_camera_towards},
+    interface::events::{RequestCameraEntityFrame, RequestToggleCameraSync, RequestViewportCameraOverride},
+    viewport::camera::{handle_movement, handle_zoom, rotate_camera_towards, ViewportCameraState},
 };
 use bevy::{
     asset::Assets,
@@ -12,7 +13,7 @@ use bevy::{
         EventReader, Local, Query, Res, ResMut, Resource, Time, Transform, Vec2, Vec3, Window,
         With, Without,
     },
-    render::mesh::{Mesh, Mesh3d},
+    render::{camera::{Camera, RenderTarget}, mesh::{Mesh, Mesh3d}},
     transform::components::GlobalTransform,
     window::{CursorGrabMode, PrimaryWindow},
 };
@@ -47,39 +48,53 @@ impl Default for CameraSyncState {
 
 pub fn sync_cameras_system(
     mut ui_camera_query: Query<&mut Transform, With<UICamera>>,
-    mut main_camera_query: Query<&mut Transform, (With<MainCamera>, Without<UICamera>)>,
+    mut active_camera_query: Query<&mut Transform, (With<Camera3d>, Without<UICamera>)>,
     mut camera_state: ResMut<CameraSyncState>,
+    mut viewport_camera_state: ResMut<ViewportCameraState>,
 ) {
-    // Who has control of camera
-    if camera_state.ui_camera_has_control {
-        if let Some(stored_ui_transform) = camera_state.ui_camera_old_position {
-            if let Some(mut ui_camera_transform) = ui_camera_query.iter_mut().next() {
-                ui_camera_transform.translation = stored_ui_transform.translation;
-                ui_camera_transform.rotation = stored_ui_transform.rotation;
+    let Ok(mut ui_camera_transform) = ui_camera_query.single_mut() else {
+        return;
+    };
 
-                camera_state.ui_camera_old_position = None;
-            }
-        } else {
-            // UICamera has control
-            if let Some(ui_camera_transform) = ui_camera_query.iter().next() {
-                if let Some(mut main_camera_transform) = main_camera_query.iter_mut().next() {
-                    main_camera_transform.translation = ui_camera_transform.translation;
-                    main_camera_transform.rotation = ui_camera_transform.rotation;
+    let Some(active_camera_entity) = viewport_camera_state.active_camera() else {
+        return;
+    };
+
+    let mut active_camera_transform = match active_camera_query.get_mut(active_camera_entity) {
+        Ok(transform) => transform,
+        Err(_) => {
+            if viewport_camera_state.active_override.is_some() {
+                viewport_camera_state.clear_override();
+                if let Some(stored_transform) = viewport_camera_state.take_stored_editor_transform() {
+                    ui_camera_transform.translation = stored_transform.translation;
+                    ui_camera_transform.rotation = stored_transform.rotation;
+
+                    if let Some(editor_entity) = viewport_camera_state.editor_camera {
+                        if let Ok(mut editor_transform) = active_camera_query.get_mut(editor_entity) {
+                            *editor_transform = stored_transform;
+                        }
+                    }
                 }
             }
+            return;
+        }
+    };
+
+    if camera_state.ui_camera_has_control {
+        if let Some(stored_ui_transform) = camera_state.ui_camera_old_position.take() {
+            ui_camera_transform.translation = stored_ui_transform.translation;
+            ui_camera_transform.rotation = stored_ui_transform.rotation;
+        } else {
+            active_camera_transform.translation = ui_camera_transform.translation;
+            active_camera_transform.rotation = ui_camera_transform.rotation;
         }
     } else {
-        // MainCamera has control
-        if let Some(main_camera_transform) = main_camera_query.iter().next() {
-            if let Some(mut ui_camera_transform) = ui_camera_query.iter_mut().next() {
-                ui_camera_transform.translation = main_camera_transform.translation;
-                ui_camera_transform.rotation = main_camera_transform.rotation;
-            }
-        }
+        ui_camera_transform.translation = active_camera_transform.translation;
+        ui_camera_transform.rotation = active_camera_transform.rotation;
     }
 }
 
-// Whether or not we want control of main camera
+// Whether or not we want control of the active viewport camera
 pub fn camera_sync_toggle_system(
     mut toggle_event_writer: EventReader<RequestToggleCameraSync>,
     mut sync: ResMut<CameraSyncState>,
@@ -100,6 +115,169 @@ pub fn camera_sync_toggle_system(
             "Toggled camera control sync"
         );
         sync.ui_camera_has_control = !sync.ui_camera_has_control;
+    }
+}
+
+pub fn enforce_viewport_camera_state(
+    viewport_camera_state: Res<ViewportCameraState>,
+    mut camera_query: Query<(Entity, &mut Camera), (With<Camera3d>, Without<UICamera>)>,
+) {
+    let Some(active_camera_entity) = viewport_camera_state.active_camera() else {
+        return;
+    };
+
+    let mut active_found = false;
+
+    for (entity, mut camera) in camera_query.iter_mut() {
+        if entity == active_camera_entity {
+            active_found = true;
+            camera.is_active = true;
+        } else if matches!(camera.target, RenderTarget::Window(_)) {
+            camera.is_active = false;
+        }
+    }
+
+    if !active_found {
+        // The active camera is missing; the sync system will fall back to the editor camera.
+    }
+}
+
+pub fn restore_runtime_camera_state(
+    mut viewport_camera_state: ResMut<ViewportCameraState>,
+    mut ui_camera_query: Query<&mut Transform, With<UICamera>>,
+    mut camera_transform_query: Query<&mut Transform, (With<Camera3d>, Without<UICamera>)>,
+    mut camera_query: Query<(Entity, &mut Camera), (With<Camera3d>, Without<UICamera>)>,
+    main_camera_entities: Query<Entity, With<MainCamera>>,
+) {
+    if viewport_camera_state.active_override.is_some() {
+        if let Ok(mut ui_transform) = ui_camera_query.single_mut() {
+            if let Some(stored_transform) = viewport_camera_state.take_stored_editor_transform() {
+                ui_transform.translation = stored_transform.translation;
+                ui_transform.rotation = stored_transform.rotation;
+
+                if let Some(editor_entity) = viewport_camera_state.editor_camera {
+                    if let Ok(mut editor_transform) = camera_transform_query.get_mut(editor_entity) {
+                        *editor_transform = stored_transform;
+                    }
+                }
+            }
+        }
+        viewport_camera_state.clear_override();
+    }
+
+    let main_entities: Vec<Entity> = main_camera_entities.iter().collect();
+    let mut any_main_enabled = false;
+
+    for entity in &main_entities {
+        if let Ok((_, mut camera)) = camera_query.get_mut(*entity) {
+            if matches!(camera.target, RenderTarget::Window(_)) {
+                camera.is_active = true;
+                any_main_enabled = true;
+            }
+        }
+    }
+
+    if any_main_enabled {
+        for (entity, mut camera) in camera_query.iter_mut() {
+            if !main_entities.contains(&entity) && matches!(camera.target, RenderTarget::Window(_)) {
+                camera.is_active = false;
+            }
+        }
+    } else {
+        for (_, mut camera) in camera_query.iter_mut() {
+            if matches!(camera.target, RenderTarget::Window(_)) {
+                camera.is_active = true;
+            }
+        }
+    }
+}
+
+pub fn handle_viewport_camera_override_requests(
+    mut requests: EventReader<RequestViewportCameraOverride>,
+    mut viewport_camera_state: ResMut<ViewportCameraState>,
+    mut camera_sync_state: ResMut<CameraSyncState>,
+    mut ui_camera_query: Query<&mut Transform, With<UICamera>>,
+    mut camera_transform_query: Query<&mut Transform, (With<Camera3d>, Without<UICamera>)>,
+    camera_meta_query: Query<&Camera, (With<Camera3d>, Without<UICamera>)>,
+) {
+    for RequestViewportCameraOverride { camera } in requests.read() {
+        let Ok(mut ui_transform) = ui_camera_query.single_mut() else {
+            continue;
+        };
+
+        if let Some(target_entity) = camera {
+            if Some(*target_entity) == viewport_camera_state.active_override {
+                continue;
+            }
+
+            let Ok(target_camera) = camera_meta_query.get(*target_entity) else {
+                log!(
+                    LogType::Editor,
+                    LogLevel::Warning,
+                    LogCategory::System,
+                    "Requested viewport camera {:?} is missing",
+                    target_entity
+                );
+                continue;
+            };
+
+            if !matches!(target_camera.target, RenderTarget::Window(_)) {
+                log!(
+                    LogType::Editor,
+                    LogLevel::Warning,
+                    LogCategory::System,
+                    "Requested viewport camera {:?} is not targeting a window and cannot take over",
+                    target_entity
+                );
+                continue;
+            }
+
+            if viewport_camera_state.is_using_editor() {
+                if let Some(editor_entity) = viewport_camera_state.editor_camera {
+                    if let Ok(editor_transform) = camera_transform_query.get_mut(editor_entity) {
+                        viewport_camera_state.store_editor_transform(editor_transform.clone());
+                    }
+                }
+            }
+
+            match camera_transform_query.get_mut(*target_entity) {
+                Ok(target_transform) => {
+                    ui_transform.translation = target_transform.translation;
+                    ui_transform.rotation = target_transform.rotation;
+                }
+                Err(_) => {
+                    log!(
+                        LogType::Editor,
+                        LogLevel::Warning,
+                        LogCategory::System,
+                        "Requested viewport camera {:?} has no transform",
+                        target_entity
+                    );
+                    continue;
+                }
+            }
+
+            viewport_camera_state.set_override(*target_entity);
+            camera_sync_state.ui_camera_old_position = None;
+        } else {
+            if viewport_camera_state.active_override.is_none() {
+                continue;
+            }
+
+            viewport_camera_state.clear_override();
+            camera_sync_state.ui_camera_old_position = None;
+
+            if let Some(stored_transform) = viewport_camera_state.take_stored_editor_transform() {
+                ui_transform.translation = stored_transform.translation;
+                ui_transform.rotation = stored_transform.rotation;
+
+                if let Some(editor_entity) = viewport_camera_state.editor_camera {
+                    if let Ok(mut editor_transform) = camera_transform_query.get_mut(editor_entity) {
+                        *editor_transform = stored_transform;
+                    }
+                }
+            }
+        }
     }
 }
 
