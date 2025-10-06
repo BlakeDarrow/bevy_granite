@@ -70,7 +70,7 @@ pub fn add_ui_camera(mut commands: Commands) {
         .insert((bevy_egui::PrimaryEguiContext, context))
         .insert(TreeHiddenEntity)
         .insert(bevy_granite_gizmos::GizmoCamera)
-        .insert(RenderLayers::layer(14)) // 14 is our UI/Gizmo layer.
+        .insert(RenderLayers::from_layers(&[0,14])) // 14 is our UI/Gizmo layer.
         .with_child((
             Camera3d::default(),
             crate::ViewPortCamera,

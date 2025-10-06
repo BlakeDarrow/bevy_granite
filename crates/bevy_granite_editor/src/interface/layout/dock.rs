@@ -13,16 +13,11 @@ use crate::{
 };
 
 use bevy::{
-    camera::Camera,
+    camera::{Camera, Camera3d, RenderTarget},
     ecs::{
-        query::With,
-        system::{Commands, Query, Single},
+        system::{Commands, Query},
     },
-    prelude::{Res, ResMut},
-    core_pipeline::core_3d::Camera3d,
-    ecs::system::Commands,
-    prelude::{Entity, Name, Res, ResMut, With, Without},
-    render::camera::RenderTarget,
+    prelude::{Entity, Name, Res, ResMut},
 };
 use bevy_egui::{egui, EguiContexts};
 use bevy_granite_core::{UICamera, UserInput};
@@ -63,21 +58,22 @@ pub fn dock_ui_system(
     editor_state: Res<EditorState>,
     user_input: Res<UserInput>,
     mut commands: Commands,
-    mut view_port: Query<&mut Camera, With<crate::ViewPortCamera>>,
-    camera_query: Query<
-        (Entity, Option<&Name>, &Camera),
-        (With<Camera3d>, Without<UICamera>, Without<EditorViewportCamera>),
-    >, // some changes from #78
+    mut camera_query: Query<
+        (Entity, Option<&Name>, &mut Camera, Option<&Camera3d>, Option<&UICamera>, Option<&EditorViewportCamera>, Option<&crate::ViewPortCamera>)
+    >,
     viewport_camera_state: Res<ViewportCameraState>,
 ) {
     let mut camera_options: Vec<(Entity, String)> = camera_query
-        .iter()
-        .filter(|(_, _, camera)| matches!(camera.target, RenderTarget::Window(_)))
-        .map(|(entity, name, _)| {
-            let label = name
-                .map(|n| n.as_str().to_string())
-                .unwrap_or_else(|| format!("Camera {}", entity.index()));
-            (entity, label)
+        .iter_mut()
+        .filter_map(|(entity, name, camera, camera3d, uicamera, editorviewportcamera, _)| {
+            if camera3d.is_some() && uicamera.is_none() && editorviewportcamera.is_none() && matches!(camera.target, RenderTarget::Window(_)) {
+                let label = name
+                    .map(|n| n.as_str().to_string())
+                    .unwrap_or_else(|| format!("Camera {}", entity.index()));
+                Some((entity, label))
+            } else {
+                None
+            }
         })
         .collect();
     camera_options.sort_by(|a, b| a.1.cmp(&b.1));
@@ -149,18 +145,20 @@ pub fn dock_ui_system(
         });
 
     let size = ctx.available_rect();
-    for mut camera in view_port.iter_mut() {
-        let width = (size.width() * 1.5) as u32;
-        let height = (size.height() * 1.5) as u32;
-        let Some(viewport) = camera.viewport.as_mut() else {
-            continue;
-        };
-        if left {
-            viewport.physical_position.x = screen_width as u32 - width;
-        } else {
-            viewport.physical_position.x = 0;
+    for (_, _, mut camera, _, _, _, viewportcamera) in camera_query.iter_mut() {
+        if viewportcamera.is_some() {
+            let width = (size.width() * 1.5) as u32;
+            let height = (size.height() * 1.5) as u32;
+            let Some(viewport) = camera.viewport.as_mut() else {
+                continue;
+            };
+            if left {
+                viewport.physical_position.x = screen_width as u32 - width;
+            } else {
+                viewport.physical_position.x = 0;
+            }
+            viewport.physical_position.y = (size.min.y * 1.5) as u32;
+            viewport.physical_size = bevy::prelude::UVec2::new(width, height);
         }
-        viewport.physical_position.y = (size.min.y * 1.5) as u32;
-        viewport.physical_size = bevy::prelude::UVec2::new(width, height);
     }
 }

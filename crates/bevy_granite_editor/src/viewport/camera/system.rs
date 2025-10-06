@@ -1,4 +1,3 @@
-use bevy::core_pipeline::core_3d::Camera3d;
 use crate::{
     editor_state::INPUT_CONFIG,
     entities::bounds::get_entity_bounds_world,
@@ -6,17 +5,10 @@ use crate::{
     viewport::camera::{handle_movement, handle_zoom, rotate_camera_towards, ViewportCameraState},
 };
 use bevy::{
-    asset::Assets,
-    ecs::entity::Entity,
-    input::mouse::{MouseMotion, MouseWheel},
-    mesh::{Mesh, Mesh3d},
-    prelude::{
+    asset::Assets, camera::{Camera, Camera3d, RenderTarget}, ecs::entity::Entity, input::mouse::{MouseMotion, MouseWheel}, mesh::{Mesh, Mesh3d}, prelude::{
         Local, MessageReader, Query, Res, ResMut, Resource, Time, Transform, Vec2, Vec3, Window,
         With, Without,
-    },
-    render::{camera::{Camera, RenderTarget}, mesh::{Mesh, Mesh3d}},
-    transform::components::GlobalTransform, // from #78
-    window::{CursorGrabMode, CursorOptions, PrimaryWindow},
+    }, transform::components::GlobalTransform, window::{CursorGrabMode, CursorOptions, PrimaryWindow}
 };
 use bevy_granite_core::{MainCamera, UICamera, UserInput};
 use bevy_granite_gizmos::{ActiveSelection, DragState, Selected};
@@ -194,7 +186,7 @@ pub fn restore_runtime_camera_state(
 }
 
 pub fn handle_viewport_camera_override_requests(
-    mut requests: EventReader<RequestViewportCameraOverride>,
+    mut requests: MessageReader<RequestViewportCameraOverride>,
     mut viewport_camera_state: ResMut<ViewportCameraState>,
     mut camera_sync_state: ResMut<CameraSyncState>,
     mut ui_camera_query: Query<&mut Transform, With<UICamera>>,

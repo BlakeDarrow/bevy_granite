@@ -18,7 +18,7 @@ pub struct EditorEvents<'w> {
     pub load: MessageWriter<'w, RequestLoadEvent>,
     pub toggle_editor: MessageWriter<'w, RequestEditorToggle>,
     pub toggle_cam_sync: MessageWriter<'w, RequestToggleCameraSync>,
-    pub viewport_camera: EventWriter<'w, RequestViewportCameraOverride>, // From #78
+    pub viewport_camera: MessageWriter<'w, RequestViewportCameraOverride>, // From #78
     pub frame: MessageWriter<'w, RequestCameraEntityFrame>,
     pub parent: MessageWriter<'w, RequestNewParent>,
     pub remove_parent: MessageWriter<'w, RequestRemoveParents>,
