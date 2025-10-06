@@ -1,7 +1,7 @@
 (
 	metadata: (
 		format_version: "0.1.4",
-		entity_count: 459,
+		entity_count: 458,
 	),
 	entities: [(
 		identity: (
@@ -7752,51 +7752,6 @@
 			scale: (1.0, 1.0, 1.0),
 		),
 		parent: Some("2ed15f57-730d-43a4-afdc-2328219392e8"),
-	), (
-		identity: (
-			uuid: "f938f739-21fa-4701-b296-d9adc37961d7",
-			name: "Camera 3D",
-			class: Camera3D((
-				is_active: true,
-				has_volumetric_fog: true,
-				volumetric_fog_settings: Some((
-					fog_color: Srgba((
-						red: 0.0,
-						green: 0.0,
-						blue: 1.0,
-						alpha: 1.0,
-					)),
-					ambient_color: Srgba((
-						red: 0.12941177,
-						green: 0.0,
-						blue: 1.0,
-						alpha: 1.0,
-					)),
-					ambient_intensity: 0.01,
-					step_count: 64,
-					max_depth: 25.0,
-					absorption: 0.3,
-					scattering: 0.3,
-					density: 0.1,
-					scattering_asymmetry: 0.8,
-					light_tint: LinearRgba((
-						red: 1.0,
-						green: 1.0,
-						blue: 1.0,
-						alpha: 1.0,
-					)),
-					light_intensity: 0.1,
-				)),
-			)),
-		),
-		transform: (
-			position: (-10.958, 4.294, 6.215),
-			rotation: (-0.143, -0.574, -0.102, 0.8),
-			scale: (1.0, 1.0, 1.0),
-		),
-		components: Some({
-			"bevy_core_pipeline::tonemapping::Tonemapping": "{\"bevy_core_pipeline::tonemapping::Tonemapping\":None}",
-			"bevy_granite_core::entities::MainCamera": "{\"bevy_granite_core::entities::MainCamera\":()}",
-		}),
-	)],
+	)
+],
 )
