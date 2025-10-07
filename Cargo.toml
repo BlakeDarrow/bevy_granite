@@ -3,7 +3,7 @@ members = ["crates/*"]
 resolver = "2"
 
 [workspace.dependencies]
-bevy = { version = "0.17.2", default-features = false }
+bevy = { version = "0.17.2", default-features = true, features = ["bevy_remote"]}
 bevy-inspector-egui = "0.34.0"
 bevy_obj = "0.17.0"
 bevy_egui = "0.37.0"
@@ -39,10 +39,22 @@ bevy_granite_macros = { path = "crates/bevy_granite_macros", optional = true }
 
 [dev-dependencies]
 serde = "*"
+serde_json = "*"
+ureq = { version = "3.0.8", features = ["json"] }
+anyhow = "*"
 
 [[example]]
 name = "dungeon"
 required-features = ["bevy/bevy_winit"]
+
+[[example]]
+name = "brp_editor"
+required-features = ["bevy/bevy_winit", "bevy/bevy_remote"]
+
+[[example]]
+name = "brp_server"
+required-features = ["bevy/bevy_winit", "bevy/bevy_remote"]
+
 
 [profile.dev]
 opt-level = 1

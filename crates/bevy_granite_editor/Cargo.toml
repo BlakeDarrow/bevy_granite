@@ -4,7 +4,7 @@ version = "0.3.0"
 edition = "2021"
 
 [dependencies]
-bevy = { workspace = true, features = ["bevy_winit"]}
+bevy = { workspace = true, features = ["bevy_winit", "bevy_ui"]}
 toml = { workspace = true }
 bevy-inspector-egui = { workspace = true }
 bevy_egui = { workspace = true }
