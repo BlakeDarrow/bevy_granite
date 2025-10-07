@@ -1,7 +1,7 @@
 use bevy::{
     app::PostStartup,
     ecs::{resource::Resource, schedule::IntoScheduleConfigs},
-    prelude::{App, Plugin, Update},
+    prelude::{App, Plugin, Res, ResMut, Startup, Update},
 };
 
 use super::editor::update_editor_vis_system;
@@ -12,6 +12,7 @@ use crate::{
     interface::EditorSettingsTabData,
     setup::is_editor_active,
 };
+use bevy_granite_gizmos::GizmoVisibilityState;
 
 #[derive(Resource, Clone)]
 pub struct EditorState {
@@ -53,9 +54,18 @@ impl Plugin for ConfigPlugin {
             //
             // Systems
             //
+            .add_systems(Startup, sync_initial_gizmo_state)
             .add_systems(PostStartup, load_editor_settings_toml)
             .add_systems(Update, update_active_world_system.run_if(is_editor_active))
             .add_systems(Update, save_dock_on_window_close_system)
             .add_systems(Update, update_editor_vis_system);
     }
+}
+
+/// This ensures that if the editor starts with active: false, the gizmos are also disabled
+fn sync_initial_gizmo_state(
+    editor_state: Res<EditorState>,
+    mut gizmo_state: ResMut<GizmoVisibilityState>,
+) {
+    gizmo_state.active = editor_state.active;
 }
