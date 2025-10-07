@@ -79,11 +79,12 @@ pub fn add_gizmo_camera(
             ))
             .insert(Camera {
                 order: 1,
+                clear_color: bevy::camera::ClearColorConfig::None,
                 ..Default::default()
             })
             .insert(TreeHiddenEntity)
             .insert(GizmoCamera)
-            .insert(RenderLayers::from_layers(&[0, 14])) // 14 is our UI/Gizmo layer.
+            .insert(RenderLayers::from_layers(&[14])) // 14 is our Gizmo layer.
             .id();
     }
 }

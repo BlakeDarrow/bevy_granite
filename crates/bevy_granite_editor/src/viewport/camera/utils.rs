@@ -1,11 +1,10 @@
-
-use bevy::camera::visibility::RenderLayers;
-use bevy::camera::Viewport;
 use crate::{
     editor_state::INPUT_CONFIG,
-    viewport::camera::{CameraTarget, EditorViewportCamera, ViewportCameraState},
-}; // from #78
-use bevy::{core_pipeline::tonemapping::Tonemapping, picking::Pickable};
+    viewport::camera::{
+        gizmo_layers, scene_layers, ui_layers, CameraTarget, EditorViewportCamera,
+        ViewportCameraState,
+    },
+};
 use bevy::{
     camera::Camera3d,
     input::mouse::{MouseMotion, MouseWheel},
@@ -14,7 +13,9 @@ use bevy::{
         Transform, Vec2, Vec3, With,
     },
 };
+use bevy::{core_pipeline::tonemapping::Tonemapping, picking::Pickable};
 use bevy_granite_core::{EditorIgnore, TreeHiddenEntity, UICamera, UserInput};
+use bevy_granite_gizmos::GizmoCamera;
 
 pub fn add_editor_camera(
     mut commands: Commands,
@@ -40,16 +41,40 @@ pub fn add_editor_camera(
         })
         .insert(EditorViewportCamera)
         .insert(TreeHiddenEntity)
+        .insert(scene_layers())
         .id();
 
     viewport_camera_state.set_editor_camera(editor_camera);
     viewport_camera_state.clear_override();
 }
 
+pub fn add_gizmo_overlay_camera(mut commands: Commands) {
+    commands
+        .spawn((
+            Transform::default(),
+            Camera3d::default(),
+            Name::new("Gizmo Overlay Camera"),
+            Tonemapping::None,
+            Pickable {
+                should_block_lower: false,
+                is_hoverable: false,
+            },
+            EditorIgnore::PICKING,
+        ))
+        .insert(Camera {
+            order: 1,
+            clear_color: bevy::camera::ClearColorConfig::None,
+            ..Default::default()
+        })
+        .insert(TreeHiddenEntity)
+        .insert(GizmoCamera)
+        .insert(gizmo_layers());
+}
+
 pub fn add_ui_camera(mut commands: Commands) {
     let context = bevy_egui::EguiContext::default();
 
-    let _ui_camera = commands
+    commands
         .spawn((
             Transform::from_xyz(2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
             Camera3d::default(),
@@ -60,32 +85,17 @@ pub fn add_ui_camera(mut commands: Commands) {
                 should_block_lower: false,
                 is_hoverable: false,
             },
-            EditorIgnore::PICKING, // This camera should not be selectable in the editor
+            EditorIgnore::PICKING,
         ))
         .insert(Camera {
             order: 2,
+            clear_color: bevy::camera::ClearColorConfig::None,
             ..Default::default()
         })
         .insert(UICamera)
         .insert((bevy_egui::PrimaryEguiContext, context))
         .insert(TreeHiddenEntity)
-        .insert(bevy_granite_gizmos::GizmoCamera)
-        .insert(RenderLayers::from_layers(&[0,14])) // 14 is our UI/Gizmo layer.
-        .with_child((
-            Camera3d::default(),
-            crate::ViewPortCamera,
-            Tonemapping::None,
-            Camera {
-                order: 3,
-                viewport: Some(Viewport {
-                    physical_position: (0, 0).into(),
-                    physical_size: (400, 400).into(),
-                    ..Default::default()
-                }),
-                ..Default::default()
-            },
-        ))
-        .id();
+        .insert(ui_layers());
 }
 
 pub fn rotate_camera_towards(

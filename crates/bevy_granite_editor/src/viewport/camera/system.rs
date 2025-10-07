@@ -1,17 +1,32 @@
 use crate::{
-    editor_state::INPUT_CONFIG,
+    editor_state::{EditorState, INPUT_CONFIG},
     entities::bounds::get_entity_bounds_world,
-    interface::events::{RequestCameraEntityFrame, RequestToggleCameraSync, RequestViewportCameraOverride},
-    viewport::camera::{handle_movement, handle_zoom, rotate_camera_towards, ViewportCameraState},
+    interface::events::{
+        RequestCameraEntityFrame, RequestToggleCameraSync, RequestViewportCameraOverride,
+    },
+    viewport::camera::{
+        handle_movement, handle_zoom, rotate_camera_towards, ViewportCameraState, LAYER_GIZMO,
+        LAYER_GRID, LAYER_SCENE,
+    },
 };
 use bevy::{
-    asset::Assets, camera::{Camera, Camera3d, RenderTarget}, ecs::entity::Entity, input::mouse::{MouseMotion, MouseWheel}, mesh::{Mesh, Mesh3d}, prelude::{
-        Local, MessageReader, Query, Res, ResMut, Resource, Time, Transform, Vec2, Vec3, Window,
-        With, Without,
-    }, transform::components::GlobalTransform, window::{CursorGrabMode, CursorOptions, PrimaryWindow}
+    asset::Assets,
+    camera::{visibility::RenderLayers, Camera, Camera3d, RenderTarget, Viewport},
+    ecs::{entity::Entity, system::Commands},
+    input::mouse::{MouseMotion, MouseWheel},
+    mesh::{Mesh, Mesh3d},
+    prelude::{
+        Local, MessageReader, Query, Res, ResMut, Resource, Time, Transform, UVec2, Vec2, Vec3,
+        Window, With, Without,
+    },
+    transform::components::GlobalTransform,
+    window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
+use bevy_egui::EguiContexts;
 use bevy_granite_core::{MainCamera, UICamera, UserInput};
-use bevy_granite_gizmos::{ActiveSelection, DragState, Selected};
+use bevy_granite_gizmos::{
+    ActiveSelection, DragState, GizmoCamera, GizmoVisibilityState, Selected,
+};
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 
 #[derive(Resource, Default)]
@@ -39,9 +54,36 @@ impl Default for CameraSyncState {
     }
 }
 
+fn compute_viewport_layers(existing: Option<&RenderLayers>) -> RenderLayers {
+    let mut layers = vec![LAYER_SCENE, LAYER_GRID];
+    if let Some(existing_layers) = existing {
+        for layer in existing_layers.iter() {
+            if layer == LAYER_GIZMO {
+                continue;
+            }
+            if !layers.contains(&layer) {
+                layers.push(layer);
+            }
+        }
+    }
+    RenderLayers::from_layers(&layers)
+}
+
+fn restore_render_layers(commands: &mut Commands, entity: Entity, layers: Option<RenderLayers>) {
+    if let Some(layers) = layers {
+        commands.entity(entity).insert(layers);
+    } else {
+        commands.entity(entity).remove::<RenderLayers>();
+    }
+}
+
 pub fn sync_cameras_system(
+    mut commands: Commands,
     mut ui_camera_query: Query<&mut Transform, With<UICamera>>,
-    mut active_camera_query: Query<&mut Transform, (With<Camera3d>, Without<UICamera>)>,
+    mut active_camera_query: Query<
+        &mut Transform,
+        (With<Camera3d>, Without<UICamera>, Without<GizmoCamera>),
+    >,
     mut camera_state: ResMut<CameraSyncState>,
     mut viewport_camera_state: ResMut<ViewportCameraState>,
 ) {
@@ -57,13 +99,20 @@ pub fn sync_cameras_system(
         Ok(transform) => transform,
         Err(_) => {
             if viewport_camera_state.active_override.is_some() {
+                if let Some((stored_entity, stored_layers)) =
+                    viewport_camera_state.take_override_render_layers()
+                {
+                    restore_render_layers(&mut commands, stored_entity, stored_layers);
+                }
                 viewport_camera_state.clear_override();
-                if let Some(stored_transform) = viewport_camera_state.take_stored_editor_transform() {
+                if let Some(stored_transform) = viewport_camera_state.take_stored_editor_transform()
+                {
                     ui_camera_transform.translation = stored_transform.translation;
                     ui_camera_transform.rotation = stored_transform.rotation;
 
                     if let Some(editor_entity) = viewport_camera_state.editor_camera {
-                        if let Ok(mut editor_transform) = active_camera_query.get_mut(editor_entity) {
+                        if let Ok(mut editor_transform) = active_camera_query.get_mut(editor_entity)
+                        {
                             *editor_transform = stored_transform;
                         }
                     }
@@ -113,7 +162,10 @@ pub fn camera_sync_toggle_system(
 
 pub fn enforce_viewport_camera_state(
     viewport_camera_state: Res<ViewportCameraState>,
-    mut camera_query: Query<(Entity, &mut Camera), (With<Camera3d>, Without<UICamera>)>,
+    mut camera_query: Query<
+        (Entity, &mut Camera),
+        (With<Camera3d>, Without<UICamera>, Without<GizmoCamera>),
+    >,
 ) {
     let Some(active_camera_entity) = viewport_camera_state.active_camera() else {
         return;
@@ -136,20 +188,38 @@ pub fn enforce_viewport_camera_state(
 }
 
 pub fn restore_runtime_camera_state(
+    mut commands: Commands,
     mut viewport_camera_state: ResMut<ViewportCameraState>,
     mut ui_camera_query: Query<&mut Transform, With<UICamera>>,
-    mut camera_transform_query: Query<&mut Transform, (With<Camera3d>, Without<UICamera>)>,
-    mut camera_query: Query<(Entity, &mut Camera), (With<Camera3d>, Without<UICamera>)>,
+    mut camera_transform_query: Query<
+        &mut Transform,
+        (With<Camera3d>, Without<UICamera>, Without<GizmoCamera>),
+    >,
+    mut camera_query: Query<
+        (Entity, &mut Camera),
+        (With<Camera3d>, Without<UICamera>, Without<GizmoCamera>),
+    >,
     main_camera_entities: Query<Entity, With<MainCamera>>,
 ) {
-    if viewport_camera_state.active_override.is_some() {
+    if let Some(active_override) = viewport_camera_state.active_override {
+        if let Some((stored_entity, stored_layers)) =
+            viewport_camera_state.take_override_render_layers()
+        {
+            if stored_entity == active_override {
+                restore_render_layers(&mut commands, stored_entity, stored_layers);
+            } else {
+                viewport_camera_state.store_override_render_layers(stored_entity, stored_layers);
+            }
+        }
+
         if let Ok(mut ui_transform) = ui_camera_query.single_mut() {
             if let Some(stored_transform) = viewport_camera_state.take_stored_editor_transform() {
                 ui_transform.translation = stored_transform.translation;
                 ui_transform.rotation = stored_transform.rotation;
 
                 if let Some(editor_entity) = viewport_camera_state.editor_camera {
-                    if let Ok(mut editor_transform) = camera_transform_query.get_mut(editor_entity) {
+                    if let Ok(mut editor_transform) = camera_transform_query.get_mut(editor_entity)
+                    {
                         *editor_transform = stored_transform;
                     }
                 }
@@ -172,7 +242,8 @@ pub fn restore_runtime_camera_state(
 
     if any_main_enabled {
         for (entity, mut camera) in camera_query.iter_mut() {
-            if !main_entities.contains(&entity) && matches!(camera.target, RenderTarget::Window(_)) {
+            if !main_entities.contains(&entity) && matches!(camera.target, RenderTarget::Window(_))
+            {
                 camera.is_active = false;
             }
         }
@@ -183,15 +254,30 @@ pub fn restore_runtime_camera_state(
             }
         }
     }
+
+    // Clear ALL custom viewports when exiting editor
+    for (_, mut camera) in camera_query.iter_mut() {
+        if matches!(camera.target, RenderTarget::Window(_)) {
+            camera.viewport = None;
+        }
+    }
 }
 
 pub fn handle_viewport_camera_override_requests(
     mut requests: MessageReader<RequestViewportCameraOverride>,
     mut viewport_camera_state: ResMut<ViewportCameraState>,
     mut camera_sync_state: ResMut<CameraSyncState>,
+    mut commands: Commands,
     mut ui_camera_query: Query<&mut Transform, With<UICamera>>,
-    mut camera_transform_query: Query<&mut Transform, (With<Camera3d>, Without<UICamera>)>,
-    camera_meta_query: Query<&Camera, (With<Camera3d>, Without<UICamera>)>,
+    mut camera_transform_query: Query<
+        &mut Transform,
+        (With<Camera3d>, Without<UICamera>, Without<GizmoCamera>),
+    >,
+    camera_meta_query: Query<&Camera, (With<Camera3d>, Without<UICamera>, Without<GizmoCamera>)>,
+    render_layers_query: Query<
+        &RenderLayers,
+        (With<Camera3d>, Without<UICamera>, Without<GizmoCamera>),
+    >,
 ) {
     for RequestViewportCameraOverride { camera } in requests.read() {
         let Ok(mut ui_transform) = ui_camera_query.single_mut() else {
@@ -201,6 +287,21 @@ pub fn handle_viewport_camera_override_requests(
         if let Some(target_entity) = camera {
             if Some(*target_entity) == viewport_camera_state.active_override {
                 continue;
+            }
+
+            if let Some(current_override) = viewport_camera_state.active_override {
+                if current_override != *target_entity {
+                    if let Some((stored_entity, stored_layers)) =
+                        viewport_camera_state.take_override_render_layers()
+                    {
+                        if stored_entity == current_override {
+                            restore_render_layers(&mut commands, stored_entity, stored_layers);
+                        } else {
+                            viewport_camera_state
+                                .store_override_render_layers(stored_entity, stored_layers);
+                        }
+                    }
+                }
             }
 
             let Ok(target_camera) = camera_meta_query.get(*target_entity) else {
@@ -250,11 +351,31 @@ pub fn handle_viewport_camera_override_requests(
                 }
             }
 
+            let existing_layers = render_layers_query.get(*target_entity).ok().cloned();
+            let new_layers = compute_viewport_layers(existing_layers.as_ref());
+            viewport_camera_state.store_override_render_layers(*target_entity, existing_layers);
+            commands.entity(*target_entity).insert(new_layers);
+
             viewport_camera_state.set_override(*target_entity);
             camera_sync_state.ui_camera_old_position = None;
         } else {
             if viewport_camera_state.active_override.is_none() {
                 continue;
+            }
+
+            if let Some((stored_entity, stored_layers)) =
+                viewport_camera_state.take_override_render_layers()
+            {
+                if let Some(active_override) = viewport_camera_state.active_override {
+                    if stored_entity == active_override {
+                        restore_render_layers(&mut commands, stored_entity, stored_layers);
+                    } else {
+                        viewport_camera_state
+                            .store_override_render_layers(stored_entity, stored_layers);
+                    }
+                } else {
+                    restore_render_layers(&mut commands, stored_entity, stored_layers);
+                }
             }
 
             viewport_camera_state.clear_override();
@@ -265,12 +386,131 @@ pub fn handle_viewport_camera_override_requests(
                 ui_transform.rotation = stored_transform.rotation;
 
                 if let Some(editor_entity) = viewport_camera_state.editor_camera {
-                    if let Ok(mut editor_transform) = camera_transform_query.get_mut(editor_entity) {
+                    if let Ok(mut editor_transform) = camera_transform_query.get_mut(editor_entity)
+                    {
                         *editor_transform = stored_transform;
                     }
                 }
             }
         }
+    }
+}
+
+pub fn update_viewport_camera_viewports_system(
+    mut contexts: EguiContexts,
+    editor_state: Res<EditorState>,
+    viewport_camera_state: Res<ViewportCameraState>,
+    mut camera_query: Query<&mut Camera, (With<Camera3d>, Without<UICamera>, Without<GizmoCamera>)>,
+    mut gizmo_camera_query: Query<&mut Camera, With<GizmoCamera>>,
+    primary_window_query: Query<&Window, With<PrimaryWindow>>,
+) {
+    let Ok(ctx) = contexts.ctx_mut() else { return };
+    let Ok(primary_window) = primary_window_query.single() else { return };
+
+    let surface_width = primary_window.resolution.physical_width() as f32;
+    let surface_height = primary_window.resolution.physical_height() as f32;
+    if surface_width < 1.0 || surface_height < 1.0 {
+        return;
+    }
+
+    let mut clear_viewports = || {
+        if let Ok(mut gizmo) = gizmo_camera_query.single_mut() {
+            gizmo.viewport = None;
+        }
+    };
+
+    let Some(active_camera) = viewport_camera_state.active_camera() else {
+        clear_viewports();
+        return;
+    };
+
+    if !editor_state.active {
+        if let Ok(mut camera) = camera_query.get_mut(active_camera) {
+            camera.viewport = None;
+        }
+        clear_viewports();
+        return;
+    }
+
+    let available_rect = ctx.available_rect();
+    if available_rect.width() <= 1.0 || available_rect.height() <= 1.0 {
+        if let Ok(mut camera) = camera_query.get_mut(active_camera) {
+            camera.viewport = None;
+        }
+        clear_viewports();
+        return;
+    }
+
+    // Clamp the egui rect against the full window rect so we never request a viewport outside the surface.
+    let scale = ctx.pixels_per_point();
+    let mut min_px = (available_rect.min * scale).floor();
+    let mut max_px = (available_rect.max * scale).ceil();
+
+    min_px.x = min_px.x.clamp(0.0, surface_width);
+    min_px.y = min_px.y.clamp(0.0, surface_height);
+    max_px.x = max_px.x.clamp(min_px.x, surface_width);
+    max_px.y = max_px.y.clamp(min_px.y, surface_height);
+
+    if max_px.x - min_px.x < 1.0 || max_px.y - min_px.y < 1.0 {
+        if let Ok(mut camera) = camera_query.get_mut(active_camera) {
+            camera.viewport = None;
+        }
+        clear_viewports();
+        return;
+    }
+
+    let viewport = Viewport {
+        physical_position: UVec2::new(min_px.x as u32, min_px.y as u32),
+        physical_size: UVec2::new((max_px.x - min_px.x) as u32, (max_px.y - min_px.y) as u32),
+        ..Default::default()
+    };
+
+    if viewport.physical_size.x == 0 || viewport.physical_size.y == 0 {
+        if let Ok(mut camera) = camera_query.get_mut(active_camera) {
+            camera.viewport = None;
+        }
+        clear_viewports();
+        return;
+    }
+
+    if let Ok(mut camera) = camera_query.get_mut(active_camera) {
+        camera.viewport = Some(viewport.clone());
+    }
+    if let Ok(mut gizmo_camera) = gizmo_camera_query.single_mut() {
+        gizmo_camera.viewport = Some(viewport);
+    }
+}
+
+pub fn sync_gizmo_camera_state(
+    viewport_camera_state: Res<ViewportCameraState>,
+    editor_state: Res<EditorState>,
+    gizmo_visibility: Res<GizmoVisibilityState>,
+    mut gizmo_camera_query: Query<(&mut Camera, &mut Transform), With<GizmoCamera>>,
+    active_camera_query: Query<
+        &Transform,
+        (With<Camera3d>, Without<UICamera>, Without<GizmoCamera>),
+    >,
+) {
+    let Ok((mut gizmo_camera, mut gizmo_transform)) = gizmo_camera_query.single_mut() else {
+        return;
+    };
+
+    let should_render = editor_state.active && gizmo_visibility.active;
+    gizmo_camera.is_active = should_render;
+
+    if !should_render {
+        gizmo_camera.viewport = None;
+        return;
+    }
+
+    let Some(active_entity) = viewport_camera_state.active_camera() else {
+        gizmo_camera.is_active = false;
+        gizmo_camera.viewport = None;
+        return;
+    };
+
+    if let Ok(active_transform) = active_camera_query.get(active_entity) {
+        *gizmo_transform = active_transform.clone();
     }
 }
 

@@ -3,9 +3,9 @@ use super::{
     events::{
         MaterialDeleteEvent, MaterialHandleUpdateEvent, PopupMenuRequestedEvent,
         RequestCameraEntityFrame, RequestEditorToggle, RequestNewParent, RequestRemoveChildren,
-        RequestRemoveParents, RequestToggleCameraSync, RequestViewportCameraOverride, SetActiveWorld,
-        UserRequestGraniteTypeViaPopup, UserUpdatedComponentsEvent, UserUpdatedIdentityEvent,
-        UserUpdatedTransformEvent,
+        RequestRemoveParents, RequestToggleCameraSync, RequestViewportCameraOverride,
+        SetActiveWorld, UserRequestGraniteTypeViaPopup, UserUpdatedComponentsEvent,
+        UserUpdatedIdentityEvent, UserUpdatedTransformEvent,
     },
     layout::dock_ui_system,
     popups::{handle_popup_requests_system, show_active_popups_system},
@@ -47,8 +47,7 @@ impl Plugin for InterfacePlugin {
             .add_message::<RequestRemoveChildren>()
             .add_message::<RequestRemoveParents>()
             .add_message::<SetActiveWorld>()
-            .add_event::<RequestViewportCameraOverride>() // from #78
-
+            .add_message::<RequestViewportCameraOverride>()
             // need to rework
             .add_message::<RequestReparentEntityEvent>()
             .add_message::<RequestRemoveParentsFromEntities>()
@@ -107,4 +106,3 @@ impl Plugin for InterfacePlugin {
             .add_systems(Update, send_queued_events_system.run_if(is_editor_active));
     }
 }
-

@@ -1,3 +1,4 @@
+use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::{Component, Entity, Resource, Transform};
 
 /// Marker component for the editor's dedicated 3D viewport camera.
@@ -10,6 +11,7 @@ pub struct ViewportCameraState {
     pub editor_camera: Option<Entity>,
     pub active_override: Option<Entity>,
     pub stored_editor_transform: Option<Transform>,
+    pub override_render_state: Option<(Entity, Option<RenderLayers>)>,
 }
 
 impl ViewportCameraState {
@@ -40,5 +42,18 @@ impl ViewportCameraState {
     pub fn take_stored_editor_transform(&mut self) -> Option<Transform> {
         self.stored_editor_transform.take()
     }
-}
 
+    pub fn store_override_render_layers(&mut self, entity: Entity, layers: Option<RenderLayers>) {
+        self.override_render_state = Some((entity, layers));
+    }
+
+    pub fn take_override_render_layers(&mut self) -> Option<(Entity, Option<RenderLayers>)> {
+        self.override_render_state.take()
+    }
+
+    pub fn override_layers_entity(&self) -> Option<Entity> {
+        self.override_render_state
+            .as_ref()
+            .map(|(entity, _)| *entity)
+    }
+}
