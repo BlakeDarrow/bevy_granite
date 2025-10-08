@@ -321,24 +321,12 @@ pub fn draw_axis_lines(
     let mut asset = GizmoAsset::new();
     match transform {
         TransformGizmo::Axis => {
-            asset.line(
-                origin.translation() + axis.to_vec3() * 1000.,
-                origin.translation() + axis.to_vec3() * -1000.,
-                axis.color(),
-            );
+            render_line(&mut asset, axis, origin);
         }
         TransformGizmo::Plane => {
             let (a, b) = axis.plane();
-            asset.line(
-                origin.translation() + a.to_vec3() * 1000.,
-                origin.translation() + a.to_vec3() * -1000.,
-                a.color(),
-            );
-            asset.line(
-                origin.translation() + b.to_vec3() * 1000.,
-                origin.translation() + b.to_vec3() * -1000.,
-                b.color(),
-            );
+            render_line(&mut asset, &a, origin);
+            render_line(&mut asset, &b, origin);
         }
     }
 
@@ -351,6 +339,22 @@ pub fn draw_axis_lines(
         },
         AxisLine,
     ));
+}
+
+// Fix for too thick of lines
+// Thanks to 0xD21F
+fn render_line(asset: &mut GizmoAsset, axis: &GizmoAxis, origin: &GlobalTransform) {
+    let step = 10.0;
+    let max_distance = 1000.0;
+    let mut current = -max_distance;
+    while current < max_distance {
+        asset.line(
+            origin.translation() + axis.to_vec3() * current,
+            origin.translation() + axis.to_vec3() * (current + step),
+            axis.color(),
+        );
+        current += step;
+    }
 }
 
 pub fn cleanup_axis_line(
