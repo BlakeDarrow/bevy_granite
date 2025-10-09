@@ -306,7 +306,7 @@ fn build_axis_plane(
 
 pub fn despawn_transform_gizmo(
     commands: &mut Commands,
-    query: &mut Query<(Entity, &TransformGizmo, &Children)>,
+    query: &mut Query<(Entity, &TransformGizmoParent, &Children)>,
 ) {
     for (entity, _, _) in query.iter() {
         commands.entity(entity).try_despawn();
