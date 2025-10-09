@@ -140,6 +140,7 @@ pub fn drag_transform_gizmo(
         }
     };
 
+    //log!("{:?}", typ);
     let world_delta = match (axis, typ) {
         (GizmoAxis::None, _) => Vec3::ZERO,
         (GizmoAxis::X, TransformGizmo::Axis) => {
