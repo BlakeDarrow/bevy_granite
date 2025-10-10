@@ -8,11 +8,16 @@ use crate::{
 use bevy::{
     asset::Assets,
     ecs::{
-        component::Component, hierarchy::ChildOf, message::MessageWriter, observer::On,
+        component::Component,
+        hierarchy::ChildOf,
+        message::MessageWriter,
+        observer::On,
         system::Commands,
     },
     gizmos::{retained::Gizmo, GizmoAsset},
-    picking::events::{Drag, DragStart, Pointer, Press},
+    picking::
+        events::{Drag, DragStart, Pointer, Press}
+    ,
     prelude::{
         Entity, GlobalTransform, Query, Res, ResMut, Resource, Transform, Vec3, With, Without,
     },
@@ -30,6 +35,7 @@ pub struct TransformDuplicationState {
 
 pub fn drag_transform_gizmo(
     event: On<Pointer<Drag>>,
+    mut command: Commands,
     targets: Query<&GizmoOf>,
     camera_query: Query<(Entity, &GlobalTransform, &bevy::camera::Camera), With<GizmoCamera>>,
     mut objects: Query<&mut Transform>,
@@ -140,7 +146,7 @@ pub fn drag_transform_gizmo(
         }
     };
 
-    let world_delta = match (axis, typ) {
+    let mut world_delta = match (axis, typ) {
         (GizmoAxis::None, _) => Vec3::ZERO,
         (GizmoAxis::X, TransformGizmo::Axis) => {
             let Some(click_distance) = click_ray.intersect_plane(
@@ -237,20 +243,17 @@ pub fn drag_transform_gizmo(
     };
 
     // Apply the delta to all root selected entities
-    for &entity in &root_entities {
-        if let Ok(mut entity_transform) = objects.get_mut(entity) {
+    if world_delta.length() > 0.0 {
+        for &entity in &root_entities {
             if let Ok(parent) = parents.get(entity) {
                 if let Ok(parent_global) = global_transforms.get(parent.parent()) {
                     let parent_rotation_inv =
                         parent_global.to_scale_rotation_translation().1.inverse();
                     let parent_local_delta = parent_rotation_inv * world_delta;
-                    entity_transform.translation += parent_local_delta;
-                } else {
-                    entity_transform.translation += world_delta;
+                    world_delta = parent_local_delta;
                 }
-            } else {
-                entity_transform.translation += world_delta;
             }
+            command.entity(entity).insert(TransitionDelta(world_delta));
         }
     }
 
@@ -258,6 +261,16 @@ pub fn drag_transform_gizmo(
         if let Ok(mut camera_transform) = objects.get_mut(c_entity) {
             camera_transform.translation += world_delta;
         }
+    }
+}
+
+pub fn apply_transformations(
+    mut command: Commands,
+    objects: Query<(Entity, &mut Transform, &TransitionDelta)>,
+) {
+    for (entity, mut transform, transition_delta) in objects {
+        transform.translation += transition_delta.0;
+        command.entity(entity).remove::<TransitionDelta>();
     }
 }
 
@@ -371,3 +384,6 @@ pub fn cleanup_axis_line(
 
 #[derive(Component)]
 pub struct AxisLine;
+
+#[derive(Component)]
+pub struct TransitionDelta(Vec3);

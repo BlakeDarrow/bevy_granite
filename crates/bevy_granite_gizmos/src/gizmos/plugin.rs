@@ -6,8 +6,12 @@ use super::{
     RotateInitDragEvent, RotateResetDragEvent, SpawnGizmoEvent, TransformDraggingEvent,
     TransformInitDragEvent, TransformResetDragEvent,
 };
+use crate::gizmos::transform::{
+    apply_transformations, TransitionDelta,
+};
 use crate::gizmos::{GizmoMode, NewGizmoType};
 use crate::is_gizmos_active;
+use bevy::ecs::schedule::common_conditions::any_with_component;
 use bevy::{
     app::{App, Plugin, PostUpdate, Startup, Update},
     ecs::schedule::IntoScheduleConfigs,
@@ -52,7 +56,12 @@ impl Plugin for GizmoPlugin {
             .add_systems(Startup, register_embedded_rotate_gizmo_mesh)
             .add_systems(
                 Update,
-                (gizmo_changed_watcher, gizmo_events).run_if(is_gizmos_active),
+                (
+                    gizmo_changed_watcher,
+                    gizmo_events,
+                    apply_transformations.run_if(any_with_component::<TransitionDelta>),
+                )
+                    .run_if(is_gizmos_active),
             )
             .add_systems(
                 Update,
