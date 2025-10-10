@@ -22,7 +22,7 @@ pub fn gizmo_events(
     selected_gizmo: Res<NewGizmoType>,
     mut spawn_events: MessageReader<SpawnGizmoEvent>,
     mut despawn_events: MessageReader<DespawnGizmoEvent>,
-    mut transform_gizmo_query: Query<(Entity, &TransformGizmo, &Children)>,
+    mut transform_gizmo_query: Query<(Entity, &TransformGizmoParent, &Children)>,
     mut rotate_gizmo_query: Query<(Entity, &RotateGizmo, &Children)>,
     new_config: Res<NewGizmoConfig>,
 ) {
