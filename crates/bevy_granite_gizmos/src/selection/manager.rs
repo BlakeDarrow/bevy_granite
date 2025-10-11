@@ -137,7 +137,7 @@ pub fn handle_picking_selection(
     if on_click.button != bevy::picking::pointer::PointerButton::Primary {
         return;
     }
-    match ignored.get(on_click.entity) {
+    match ignored.get(on_click.trigger().original_event_target) {
         Ok(to_ignore) => {
             if to_ignore.contains(EditorIgnore::PICKING) {
                 return;
