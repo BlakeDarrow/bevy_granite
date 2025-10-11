@@ -8,16 +8,10 @@ use crate::{
 use bevy::{
     asset::Assets,
     ecs::{
-        component::Component,
-        hierarchy::ChildOf,
-        message::MessageWriter,
-        observer::On,
-        system::Commands,
+        component::Component, entity::ContainsEntity, hierarchy::{ChildOf, Children}, message::MessageWriter, observer::On, system::Commands
     },
     gizmos::{retained::Gizmo, GizmoAsset},
-    picking::
-        events::{Drag, DragStart, Pointer, Press}
-    ,
+    picking::events::{Drag, DragEnd, DragStart, Pointer, Press},
     prelude::{
         Entity, GlobalTransform, Query, Res, ResMut, Resource, Transform, Vec3, With, Without,
     },
@@ -44,7 +38,7 @@ pub fn drag_transform_gizmo(
     active_selection: Query<Entity, With<ActiveSelection>>,
     other_selected: Query<Entity, (With<Selected>, Without<ActiveSelection>)>,
     gizmo_snap: Res<GizmoSnap>,
-    gizmo_data: Query<(&GizmoAxis, &TransformGizmo)>,
+    gizmo_data: Query<(&GizmoAxis, &TransformGizmo, &InitialDragOffset)>,
     user_input: Res<UserInput>,
     mut duplication_state: ResMut<TransformDuplicationState>,
 ) {
@@ -56,7 +50,7 @@ pub fn drag_transform_gizmo(
         duplication_state.just_duplicated = false;
         return;
     }
-    let Ok((axis, typ)) = gizmo_data.get(event.entity) else {
+    let Ok((axis, typ, drag_offset)) = gizmo_data.get(event.entity) else {
         log!(
             LogType::Editor,
             LogLevel::Warning,
@@ -127,7 +121,7 @@ pub fn drag_transform_gizmo(
         return;
     }
 
-    let current_world_pos = {
+    let mut current_world_pos = {
         let Ok(target_transform) = objects.get(*target) else {
             log! {
                 LogType::Editor,
@@ -146,102 +140,23 @@ pub fn drag_transform_gizmo(
         }
     };
 
-    //log!("{:?}", typ);
-    let mut world_delta = match (axis, typ) {
-        (GizmoAxis::None, _) => Vec3::ZERO,
-        (GizmoAxis::X, TransformGizmo::Axis) => {
-            let Some(click_distance) = click_ray.intersect_plane(
-                Vec3::new(0., current_world_pos.y, 0.),
-                bevy::math::primitives::InfinitePlane3d::new(Vec3::Y),
-            ) else {
-                return;
-            };
-            let hit = camera_transform.translation() + (click_ray.direction * click_distance);
-            let raw_delta_x = hit.x - current_world_pos.x;
-            let delta_x = snap_gizmo(raw_delta_x, gizmo_snap.transform_value);
-            Vec3::new(delta_x, 0.0, 0.0)
-        }
-        (GizmoAxis::Y, TransformGizmo::Axis) => {
-            let mut normal = camera_transform.forward().as_vec3();
-            normal.y = 0.0;
-            let Some(click_distance) = click_ray.intersect_plane(
-                Vec3::new(current_world_pos.x, 0., current_world_pos.z),
-                bevy::math::primitives::InfinitePlane3d::new(normal.normalize()),
-            ) else {
-                return;
-            };
-            let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
-            let raw_delta_y = hit.y - current_world_pos.y;
-            let delta_y = snap_gizmo(raw_delta_y, gizmo_snap.transform_value);
-            Vec3::new(0.0, delta_y, 0.0)
-        }
-        (GizmoAxis::Z, TransformGizmo::Axis) => {
-            let Some(click_distance) = click_ray.intersect_plane(
-                Vec3::new(0., current_world_pos.y, 0.),
-                bevy::math::primitives::InfinitePlane3d::new(Vec3::Y),
-            ) else {
-                return;
-            };
-            let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
-            let raw_delta_z = hit.z - current_world_pos.z;
-            let delta_z = snap_gizmo(raw_delta_z, gizmo_snap.transform_value);
-            Vec3::new(0.0, 0.0, delta_z)
-        }
-        (GizmoAxis::X, TransformGizmo::Plane) => {
-            let Some(click_distance) = click_ray.intersect_plane(
-                Vec3::new(current_world_pos.x, 0., 0.),
-                bevy::math::primitives::InfinitePlane3d::new(Vec3::X),
-            ) else {
-                return;
-            };
-            let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
-            let raw_delta_y = hit.y - current_world_pos.y;
-            let raw_delta_z = hit.z - current_world_pos.z;
-            let delta_y = snap_gizmo(raw_delta_y, gizmo_snap.transform_value);
-            let delta_z = snap_gizmo(raw_delta_z, gizmo_snap.transform_value);
-            Vec3::new(0.0, delta_y, delta_z)
-        }
-        (GizmoAxis::Y, TransformGizmo::Plane) => {
-            let Some(click_distance) = click_ray.intersect_plane(
-                Vec3::new(0., current_world_pos.y, 0.),
-                bevy::math::primitives::InfinitePlane3d::new(Vec3::Y),
-            ) else {
-                return;
-            };
-            let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
-            let raw_delta_x = hit.x - current_world_pos.x;
-            let raw_delta_z = hit.z - current_world_pos.z;
-            let delta_x = snap_gizmo(raw_delta_x, gizmo_snap.transform_value);
-            let delta_z = snap_gizmo(raw_delta_z, gizmo_snap.transform_value);
-            Vec3::new(delta_x, 0.0, delta_z)
-        }
-        (GizmoAxis::Z, TransformGizmo::Plane) => {
-            let Some(click_distance) = click_ray.intersect_plane(
-                Vec3::new(0., 0., current_world_pos.z),
-                bevy::math::primitives::InfinitePlane3d::new(Vec3::Z),
-            ) else {
-                return;
-            };
-            let hit = camera_transform.translation() - (click_ray.direction * -click_distance);
-            let raw_delta_x = hit.x - current_world_pos.x;
-            let raw_delta_y = hit.y - current_world_pos.y;
-            let delta_x = snap_gizmo(raw_delta_x, gizmo_snap.transform_value);
-            let delta_y = snap_gizmo(raw_delta_y, gizmo_snap.transform_value);
-            Vec3::new(delta_x, delta_y, 0.0)
-        }
-        (GizmoAxis::All, _) => {
-            let camera_right = camera_transform.rotation() * Vec3::X;
-            let camera_up = camera_transform.rotation() * Vec3::Y;
-            let movement_scale = 0.005;
-            let world_delta =
-                (camera_right * event.delta.x + camera_up * -event.delta.y) * movement_scale;
-            Vec3::new(
-                snap_gizmo(world_delta.x, gizmo_snap.transform_value),
-                snap_gizmo(world_delta.y, gizmo_snap.transform_value),
-                snap_gizmo(world_delta.z, gizmo_snap.transform_value),
-            )
-        }
+    let (active_axis, normal) = match typ {
+        TransformGizmo::Axis => (axis.to_vec3(), camera_transform.forward().as_vec3()),
+        TransformGizmo::Plane => (axis.plane_as_vec3(), axis.to_vec3()),
     };
+
+    current_world_pos -= drag_offset.offset();
+
+    let Some(click_distance) = click_ray.intersect_plane(
+        current_world_pos,
+        bevy::math::primitives::InfinitePlane3d::new(normal),
+    ) else {
+        return;
+    };
+
+    let hit = click_ray.get_point(click_distance);
+    let raw_delta = hit - current_world_pos;
+    let mut world_delta = snap_gizmo(active_axis * raw_delta, gizmo_snap.transform_value);
 
     // Apply the delta to all root selected entities
     if world_delta.length() > 0.0 {
@@ -262,6 +177,56 @@ pub fn drag_transform_gizmo(
         if let Ok(mut camera_transform) = objects.get_mut(c_entity) {
             camera_transform.translation += world_delta;
         }
+    }
+}
+
+pub fn calculate_drag_offset(
+    event: On<Pointer<DragStart>>,
+    mut command: Commands,
+    object: Query<&GlobalTransform, With<Children>>,
+    gizmo_data: Query<(Entity, &GizmoOf), With<GizmoAxis>>,
+) {
+    if event.button != bevy::picking::pointer::PointerButton::Primary {
+        return;
+    }
+    let Ok((entity, parent)) = gizmo_data.get(event.entity) else {
+        log!(
+            LogType::Editor,
+            LogLevel::Warning,
+            LogCategory::Input,
+            "Gizmo Axis data not found for Gizmo entity {:?}",
+            event.entity
+        );
+        return;
+    };
+    let Ok(object_transform) = object.get(parent.entity()) else {
+        log! {
+            LogType::Editor,
+            LogLevel::Error,
+            LogCategory::Input,
+            "Gizmo target not found for entity {:?}",
+            event.entity
+        };
+        return;
+    };
+
+    // Fallback to the center of the target object if can't resolve position.
+    let cursor_postion = event.hit.position.unwrap_or(object_transform.translation());
+    command.entity(entity).insert(InitialDragOffset(
+        object_transform.translation() - cursor_postion,
+    ));
+}
+
+pub fn drag_end_cleanup(
+    event: On<Pointer<DragEnd>>,
+    mut command: Commands,
+    gizmo_data: Query<Entity, With<InitialDragOffset>>,
+) {
+    if event.button != bevy::picking::pointer::PointerButton::Primary {
+        return;
+    }
+    for gizmo_entity in gizmo_data {
+        command.entity(gizmo_entity).remove::<InitialDragOffset>();
     }
 }
 
@@ -297,7 +262,7 @@ pub fn dragstart_transform_gizmo(
     duplication_state.just_duplicated = true;
 }
 
-fn snap_gizmo(value: f32, inc: f32) -> f32 {
+fn snap_gizmo(value: Vec3, inc: f32) -> Vec3 {
     if inc == 0.0 {
         value
     } else {
@@ -388,3 +353,12 @@ pub struct AxisLine;
 
 #[derive(Component)]
 pub struct TransitionDelta(Vec3);
+
+#[derive(Component)]
+pub struct InitialDragOffset(Vec3);
+
+impl InitialDragOffset {
+    pub fn offset(&self) -> Vec3 {
+        self.0
+    }
+}

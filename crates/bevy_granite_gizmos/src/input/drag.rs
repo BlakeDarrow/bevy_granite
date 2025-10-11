@@ -86,4 +86,8 @@ impl GizmoAxis {
             GizmoAxis::None => (GizmoAxis::None, GizmoAxis::None),
         }
     }
+
+    pub fn plane_as_vec3(self) -> Vec3 {
+        self.plane().0.to_vec3() + self.plane().1.to_vec3()
+    }
 }

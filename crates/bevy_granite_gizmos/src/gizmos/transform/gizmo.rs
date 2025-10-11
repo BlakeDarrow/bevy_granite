@@ -188,6 +188,8 @@ fn build_gizmo_sphere(
             GizmoOf(root),
             ChildOf(parent),
         ))
+        .observe(super::drag::calculate_drag_offset)
+        .observe(super::drag::drag_end_cleanup)
         .observe(super::drag::drag_transform_gizmo)
         .observe(super::drag::dragstart_transform_gizmo);
 }
@@ -237,6 +239,8 @@ fn build_axis_cylinder(
         .insert(TransformGizmo::Axis)
         .insert(GizmoMesh)
         .insert(ChildOf(parent))
+        .observe(super::drag::calculate_drag_offset)
+        .observe(super::drag::drag_end_cleanup)
         .observe(super::drag::drag_transform_gizmo)
         .observe(super::drag::dragstart_transform_gizmo)
         .with_children(|p| {
@@ -300,6 +304,8 @@ fn build_axis_plane(
             GizmoMesh,
             ChildOf(parent),
         ))
+        .observe(super::drag::calculate_drag_offset)
+        .observe(super::drag::drag_end_cleanup)
         .observe(super::drag::drag_transform_gizmo)
         .observe(super::drag::dragstart_transform_gizmo);
 }
