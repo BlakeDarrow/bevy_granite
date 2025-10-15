@@ -473,9 +473,6 @@ pub fn handle_rotate_dragging(
                     }
                 }
                 GizmoMode::Global => {
-                    let relative_pos = entity_transform.translation - origin;
-                    let rotated_relative_pos = final_rotation * relative_pos;
-                    entity_transform.translation = origin + rotated_relative_pos;
                     entity_transform.rotation = final_rotation * entity_transform.rotation;
                 }
             }
