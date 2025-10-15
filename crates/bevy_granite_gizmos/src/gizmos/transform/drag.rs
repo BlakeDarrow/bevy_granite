@@ -175,7 +175,7 @@ pub fn drag_transform_gizmo(
             (axis_vec, camera_transform.forward().as_vec3())
         }
         TransformGizmo::Plane => {
-            let plane_vec = match gizmo_config.mode() {
+            let plane_normal = match gizmo_config.mode() {
                 GizmoMode::Local => {
                     target_rotation * axis.to_vec3()
                 }
@@ -183,15 +183,7 @@ pub fn drag_transform_gizmo(
                     axis.to_vec3()
                 }
             };
-            let active_vec = match gizmo_config.mode() {
-                GizmoMode::Local => {
-                    target_rotation * axis.plane_as_vec3()
-                }
-                GizmoMode::Global => {
-                    axis.plane_as_vec3()
-                }
-            };
-            (active_vec, plane_vec)
+            (plane_normal, plane_normal)
         }
     };
 
@@ -221,7 +213,9 @@ pub fn drag_transform_gizmo(
             axis_normalized * snapped_distance
         }
         TransformGizmo::Plane => {
-            let projected = active_axis * raw_delta;
+            let plane_normal_normalized = normal.normalize_or_zero();
+            let normal_component = raw_delta.dot(plane_normal_normalized);
+            let projected = raw_delta - (plane_normal_normalized * normal_component);
             snap_gizmo(projected, gizmo_snap.transform_value)
         }
     };
