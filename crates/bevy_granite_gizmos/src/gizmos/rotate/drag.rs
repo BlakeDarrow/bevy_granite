@@ -381,7 +381,6 @@ pub fn handle_rotate_dragging(
                 _ => return,
             };
             
-            // Apply local/global mode transformation
             let world_axis = match mode {
                 GizmoMode::Local => {
                     target_rotation * axis
@@ -433,7 +432,6 @@ pub fn handle_rotate_dragging(
             let direction = prev_vec.cross(curr_vec).dot(world_axis).signum();
             let signed_angle = unsigned_angle * direction * locked_rotate_speed;
             
-            // Apply snapping for locked axis rotation
             let snap_increment = _gizmo_snap.rotate_value.to_radians();
             let (snapped_angle, new_accumulated, new_last_snapped) = calculate_snap_rotation(
                 signed_angle,
@@ -442,12 +440,10 @@ pub fn handle_rotate_dragging(
                 snap_increment,
             );
             
-            // Update drag state
             drag_state.accumulated_angle = new_accumulated;
             drag_state.last_snapped = new_last_snapped;
             drag_state.prev_hit_dir = curr_vec;
             
-            // If no rotation should be applied yet (haven't crossed snap threshold)
             if snapped_angle.abs() < f32::EPSILON {
                 return;
             }
@@ -473,7 +469,28 @@ pub fn handle_rotate_dragging(
                     }
                 }
                 GizmoMode::Global => {
-                    entity_transform.rotation = final_rotation * entity_transform.rotation;
+                    // Get the current global rotation
+                    // Apply the rotation in global space
+                    // Convert back to local space (accounting for parent rotation)
+                    
+                    let current_global_rotation = if let Ok(global_transform) = global_transforms.get(entity) {
+                        global_transform.to_scale_rotation_translation().1
+                    } else {
+                        entity_transform.rotation
+                    };
+                    
+                    let new_global_rotation = final_rotation * current_global_rotation;
+                    
+                    if let Ok(parent) = parents.get(entity) {
+                        if let Ok(parent_global) = global_transforms.get(parent.parent()) {
+                            let parent_rotation = parent_global.to_scale_rotation_translation().1;
+                            entity_transform.rotation = parent_rotation.inverse() * new_global_rotation;
+                        } else {
+                            entity_transform.rotation = new_global_rotation;
+                        }
+                    } else {
+                        entity_transform.rotation = new_global_rotation;
+                    }
                 }
             }
         }

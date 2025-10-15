@@ -68,6 +68,21 @@ pub fn spawn_rotate_gizmo(
             ..Default::default()
         });
 
+        // Set initial gizmo rotation based on mode
+        let initial_rotation = match config.mode() {
+            GizmoMode::Global => {
+                // Counter-rotate to stay aligned with world axes
+                parent_global_transform
+                    .to_scale_rotation_translation()
+                    .1
+                    .inverse()
+            }
+            GizmoMode::Local => {
+                // Align with entity's rotation (identity in local space)
+                Quat::IDENTITY
+            }
+        };
+
         let gizmo_entity = commands
             .spawn((
                 Mesh3d(sphere_handle),
@@ -80,10 +95,7 @@ pub fn spawn_rotate_gizmo(
                 },
                 Transform {
                     translation: gizmo_translation,
-                    rotation: parent_global_transform
-                        .to_scale_rotation_translation()
-                        .1
-                        .inverse(),
+                    rotation: initial_rotation,
                     ..Default::default()
                 },
                 Visibility::default(),
@@ -251,19 +263,31 @@ fn build_axis_ring(
 
 pub fn update_gizmo_rotation_for_mode(
     mut gizmo_query: Query<(&mut Transform, &GizmoOf, &GizmoConfig), With<RotateGizmoParent>>,
-    parent_query: Query<&Transform, Without<RotateGizmoParent>>,
+    transform_query: Query<&Transform, Without<RotateGizmoParent>>,
+    parent_query: Query<&ChildOf>,
 ) {
     for (mut gizmo_transform, gizmo_of, config) in gizmo_query.iter_mut() {
-        if let Ok(parent_transform) = parent_query.get(gizmo_of.0) {
-            let parent_rotation = parent_transform.rotation;
-            
+        if let Ok(entity_transform) = transform_query.get(gizmo_of.0) {
             match config.mode() {
                 GizmoMode::Global => {
-                    // Counter-rotate to stay aligned with world axes
-                    gizmo_transform.rotation = parent_rotation.inverse();
+                    // Mimic GlobalTransform
+                    // We want this to happen immediately, but GlobalTransform propagates later. So this is a workaround so we dont get gizmo off by one rotation 
+                    let mut global_rotation = entity_transform.rotation;
+                    let mut current_entity = gizmo_of.0;
+                    
+                    while let Ok(parent_of) = parent_query.get(current_entity) {
+                        let parent_entity = parent_of.parent();
+                        if let Ok(parent_transform) = transform_query.get(parent_entity) {
+                            global_rotation = parent_transform.rotation * global_rotation;
+                            current_entity = parent_entity;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    gizmo_transform.rotation = global_rotation.inverse();
                 }
                 GizmoMode::Local => {
-                    // Align with entity's rotation
                     gizmo_transform.rotation = Quat::IDENTITY;
                 }
             }
