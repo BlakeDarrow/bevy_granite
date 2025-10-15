@@ -6,7 +6,7 @@ use bevy::{
     prelude::{
         AlphaMode, Assets, Color, Commands, Component, Cone, Cylinder, Entity, GlobalTransform,
         Mesh, Meshable, Name, Quat, Query, ResMut, Resource, Sphere, StandardMaterial, Transform,
-        Vec3, Visibility, Without,
+        Vec3, Visibility, With, Without,
     },
 };
 use bevy_granite_core::TreeHiddenEntity;
@@ -16,7 +16,7 @@ use bevy_granite_logging::{
 };
 
 use crate::{
-    gizmos::{GizmoConfig, GizmoMesh, GizmoOf, GizmoRoot},
+    gizmos::{GizmoConfig, GizmoMesh, GizmoMode, GizmoOf, GizmoRoot},
     input::GizmoAxis,
 };
 
@@ -341,5 +341,25 @@ fn plane_rotation(axis: GizmoAxis) -> Quat {
         GizmoAxis::Y => Quat::IDENTITY,
         GizmoAxis::Z => Quat::from_rotation_x(std::f32::consts::FRAC_PI_2),
         _ => Quat::IDENTITY,
+    }
+}
+
+pub fn update_gizmo_rotation_for_mode(
+    mut gizmo_query: Query<(&mut Transform, &GizmoOf, &GizmoConfig), With<TransformGizmoParent>>,
+    parent_query: Query<&GlobalTransform>,
+) {
+    for (mut gizmo_transform, gizmo_of, config) in gizmo_query.iter_mut() {
+        if let Ok(parent_global_transform) = parent_query.get(gizmo_of.0) {
+            let parent_rotation = parent_global_transform.to_scale_rotation_translation().1;
+            
+            match config.mode() {
+                GizmoMode::Global => {
+                    gizmo_transform.rotation = parent_rotation.inverse();
+                }
+                GizmoMode::Local => {
+                    gizmo_transform.rotation = Quat::IDENTITY;
+                }
+            }
+        }
     }
 }

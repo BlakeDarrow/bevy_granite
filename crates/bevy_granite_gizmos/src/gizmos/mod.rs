@@ -178,10 +178,10 @@ pub use manager::{gizmo_changed_watcher, gizmo_events};
 pub use plugin::GizmoPlugin;
 pub use rotate::{
     despawn_rotate_gizmo, handle_init_rotate_drag, handle_rotate_dragging, handle_rotate_input,
-    handle_rotate_reset, register_embedded_rotate_gizmo_mesh, spawn_rotate_gizmo, RotateGizmo,
-    RotateGizmoParent,
+    handle_rotate_reset, register_embedded_rotate_gizmo_mesh, spawn_rotate_gizmo, 
+    RotateGizmo, RotateGizmoParent,
 };
 pub use transform::{
-    despawn_transform_gizmo, spawn_transform_gizmo, PreviousTransformGizmo, TransformGizmo,
-    TransformGizmoParent,
+    despawn_transform_gizmo, spawn_transform_gizmo, update_gizmo_rotation_for_mode, 
+    PreviousTransformGizmo, TransformGizmo, TransformGizmoParent,
 };

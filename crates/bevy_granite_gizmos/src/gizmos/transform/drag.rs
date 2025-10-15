@@ -1,6 +1,6 @@
 use super::TransformGizmo;
 use crate::{
-    gizmos::{GizmoOf, GizmoSnap},
+    gizmos::{GizmoConfig, GizmoOf, GizmoRoot, GizmoSnap, GizmoMode},
     input::GizmoAxis,
     selection::{ActiveSelection, RequestDuplicateAllSelectionEvent, Selected},
     GizmoCamera,
@@ -13,7 +13,7 @@ use bevy::{
     gizmos::{retained::Gizmo, GizmoAsset},
     picking::events::{Drag, DragEnd, DragStart, Pointer, Press},
     prelude::{
-        Entity, GlobalTransform, Query, Res, ResMut, Resource, Transform, Vec3, With, Without,
+        Entity, GlobalTransform, Query, Quat, Res, ResMut, Resource, Transform, Vec3, With, Without,
     },
 };
 use bevy_granite_core::UserInput;
@@ -38,7 +38,8 @@ pub fn drag_transform_gizmo(
     active_selection: Query<Entity, With<ActiveSelection>>,
     other_selected: Query<Entity, (With<Selected>, Without<ActiveSelection>)>,
     gizmo_snap: Res<GizmoSnap>,
-    gizmo_data: Query<(&GizmoAxis, &TransformGizmo, &InitialDragOffset)>,
+    gizmo_data: Query<(&GizmoAxis, &TransformGizmo, &InitialDragOffset, &GizmoRoot)>,
+    gizmo_config_query: Query<&GizmoConfig>,
     user_input: Res<UserInput>,
     mut duplication_state: ResMut<TransformDuplicationState>,
 ) {
@@ -50,13 +51,24 @@ pub fn drag_transform_gizmo(
         duplication_state.just_duplicated = false;
         return;
     }
-    let Ok((axis, typ, drag_offset)) = gizmo_data.get(event.entity) else {
+    let Ok((axis, typ, drag_offset, gizmo_root)) = gizmo_data.get(event.entity) else {
         log!(
             LogType::Editor,
             LogLevel::Warning,
             LogCategory::Input,
             "Gizmo Axis data not found for Gizmo entity {:?}",
             event.entity
+        );
+        return;
+    };
+    
+    let Ok(gizmo_config) = gizmo_config_query.get(gizmo_root.0) else {
+        log!(
+            LogType::Editor,
+            LogLevel::Warning,
+            LogCategory::Input,
+            "Gizmo config not found for parent gizmo entity {:?}",
+            gizmo_root.0
         );
         return;
     };
@@ -140,9 +152,47 @@ pub fn drag_transform_gizmo(
         }
     };
 
+    let target_rotation = if let Ok(global_transform) = global_transforms.get(*target) {
+        global_transform.to_scale_rotation_translation().1
+    } else {
+        if let Ok(transform) = objects.get(*target) {
+            transform.rotation
+        } else {
+            Quat::IDENTITY
+        }
+    };
+
     let (active_axis, normal) = match typ {
-        TransformGizmo::Axis => (axis.to_vec3(), camera_transform.forward().as_vec3()),
-        TransformGizmo::Plane => (axis.plane_as_vec3(), axis.to_vec3()),
+        TransformGizmo::Axis => {
+            let axis_vec = match gizmo_config.mode() {
+                GizmoMode::Local => {
+                    target_rotation * axis.to_vec3()
+                }
+                GizmoMode::Global => {
+                    axis.to_vec3()
+                }
+            };
+            (axis_vec, camera_transform.forward().as_vec3())
+        }
+        TransformGizmo::Plane => {
+            let plane_vec = match gizmo_config.mode() {
+                GizmoMode::Local => {
+                    target_rotation * axis.to_vec3()
+                }
+                GizmoMode::Global => {
+                    axis.to_vec3()
+                }
+            };
+            let active_vec = match gizmo_config.mode() {
+                GizmoMode::Local => {
+                    target_rotation * axis.plane_as_vec3()
+                }
+                GizmoMode::Global => {
+                    axis.plane_as_vec3()
+                }
+            };
+            (active_vec, plane_vec)
+        }
     };
 
     current_world_pos -= drag_offset.offset();
@@ -156,9 +206,28 @@ pub fn drag_transform_gizmo(
 
     let hit = click_ray.get_point(click_distance);
     let raw_delta = hit - current_world_pos;
-    let mut world_delta = snap_gizmo(active_axis * raw_delta, gizmo_snap.transform_value);
-
+    
+    let world_delta = match typ {
+        TransformGizmo::Axis => {
+            let axis_normalized = active_axis.normalize_or_zero();
+            let projection = raw_delta.dot(axis_normalized);
+            
+            let snapped_distance = if gizmo_snap.transform_value == 0.0 {
+                projection
+            } else {
+                (projection / gizmo_snap.transform_value).round() * gizmo_snap.transform_value
+            };
+            
+            axis_normalized * snapped_distance
+        }
+        TransformGizmo::Plane => {
+            let projected = active_axis * raw_delta;
+            snap_gizmo(projected, gizmo_snap.transform_value)
+        }
+    };
+    
     // Apply the delta to all root selected entities
+    let mut world_delta = world_delta;
     if world_delta.length() > 0.0 {
         for &entity in &root_entities {
             if let Ok(parent) = parents.get(entity) {
@@ -272,7 +341,8 @@ fn snap_gizmo(value: Vec3, inc: f32) -> Vec3 {
 
 pub fn draw_axis_lines(
     event: On<Pointer<Press>>,
-    gizmo_data: Query<(&GizmoAxis, &GizmoOf, &TransformGizmo), With<TransformGizmo>>,
+    gizmo_data: Query<(&GizmoAxis, &GizmoOf, &TransformGizmo, &GizmoRoot), With<TransformGizmo>>,
+    gizmo_config_query: Query<&GizmoConfig>,
     mut bevy_gizmo: ResMut<Assets<GizmoAsset>>,
     mut commands: Commands,
     origin: Query<&GlobalTransform>,
@@ -281,12 +351,24 @@ pub fn draw_axis_lines(
         return;
     }
 
-    let Ok((axis, root, transform)) = gizmo_data.get(event.entity) else {
+    let Ok((axis, root, transform, gizmo_root)) = gizmo_data.get(event.entity) else {
         return;
     };
     if let GizmoAxis::All = axis {
         return;
     }
+    
+    let Ok(gizmo_config) = gizmo_config_query.get(gizmo_root.0) else {
+        log! {
+            LogType::Editor,
+            LogLevel::Warning,
+            LogCategory::Input,
+            "Gizmo config not found for parent gizmo entity {:?}",
+            gizmo_root.0
+        };
+        return;
+    };
+    
     let Ok(origin) = origin.get(root.get()) else {
         log! {
             LogType::Editor,
@@ -297,15 +379,18 @@ pub fn draw_axis_lines(
         };
         return;
     };
+    
+    let entity_rotation = origin.to_scale_rotation_translation().1;
+    
     let mut asset = GizmoAsset::new();
     match transform {
         TransformGizmo::Axis => {
-            render_line(&mut asset, axis, origin);
+            render_line(&mut asset, axis, origin, entity_rotation, gizmo_config.mode());
         }
         TransformGizmo::Plane => {
             let (a, b) = axis.plane();
-            render_line(&mut asset, &a, origin);
-            render_line(&mut asset, &b, origin);
+            render_line(&mut asset, &a, origin, entity_rotation, gizmo_config.mode());
+            render_line(&mut asset, &b, origin, entity_rotation, gizmo_config.mode());
         }
     }
 
@@ -320,16 +405,30 @@ pub fn draw_axis_lines(
     ));
 }
 
-// Fix for too thick of lines
-// Thanks to 0xD21F
-fn render_line(asset: &mut GizmoAsset, axis: &GizmoAxis, origin: &GlobalTransform) {
+fn render_line(
+    asset: &mut GizmoAsset, 
+    axis: &GizmoAxis, 
+    origin: &GlobalTransform,
+    entity_rotation: Quat,
+    mode: GizmoMode,
+) {
     let step = 10.0;
     let max_distance = 1000.0;
     let mut current = -max_distance;
+    
+    let axis_direction = match mode {
+        GizmoMode::Local => {
+            entity_rotation * axis.to_vec3()
+        }
+        GizmoMode::Global => {
+            axis.to_vec3()
+        }
+    };
+    
     while current < max_distance {
         asset.line(
-            origin.translation() + axis.to_vec3() * current,
-            origin.translation() + axis.to_vec3() * (current + step),
+            origin.translation() + axis_direction * current,
+            origin.translation() + axis_direction * (current + step),
             axis.color(),
         );
         current += step;

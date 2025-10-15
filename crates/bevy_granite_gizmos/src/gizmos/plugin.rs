@@ -7,7 +7,7 @@ use super::{
     TransformInitDragEvent, TransformResetDragEvent,
 };
 use crate::gizmos::transform::{
-    apply_transformations, TransitionDelta,
+    apply_transformations, update_gizmo_rotation_for_mode, TransitionDelta,
 };
 use crate::gizmos::{GizmoMode, NewGizmoType};
 use crate::is_gizmos_active;
@@ -59,6 +59,7 @@ impl Plugin for GizmoPlugin {
                 (
                     gizmo_changed_watcher,
                     gizmo_events,
+                    update_gizmo_rotation_for_mode,
                     apply_transformations.run_if(any_with_component::<TransitionDelta>),
                 )
                     .run_if(is_gizmos_active),
