@@ -255,39 +255,14 @@ pub fn handle_rotate_dragging(
     gizmo_config_query: Query<&GizmoConfig>,
     mut drag_state: ResMut<DragState>,
 ) {
-    log!(
-        LogType::Editor,
-        LogLevel::Info,
-        LogCategory::Debug,
-        "handle_rotate_dragging called for entity: {:?}",
-        event.entity
-    );
-    
     if event.button != PointerButton::Primary {
         return;
     }
     let Ok((gizmo_axis, gizmo_root)) = gizmo_data.get(event.entity) else {
-        log!(
-            LogType::Editor,
-            LogLevel::Warning,
-            LogCategory::Input,
-            "Gizmo Axis data not found for Gizmo entity {:?}",
-            event.entity
-        );
         return;
     };
     
-    // Get config from parent gizmo entity
     let config = gizmo_config_query.get(gizmo_root.0).ok();
-    
-    log!(
-        LogType::Editor,
-        LogLevel::Info,
-        LogCategory::Debug,
-        "Gizmo config: {:?}, gizmo_axis: {:?}",
-        config,
-        gizmo_axis
-    );
     
     let GizmoConfig::Rotate {
         speed_scale,
@@ -295,12 +270,6 @@ pub fn handle_rotate_dragging(
         mode,
     } = config.cloned().unwrap_or(selected.rotation())
     else {
-        log!(
-            LogType::Editor,
-            LogLevel::Warning,
-            LogCategory::Input,
-            "Gizmo Config for rotation was not a Rotation Config",
-        );
         return;
     };
 
@@ -308,21 +277,9 @@ pub fn handle_rotate_dragging(
     let locked_rotate_speed = 1.0 * speed_scale;
 
     let Ok(target) = targets.get(event.entity) else {
-        log(
-            LogType::Editor,
-            LogLevel::Error,
-            LogCategory::Debug,
-            format!("Rotation Gizmo({})'s Target not found", event.entity.index()),
-        );
         return;
     };
     let Ok((camera_transform, camera)) = camera_query.single() else {
-        log!(
-            LogType::Editor,
-            LogLevel::Error,
-            LogCategory::Debug,
-            "Gizmo Camera not found for rotation drag"
-        );
         return;
     };
 
@@ -372,27 +329,49 @@ pub fn handle_rotate_dragging(
 
     let (final_rotation, local_axis) = match gizmo_axis {
         GizmoAxis::All => {
-            let delta_x = event.delta.x * free_rotate_speed;
-            let delta_y = event.delta.y * free_rotate_speed;
+            let snap_increment = _gizmo_snap.rotate_value.to_radians();
             
-            let snapped_delta_x = snap_roation(delta_x, _gizmo_snap.rotate_value.to_radians());
-            let snapped_delta_y = snap_roation(delta_y, _gizmo_snap.rotate_value.to_radians());
-            
-            if snapped_delta_x.abs() < f32::EPSILON && snapped_delta_y.abs() < f32::EPSILON {
-                return;
+            if snap_increment > 0.0 {
+                let delta_x = event.delta.x * free_rotate_speed;
+                let delta_y = event.delta.y * free_rotate_speed;
+                
+                let rotation_magnitude = (delta_x * delta_x + delta_y * delta_y).sqrt();
+                
+                drag_state.accumulated_angle += rotation_magnitude;
+                
+                let delta_from_last_snap = drag_state.accumulated_angle - drag_state.last_snapped;
+                if delta_from_last_snap.abs() >= snap_increment {
+                    let snap_count = (delta_from_last_snap / snap_increment).trunc();
+                    let snapped_magnitude = snap_count * snap_increment;
+                    
+                    let normalized_delta_x = if rotation_magnitude > f32::EPSILON {
+                        delta_x / rotation_magnitude
+                    } else {
+                        0.0
+                    };
+                    let normalized_delta_y = if rotation_magnitude > f32::EPSILON {
+                        delta_y / rotation_magnitude
+                    } else {
+                        0.0
+                    };
+                    
+                    let snapped_delta_x = normalized_delta_x * snapped_magnitude;
+                    let snapped_delta_y = normalized_delta_y * snapped_magnitude;
+                    
+                    drag_state.last_snapped += snapped_magnitude;
+                    let rotation = Quat::from_axis_angle(camera_transform.up().as_vec3(), snapped_delta_x)
+                        * Quat::from_axis_angle(camera_transform.right().as_vec3(), snapped_delta_y);
+                    (rotation, None)
+                } else {
+                    return;
+                }
+            } else {
+                let delta_x = event.delta.x * free_rotate_speed;
+                let delta_y = event.delta.y * free_rotate_speed;
+                let rotation = Quat::from_axis_angle(camera_transform.up().as_vec3(), delta_x)
+                    * Quat::from_axis_angle(camera_transform.right().as_vec3(), delta_y);
+                (rotation, None)
             }
-            
-            log!(
-                LogType::Editor,
-                LogLevel::Info,
-                LogCategory::Debug,
-                "Free rotation (All axis) - mode: {:?}",
-                mode
-            );
-            
-            let rotation = Quat::from_axis_angle(camera_transform.up().as_vec3(), snapped_delta_x)
-                * Quat::from_axis_angle(camera_transform.right().as_vec3(), snapped_delta_y);
-            (rotation, None)
         }
         GizmoAxis::X | GizmoAxis::Y | GizmoAxis::Z => {
             let axis = match gizmo_axis {
@@ -401,15 +380,6 @@ pub fn handle_rotate_dragging(
                 GizmoAxis::Z => Vec3::Z,
                 _ => return,
             };
-            
-            log!(
-                LogType::Editor,
-                LogLevel::Info,
-                LogCategory::Debug,
-                "Locked axis rotation: {:?}, mode: {:?}",
-                gizmo_axis,
-                mode
-            );
             
             // Apply local/global mode transformation
             let world_axis = match mode {
@@ -422,13 +392,6 @@ pub fn handle_rotate_dragging(
             };
 
             let Ok(ray) = camera.viewport_to_world(camera_transform, event.pointer_location.position) else {
-                log! {
-                    LogType::Editor,
-                    LogLevel::Error,
-                    LogCategory::Input,
-                    "Failed to convert viewport to world coordinates for pointer location: {:?}",
-                    event.pointer_location.position
-                };
                 return;
             };
 
@@ -469,19 +432,31 @@ pub fn handle_rotate_dragging(
             
             let direction = prev_vec.cross(curr_vec).dot(world_axis).signum();
             let signed_angle = unsigned_angle * direction * locked_rotate_speed;
-            let rotation_delta = Quat::from_axis_angle(world_axis, signed_angle);
             
+            // Apply snapping for locked axis rotation
+            let snap_increment = _gizmo_snap.rotate_value.to_radians();
+            let (snapped_angle, new_accumulated, new_last_snapped) = calculate_snap_rotation(
+                signed_angle,
+                drag_state.accumulated_angle,
+                drag_state.last_snapped,
+                snap_increment,
+            );
+            
+            // Update drag state
+            drag_state.accumulated_angle = new_accumulated;
+            drag_state.last_snapped = new_last_snapped;
             drag_state.prev_hit_dir = curr_vec;
             
-            (rotation_delta, Some((axis, signed_angle)))
+            // If no rotation should be applied yet (haven't crossed snap threshold)
+            if snapped_angle.abs() < f32::EPSILON {
+                return;
+            }
+            
+            let rotation_delta = Quat::from_axis_angle(world_axis, snapped_angle);
+            
+            (rotation_delta, Some((axis, snapped_angle)))
         }
         GizmoAxis::None => {
-            log!(
-                LogType::Editor,
-                LogLevel::Error,
-                LogCategory::Debug,
-                "Rotation Gizmo Axis None Should not happen",
-            );
             (Quat::IDENTITY, None)
         }
     };
@@ -490,26 +465,14 @@ pub fn handle_rotate_dragging(
         if let Ok(mut entity_transform) = objects.get_mut(entity) {
             match mode {
                 GizmoMode::Local => {
-                    // In local mode, rotation is applied in local space (position doesn't change)
                     if let Some((local_axis, signed_angle)) = local_axis {
-                        log!(
-                            LogType::Editor,
-                            LogLevel::Info,
-                            LogCategory::Debug,
-                            "Local mode: Rotating around {:?} by {} radians",
-                            local_axis,
-                            signed_angle
-                        );
-                        // Apply rotation in local space around the local axis
                         let local_rotation = Quat::from_axis_angle(local_axis, signed_angle);
                         entity_transform.rotation = entity_transform.rotation * local_rotation;
                     } else {
-                        // Free rotation (GizmoAxis::All) - apply in world space
                         entity_transform.rotation = final_rotation * entity_transform.rotation;
                     }
                 }
                 GizmoMode::Global => {
-                    // In global mode, rotation affects both position and rotation
                     let relative_pos = entity_transform.translation - origin;
                     let rotated_relative_pos = final_rotation * relative_pos;
                     entity_transform.translation = origin + rotated_relative_pos;
@@ -520,12 +483,27 @@ pub fn handle_rotate_dragging(
     }
 }
 
-#[allow(dead_code)]
-fn snap_roation(value: f32, inc: f32) -> f32 {
-    if inc == 0.0 {
-        value
+/// Calculates the snapped rotation angle based on accumulated rotation
+fn calculate_snap_rotation(
+    raw_delta: f32,
+    accumulated: f32,
+    last_snapped: f32,
+    snap_increment: f32,
+) -> (f32, f32, f32) {
+    if snap_increment == 0.0 || snap_increment.abs() < f32::EPSILON {
+        return (raw_delta, 0.0, 0.0);
+    }
+
+    let new_accumulated = accumulated + raw_delta;
+    let delta_from_last_snap = new_accumulated - last_snapped;
+    let snap_count = (delta_from_last_snap / snap_increment).trunc();
+    
+    if snap_count.abs() >= 1.0 {
+        let snapped_angle = snap_count * snap_increment;
+        let new_last_snapped = last_snapped + snapped_angle;
+        (snapped_angle, new_accumulated, new_last_snapped)
     } else {
-        (value / inc).round() * inc
+        (0.0, new_accumulated, last_snapped)
     }
 }
 
