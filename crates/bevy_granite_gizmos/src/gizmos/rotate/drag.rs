@@ -16,7 +16,6 @@ use crate::{
 use bevy::{
     camera::Camera,
     ecs::{observer::On, query::Changed},
-    math::primitives::InfinitePlane3d,
     picking::{
         events::{Drag, Pointer, Press},
         hover::PickingInteraction,
@@ -24,7 +23,7 @@ use bevy::{
     },
     prelude::{
         ChildOf, Entity, GlobalTransform, MessageReader, MessageWriter, Mut, Name, ParamSet, Quat,
-        Query, Res, ResMut, Transform, Vec2, Vec3, Visibility, With, Without,
+        Query, Res, ResMut, Transform, Vec3, Visibility, With, Without,
     },
 };
 use bevy_granite_core::{CursorWindowPos, IconProxy, UserInput};
@@ -239,6 +238,8 @@ fn hide_unselected_axes(
     }
 }
 
+/// ANGULAR movement for locked axis. We dont want pixel delta for locked axis.
+/// Free rotate can use mouse delta
 pub fn handle_rotate_dragging(
     event: On<Pointer<Drag>>,
     targets: Query<&GizmoOf>,
@@ -252,7 +253,6 @@ pub fn handle_rotate_dragging(
     selected: Res<NewGizmoConfig>,
     gizmo_data: Query<(&GizmoAxis, Option<&GizmoConfig>)>,
     mut drag_state: ResMut<DragState>,
-    cursor_2d: Res<CursorWindowPos>,
 ) {
     if event.button != PointerButton::Primary {
         return;
@@ -282,7 +282,7 @@ pub fn handle_rotate_dragging(
         return;
     };
 
-    let free_rotate_speed = 0.3 * speed_scale;
+    let free_rotate_speed = 0.01 * speed_scale;
     let locked_rotate_speed = 1.0 * speed_scale;
 
     let Ok(_target) = targets.get(event.entity) else {
@@ -337,27 +337,22 @@ pub fn handle_rotate_dragging(
         }
     };
 
-    // Calculate rotation based on axis type
     let final_rotation = match gizmo_axis {
         GizmoAxis::All => {
-            // Free rotation using screen-space mouse delta
-            let cursor_delta_2d = cursor_2d.position - drag_state.initial_cursor_position;
+            let delta_x = event.delta.x * free_rotate_speed;
+            let delta_y = event.delta.y * free_rotate_speed;
             
-            if cursor_delta_2d == Vec2::ZERO {
+            let snapped_delta_x = snap_roation(delta_x, _gizmo_snap.rotate_value.to_radians());
+            let snapped_delta_y = snap_roation(delta_y, _gizmo_snap.rotate_value.to_radians());
+            
+            if snapped_delta_x.abs() < f32::EPSILON && snapped_delta_y.abs() < f32::EPSILON {
                 return;
             }
-
-            let yaw = cursor_delta_2d.x * free_rotate_speed;
-            let pitch = -cursor_delta_2d.y * free_rotate_speed;
             
-            let delta_x = yaw.to_radians();
-            let delta_y = pitch.to_radians();
-
-            Quat::from_axis_angle(camera_transform.up().as_vec3(), delta_x)
-                * Quat::from_axis_angle(camera_transform.right().as_vec3(), delta_y)
+            Quat::from_axis_angle(camera_transform.up().as_vec3(), snapped_delta_x)
+                * Quat::from_axis_angle(camera_transform.right().as_vec3(), snapped_delta_y)
         }
         GizmoAxis::X | GizmoAxis::Y | GizmoAxis::Z => {
-            // Locked axis rotation using ray-plane intersection
             let axis = match gizmo_axis {
                 GizmoAxis::X => Vec3::X,
                 GizmoAxis::Y => Vec3::Y,
@@ -387,8 +382,6 @@ pub fn handle_rotate_dragging(
 
             let t = (origin - ray_origin).dot(plane_normal) / ray_dir_dot;
             let hit_pos = ray_origin + ray_direction * t;
-            
-            // Calculate angle between previous and current hit direction
             let prev_vec = drag_state.prev_hit_dir;
             let curr_vec = (hit_pos - origin).normalize();
             
@@ -404,7 +397,6 @@ pub fn handle_rotate_dragging(
             }
             
             let unsigned_angle = prev_vec.angle_between(curr_vec);
-            
             if unsigned_angle.is_nan() || !unsigned_angle.is_finite() {
                 return;
             }
@@ -416,7 +408,6 @@ pub fn handle_rotate_dragging(
             
             let direction = prev_vec.cross(curr_vec).dot(axis).signum();
             let signed_angle = unsigned_angle * direction * locked_rotate_speed;
-            
             let rotation_delta = Quat::from_axis_angle(axis, signed_angle);
             
             drag_state.prev_hit_dir = curr_vec;
@@ -434,7 +425,6 @@ pub fn handle_rotate_dragging(
         }
     };
 
-    // Apply rotation to all root entities
     for &entity in &root_entities {
         if let Ok(mut entity_transform) = objects.get_mut(entity) {
             let relative_pos = entity_transform.translation - origin;
