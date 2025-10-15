@@ -171,9 +171,15 @@ pub fn handle_init_rotate_drag(
             drag_state.accumulated_angle = 0.0;
             drag_state.last_snapped = 0.0;
 
-            // Compute vector from gizmo to hit point
-            let hit_vec = (raycast_cursor_pos.position - drag_state.gizmo_position).normalize();
-            drag_state.prev_hit_dir = hit_vec;
+            drag_state.prev_hit_dir = match gizmo_axis {
+                GizmoAxis::All => {
+                    (raycast_cursor_pos.position - drag_state.gizmo_position).normalize()
+                }
+                GizmoAxis::X | GizmoAxis::Y | GizmoAxis::Z => {
+                    (raycast_cursor_pos.position - drag_state.gizmo_position).normalize()
+                }
+                GizmoAxis::None => Vec3::ZERO,
+            };
 
             // Get and store initial gizmo rotation
             if let Ok((_, _gizmo_transform, gizmo_world_transform)) = queries.p5().single() {
@@ -374,7 +380,6 @@ pub fn handle_rotate_dragging(
             let ray_direction = ray.direction;
             let plane_normal = axis;
             
-            // Ray-plane intersection
             let ray_dir_dot = ray_direction.dot(plane_normal);
             if ray_dir_dot.abs() < 1e-6 {
                 return; // Ray parallel to plane
@@ -387,26 +392,36 @@ pub fn handle_rotate_dragging(
             let prev_vec = drag_state.prev_hit_dir;
             let curr_vec = (hit_pos - origin).normalize();
             
-            // Safety check for NaN or invalid vectors
             if prev_vec.is_nan() || curr_vec.is_nan() || prev_vec.length_squared() < 1e-6 || curr_vec.length_squared() < 1e-6 {
+                drag_state.prev_hit_dir = curr_vec;
+                return;
+            }
+            
+            let dot_product = prev_vec.dot(curr_vec);
+            if dot_product < 0.95 {
                 drag_state.prev_hit_dir = curr_vec;
                 return;
             }
             
             let unsigned_angle = prev_vec.angle_between(curr_vec);
             
-            // Check for NaN in angle calculation
             if unsigned_angle.is_nan() || !unsigned_angle.is_finite() {
                 return;
+            }
+            
+            let angle_threshold = 0.001; // ~0.057 degrees
+            if unsigned_angle.abs() < angle_threshold {
+                return; 
             }
             
             let direction = prev_vec.cross(curr_vec).dot(axis).signum();
             let signed_angle = unsigned_angle * direction * locked_rotate_speed;
             
-            // Update for next frame
+            let rotation_delta = Quat::from_axis_angle(axis, signed_angle);
+            
             drag_state.prev_hit_dir = curr_vec;
             
-            Quat::from_axis_angle(axis, signed_angle)
+            rotation_delta
         }
         GizmoAxis::None => {
             log!(
