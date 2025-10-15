@@ -15,7 +15,7 @@ use crate::{
 };
 use bevy::{
     camera::Camera,
-    ecs::{observer::On, query::Changed, system::Local},
+    ecs::{observer::On, query::Changed},
     math::primitives::InfinitePlane3d,
     picking::{
         events::{Drag, Pointer, Press},
@@ -168,6 +168,8 @@ pub fn handle_init_rotate_drag(
             drag_state.gizmo_position = parent_global_transform.translation();
             drag_state.dragging = true;
             drag_state.locked_axis = Some(gizmo_axis);
+            drag_state.accumulated_angle = 0.0;
+            drag_state.last_snapped = 0.0;
 
             // Compute vector from gizmo to hit point
             let hit_vec = (raycast_cursor_pos.position - drag_state.gizmo_position).normalize();
@@ -240,10 +242,11 @@ pub fn handle_rotate_dragging(
     active_selection: Query<Entity, With<ActiveSelection>>,
     other_selected: Query<Entity, (With<Selected>, Without<ActiveSelection>)>,
     parents: Query<&ChildOf>,
-    gizmo_snap: Res<GizmoSnap>,
+    _gizmo_snap: Res<GizmoSnap>,
     selected: Res<NewGizmoConfig>,
     gizmo_data: Query<(&GizmoAxis, Option<&GizmoConfig>)>,
-    mut accrued: Local<Vec2>,
+    mut drag_state: ResMut<DragState>,
+    cursor_2d: Res<CursorWindowPos>,
 ) {
     if event.button != PointerButton::Primary {
         return;
@@ -274,26 +277,14 @@ pub fn handle_rotate_dragging(
     };
 
     let free_rotate_speed = 0.3 * speed_scale;
+    let locked_rotate_speed = 1.0 * speed_scale;
 
-    *accrued += event.delta * free_rotate_speed;
-
-    if accrued.x.abs() < gizmo_snap.rotate_value && accrued.y.abs() < gizmo_snap.rotate_value {
-        return;
-    }
-    let accrued_x_degrees = accrued.x;
-    let accrued_y_degrees = accrued.y;
-
-    let x_step = snap_roation(accrued_x_degrees, gizmo_snap.rotate_value);
-    let y_step = snap_roation(accrued_y_degrees, gizmo_snap.rotate_value);
-
-    let delta_x = x_step.to_radians();
-    let delta_y = y_step.to_radians();
     let Ok(_target) = targets.get(event.entity) else {
         log(
             LogType::Editor,
             LogLevel::Error,
             LogCategory::Debug,
-            format!("Rotaion Gizmo({})'s Target not found", event.entity.index()),
+            format!("Rotation Gizmo({})'s Target not found", event.entity.index()),
         );
         return;
     };
@@ -306,23 +297,7 @@ pub fn handle_rotate_dragging(
         );
         return;
     };
-    let effective_delta_x = delta_x;
-    let effective_delta_y = delta_y;
 
-    let rotation_delta = Quat::from_axis_angle(camera_transform.up().as_vec3(), delta_x)
-        * Quat::from_axis_angle(camera_transform.right().as_vec3(), delta_y);
-
-    let Ok(click_ray) = camera.viewport_to_world(camera_transform, event.pointer_location.position)
-    else {
-        log! {
-            LogType::Editor,
-            LogLevel::Error,
-            LogCategory::Input,
-            "Failed to convert viewport to world coordinates for pointer location: {:?}",
-            event.pointer_location.position
-        };
-        return;
-    };
     let mut all_selected_entities = Vec::new();
     all_selected_entities.extend(active_selection.iter());
     all_selected_entities.extend(other_selected.iter());
@@ -356,40 +331,82 @@ pub fn handle_rotate_dragging(
         }
     };
 
+    // Calculate rotation based on axis type
     let final_rotation = match gizmo_axis {
-        GizmoAxis::All => rotation_delta,
-        GizmoAxis::X => {
-            let mut delta = effective_delta_y;
-            if origin.x > camera_transform.translation().x {
-                delta = -delta;
+        GizmoAxis::All => {
+            // Free rotation using screen-space mouse delta
+            let cursor_delta_2d = cursor_2d.position - drag_state.initial_cursor_position;
+            
+            if cursor_delta_2d == Vec2::ZERO {
+                return;
             }
 
-            Quat::from_rotation_x(delta)
+            let yaw = cursor_delta_2d.x * free_rotate_speed;
+            let pitch = -cursor_delta_2d.y * free_rotate_speed;
+            
+            let delta_x = yaw.to_radians();
+            let delta_y = pitch.to_radians();
+
+            Quat::from_axis_angle(camera_transform.up().as_vec3(), delta_x)
+                * Quat::from_axis_angle(camera_transform.right().as_vec3(), delta_y)
         }
-        GizmoAxis::Y => {
-            let mut delta = effective_delta_x;
-            if origin.y > camera_transform.translation().y {
-                delta = -delta;
+        GizmoAxis::X | GizmoAxis::Y | GizmoAxis::Z => {
+            // Locked axis rotation using ray-plane intersection
+            let axis = match gizmo_axis {
+                GizmoAxis::X => Vec3::X,
+                GizmoAxis::Y => Vec3::Y,
+                GizmoAxis::Z => Vec3::Z,
+                _ => return,
+            };
+
+            let Ok(ray) = camera.viewport_to_world(camera_transform, event.pointer_location.position) else {
+                log! {
+                    LogType::Editor,
+                    LogLevel::Error,
+                    LogCategory::Input,
+                    "Failed to convert viewport to world coordinates for pointer location: {:?}",
+                    event.pointer_location.position
+                };
+                return;
+            };
+
+            let ray_origin = ray.origin;
+            let ray_direction = ray.direction;
+            let plane_normal = axis;
+            
+            // Ray-plane intersection
+            let ray_dir_dot = ray_direction.dot(plane_normal);
+            if ray_dir_dot.abs() < 1e-6 {
+                return; // Ray parallel to plane
             }
 
-            Quat::from_rotation_y(delta)
-        }
-        GizmoAxis::Z => {
-            let (pitch, roll, yaw) = rotation_delta.to_euler(bevy::math::EulerRot::XZY);
-            let mut delta = roll;
-            if let Some(hit_distance) = click_ray
-                .intersect_plane(Vec3::new(0., 0., origin.z), InfinitePlane3d::new(Vec3::Z))
-            {
-                let hit_point = camera_transform.translation() + click_ray.direction * hit_distance;
-                let y_diff = origin.y - hit_point.y;
-                let x_diff = origin.x - hit_point.x;
-                delta += yaw * y_diff.signum();
-                delta += pitch * x_diff.signum();
+            let t = (origin - ray_origin).dot(plane_normal) / ray_dir_dot;
+            let hit_pos = ray_origin + ray_direction * t;
+            
+            // Calculate angle between previous and current hit direction
+            let prev_vec = drag_state.prev_hit_dir;
+            let curr_vec = (hit_pos - origin).normalize();
+            
+            // Safety check for NaN or invalid vectors
+            if prev_vec.is_nan() || curr_vec.is_nan() || prev_vec.length_squared() < 1e-6 || curr_vec.length_squared() < 1e-6 {
+                drag_state.prev_hit_dir = curr_vec;
+                return;
             }
-            if origin.z > camera_transform.translation().z {
-                delta = -delta;
+            
+            let unsigned_angle = prev_vec.angle_between(curr_vec);
+            
+            // Check for NaN in angle calculation
+            if unsigned_angle.is_nan() || !unsigned_angle.is_finite() {
+                return;
             }
-            Quat::from_rotation_z(delta)
+            
+            let direction = prev_vec.cross(curr_vec).dot(axis).signum();
+            let signed_angle = unsigned_angle * direction * locked_rotate_speed;
+            
+            // Update for next frame
+            drag_state.prev_hit_dir = curr_vec;
+            
+            Quat::from_axis_angle(axis, signed_angle)
         }
         GizmoAxis::None => {
             log!(
@@ -401,6 +418,8 @@ pub fn handle_rotate_dragging(
             Quat::IDENTITY
         }
     };
+
+    // Apply rotation to all root entities
     for &entity in &root_entities {
         if let Ok(mut entity_transform) = objects.get_mut(entity) {
             let relative_pos = entity_transform.translation - origin;
@@ -409,9 +428,9 @@ pub fn handle_rotate_dragging(
             entity_transform.rotation = final_rotation * entity_transform.rotation;
         }
     }
-    *accrued = Vec2::ZERO;
 }
 
+#[allow(dead_code)]
 fn snap_roation(value: f32, inc: f32) -> f32 {
     if inc == 0.0 {
         value

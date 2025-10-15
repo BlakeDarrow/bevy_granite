@@ -1,14 +1,16 @@
 use bevy::{
     color::Color,
-    ecs::{component::Component, resource::Resource},
+    ecs::{component::Component, resource::Resource, entity::Entity},
     math::{bool, Quat, Vec2, Vec3},
 };
+use std::collections::HashMap;
 
 #[derive(Resource, Component, PartialEq, Clone)]
 pub struct DragState {
     pub dragging: bool,
     pub raycast_position: Vec3,
     pub initial_cursor_position: Vec2,
+    pub previous_cursor_position: Vec2,
     pub initial_selection_rotation: Quat,
     pub gizmo_position: Vec3,
     pub initial_gizmo_rotation: Quat,
@@ -17,6 +19,9 @@ pub struct DragState {
     pub accumulated_angle: f32,
     pub last_snapped: f32,
     pub prev_hit_dir: Vec3,
+    pub initial_hit_angle: f32,
+    pub initial_entity_rotations: HashMap<Entity, Quat>,
+    pub first_drag_frame: bool,
 }
 
 impl Default for DragState {
@@ -25,6 +30,7 @@ impl Default for DragState {
             dragging: false,
             raycast_position: Vec3::ZERO,
             initial_cursor_position: Vec2::ZERO,
+            previous_cursor_position: Vec2::ZERO,
             initial_gizmo_rotation: Quat::default(),
             gizmo_position: Vec3::ZERO,
             initial_selection_rotation: Quat::default(),
@@ -33,6 +39,9 @@ impl Default for DragState {
             accumulated_angle: 0.,
             last_snapped: 0.,
             prev_hit_dir: Vec3::NAN,
+            initial_hit_angle: 0.0,
+            initial_entity_rotations: HashMap::new(),
+            first_drag_frame: true,
         }
     }
 }
