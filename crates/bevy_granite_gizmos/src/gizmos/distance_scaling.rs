@@ -10,13 +10,14 @@ use bevy::{
 use super::{GizmoChildren, GizmoType};
 use crate::{
     gizmos::{NewGizmoType, GizmoConfig},
-    NewGizmoConfig, GizmoCamera,
+    NewGizmoConfig,
 };
+use bevy_granite_core::UICamera;
 
 const DISTANCE_SCALING_ENABLED: bool = true;
 
 pub fn scale_gizmo_by_camera_distance_system(
-    camera_q: Query<&GlobalTransform, With<GizmoCamera>>,
+    camera_q: Query<&GlobalTransform, With<UICamera>>,
     mut gizmo_q: Query<
         (&GlobalTransform, &mut Transform, Option<&mut GizmoConfig>),
         With<GizmoChildren>,
