@@ -251,11 +251,11 @@ fn build_axis_ring(
 
 pub fn update_gizmo_rotation_for_mode(
     mut gizmo_query: Query<(&mut Transform, &GizmoOf, &GizmoConfig), With<RotateGizmoParent>>,
-    parent_query: Query<&GlobalTransform>,
+    parent_query: Query<&Transform, Without<RotateGizmoParent>>,
 ) {
     for (mut gizmo_transform, gizmo_of, config) in gizmo_query.iter_mut() {
-        if let Ok(parent_global_transform) = parent_query.get(gizmo_of.0) {
-            let parent_rotation = parent_global_transform.to_scale_rotation_translation().1;
+        if let Ok(parent_transform) = parent_query.get(gizmo_of.0) {
+            let parent_rotation = parent_transform.rotation;
             
             match config.mode() {
                 GizmoMode::Global => {
