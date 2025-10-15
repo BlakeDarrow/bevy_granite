@@ -121,6 +121,7 @@ pub fn editor_gizmos_ui(
                         };
                         gizmo.set_type(active, &config);
                         gizmo.set_mode(mode);
+                        config.mode = mode; 
                         **selected_option = active;
                     } else {
                         config.mode = mode;
