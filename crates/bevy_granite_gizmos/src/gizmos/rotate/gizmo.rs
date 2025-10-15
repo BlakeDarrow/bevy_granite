@@ -7,7 +7,7 @@ use bevy::picking::Pickable;
 use bevy::prelude::{AlphaMode, Meshable, Quat, Sphere};
 use bevy::prelude::{
     Assets, Children, Color, Commands, Component, Entity, GlobalTransform, Mesh, Name, Query,
-    ResMut, Resource, StandardMaterial, Transform, Vec3, Visibility, Without,
+    ResMut, Resource, StandardMaterial, Transform, Vec3, Visibility, With, Without,
 };
 use bevy_granite_core::TreeHiddenEntity;
 use bevy_granite_logging::{
@@ -15,7 +15,7 @@ use bevy_granite_logging::{
     log,
 };
 
-use crate::gizmos::{GizmoConfig, GizmoOf, GizmoRoot};
+use crate::gizmos::{GizmoConfig, GizmoMode, GizmoOf, GizmoRoot};
 use crate::{gizmos::GizmoMesh, input::GizmoAxis};
 
 #[derive(Component)]
@@ -247,4 +247,26 @@ fn build_axis_ring(
             GizmoRoot(parent),
         ))
         .observe(super::drag::handle_rotate_dragging);
+}
+
+pub fn update_gizmo_rotation_for_mode(
+    mut gizmo_query: Query<(&mut Transform, &GizmoOf, &GizmoConfig), With<RotateGizmoParent>>,
+    parent_query: Query<&GlobalTransform>,
+) {
+    for (mut gizmo_transform, gizmo_of, config) in gizmo_query.iter_mut() {
+        if let Ok(parent_global_transform) = parent_query.get(gizmo_of.0) {
+            let parent_rotation = parent_global_transform.to_scale_rotation_translation().1;
+            
+            match config.mode() {
+                GizmoMode::Global => {
+                    // Counter-rotate to stay aligned with world axes
+                    gizmo_transform.rotation = parent_rotation.inverse();
+                }
+                GizmoMode::Local => {
+                    // Align with entity's rotation
+                    gizmo_transform.rotation = Quat::IDENTITY;
+                }
+            }
+        }
+    }
 }

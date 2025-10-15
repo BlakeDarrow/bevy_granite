@@ -2,7 +2,7 @@
 // Children inherit rotation automatically through hierarchy
 use crate::{
     gizmos::{
-        GizmoConfig, GizmoMesh, GizmoOf, GizmoSnap, GizmoType, NewGizmoConfig, NewGizmoType,
+        GizmoConfig, GizmoMesh, GizmoMode, GizmoOf, GizmoRoot, GizmoSnap, GizmoType, NewGizmoConfig, NewGizmoType,
         RotateDraggingEvent, RotateGizmo, RotateGizmoParent, RotateInitDragEvent,
         RotateResetDragEvent,
     },
@@ -251,13 +251,22 @@ pub fn handle_rotate_dragging(
     parents: Query<&ChildOf>,
     _gizmo_snap: Res<GizmoSnap>,
     selected: Res<NewGizmoConfig>,
-    gizmo_data: Query<(&GizmoAxis, Option<&GizmoConfig>)>,
+    gizmo_data: Query<(&GizmoAxis, &GizmoRoot)>,
+    gizmo_config_query: Query<&GizmoConfig>,
     mut drag_state: ResMut<DragState>,
 ) {
+    log!(
+        LogType::Editor,
+        LogLevel::Info,
+        LogCategory::Debug,
+        "handle_rotate_dragging called for entity: {:?}",
+        event.entity
+    );
+    
     if event.button != PointerButton::Primary {
         return;
     }
-    let Ok((gizmo_axis, config)) = gizmo_data.get(event.entity) else {
+    let Ok((gizmo_axis, gizmo_root)) = gizmo_data.get(event.entity) else {
         log!(
             LogType::Editor,
             LogLevel::Warning,
@@ -267,10 +276,23 @@ pub fn handle_rotate_dragging(
         );
         return;
     };
+    
+    // Get config from parent gizmo entity
+    let config = gizmo_config_query.get(gizmo_root.0).ok();
+    
+    log!(
+        LogType::Editor,
+        LogLevel::Info,
+        LogCategory::Debug,
+        "Gizmo config: {:?}, gizmo_axis: {:?}",
+        config,
+        gizmo_axis
+    );
+    
     let GizmoConfig::Rotate {
         speed_scale,
         distance_scale: _,
-        mode: _,
+        mode,
     } = config.cloned().unwrap_or(selected.rotation())
     else {
         log!(
@@ -285,7 +307,7 @@ pub fn handle_rotate_dragging(
     let free_rotate_speed = 0.01 * speed_scale;
     let locked_rotate_speed = 1.0 * speed_scale;
 
-    let Ok(_target) = targets.get(event.entity) else {
+    let Ok(target) = targets.get(event.entity) else {
         log(
             LogType::Editor,
             LogLevel::Error,
@@ -336,8 +358,19 @@ pub fn handle_rotate_dragging(
             return;
         }
     };
+    
+    // Get target rotation for local/global mode
+    let target_rotation = if let Ok(global_transform) = global_transforms.get(target.0) {
+        global_transform.to_scale_rotation_translation().1
+    } else {
+        if let Ok(transform) = objects.get(target.0) {
+            transform.rotation
+        } else {
+            Quat::IDENTITY
+        }
+    };
 
-    let final_rotation = match gizmo_axis {
+    let (final_rotation, local_axis) = match gizmo_axis {
         GizmoAxis::All => {
             let delta_x = event.delta.x * free_rotate_speed;
             let delta_y = event.delta.y * free_rotate_speed;
@@ -349,8 +382,17 @@ pub fn handle_rotate_dragging(
                 return;
             }
             
-            Quat::from_axis_angle(camera_transform.up().as_vec3(), snapped_delta_x)
-                * Quat::from_axis_angle(camera_transform.right().as_vec3(), snapped_delta_y)
+            log!(
+                LogType::Editor,
+                LogLevel::Info,
+                LogCategory::Debug,
+                "Free rotation (All axis) - mode: {:?}",
+                mode
+            );
+            
+            let rotation = Quat::from_axis_angle(camera_transform.up().as_vec3(), snapped_delta_x)
+                * Quat::from_axis_angle(camera_transform.right().as_vec3(), snapped_delta_y);
+            (rotation, None)
         }
         GizmoAxis::X | GizmoAxis::Y | GizmoAxis::Z => {
             let axis = match gizmo_axis {
@@ -358,6 +400,25 @@ pub fn handle_rotate_dragging(
                 GizmoAxis::Y => Vec3::Y,
                 GizmoAxis::Z => Vec3::Z,
                 _ => return,
+            };
+            
+            log!(
+                LogType::Editor,
+                LogLevel::Info,
+                LogCategory::Debug,
+                "Locked axis rotation: {:?}, mode: {:?}",
+                gizmo_axis,
+                mode
+            );
+            
+            // Apply local/global mode transformation
+            let world_axis = match mode {
+                GizmoMode::Local => {
+                    target_rotation * axis
+                }
+                GizmoMode::Global => {
+                    axis
+                }
             };
 
             let Ok(ray) = camera.viewport_to_world(camera_transform, event.pointer_location.position) else {
@@ -373,7 +434,7 @@ pub fn handle_rotate_dragging(
 
             let ray_origin = ray.origin;
             let ray_direction = ray.direction;
-            let plane_normal = axis;
+            let plane_normal = world_axis;
             
             let ray_dir_dot = ray_direction.dot(plane_normal);
             if ray_dir_dot.abs() < 1e-6 {
@@ -406,13 +467,13 @@ pub fn handle_rotate_dragging(
                 return; 
             }
             
-            let direction = prev_vec.cross(curr_vec).dot(axis).signum();
+            let direction = prev_vec.cross(curr_vec).dot(world_axis).signum();
             let signed_angle = unsigned_angle * direction * locked_rotate_speed;
-            let rotation_delta = Quat::from_axis_angle(axis, signed_angle);
+            let rotation_delta = Quat::from_axis_angle(world_axis, signed_angle);
             
             drag_state.prev_hit_dir = curr_vec;
             
-            rotation_delta
+            (rotation_delta, Some((axis, signed_angle)))
         }
         GizmoAxis::None => {
             log!(
@@ -421,16 +482,40 @@ pub fn handle_rotate_dragging(
                 LogCategory::Debug,
                 "Rotation Gizmo Axis None Should not happen",
             );
-            Quat::IDENTITY
+            (Quat::IDENTITY, None)
         }
     };
 
     for &entity in &root_entities {
         if let Ok(mut entity_transform) = objects.get_mut(entity) {
-            let relative_pos = entity_transform.translation - origin;
-            let rotated_relative_pos = final_rotation * relative_pos;
-            entity_transform.translation = origin + rotated_relative_pos;
-            entity_transform.rotation = final_rotation * entity_transform.rotation;
+            match mode {
+                GizmoMode::Local => {
+                    // In local mode, rotation is applied in local space (position doesn't change)
+                    if let Some((local_axis, signed_angle)) = local_axis {
+                        log!(
+                            LogType::Editor,
+                            LogLevel::Info,
+                            LogCategory::Debug,
+                            "Local mode: Rotating around {:?} by {} radians",
+                            local_axis,
+                            signed_angle
+                        );
+                        // Apply rotation in local space around the local axis
+                        let local_rotation = Quat::from_axis_angle(local_axis, signed_angle);
+                        entity_transform.rotation = entity_transform.rotation * local_rotation;
+                    } else {
+                        // Free rotation (GizmoAxis::All) - apply in world space
+                        entity_transform.rotation = final_rotation * entity_transform.rotation;
+                    }
+                }
+                GizmoMode::Global => {
+                    // In global mode, rotation affects both position and rotation
+                    let relative_pos = entity_transform.translation - origin;
+                    let rotated_relative_pos = final_rotation * relative_pos;
+                    entity_transform.translation = origin + rotated_relative_pos;
+                    entity_transform.rotation = final_rotation * entity_transform.rotation;
+                }
+            }
         }
     }
 }

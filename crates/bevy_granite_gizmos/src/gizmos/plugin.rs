@@ -5,9 +5,10 @@ use super::{
     GizmoType, LastSelectedGizmo, NewGizmoConfig, PreviousTransformGizmo, RotateDraggingEvent,
     RotateInitDragEvent, RotateResetDragEvent, SpawnGizmoEvent, TransformDraggingEvent,
     TransformInitDragEvent, TransformResetDragEvent,
+    update_rotate_gizmo_rotation_for_mode, update_transform_gizmo_rotation_for_mode,
 };
 use crate::gizmos::transform::{
-    apply_transformations, update_gizmo_rotation_for_mode, TransitionDelta,
+    apply_transformations, TransitionDelta,
 };
 use crate::gizmos::{GizmoMode, NewGizmoType};
 use crate::is_gizmos_active;
@@ -59,7 +60,8 @@ impl Plugin for GizmoPlugin {
                 (
                     gizmo_changed_watcher,
                     gizmo_events,
-                    update_gizmo_rotation_for_mode,
+                    update_transform_gizmo_rotation_for_mode,
+                    update_rotate_gizmo_rotation_for_mode,
                     apply_transformations.run_if(any_with_component::<TransitionDelta>),
                 )
                     .run_if(is_gizmos_active),

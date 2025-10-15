@@ -53,7 +53,7 @@ impl NewGizmoConfig {
     }
 }
 
-#[derive(Component, Clone, Copy)]
+#[derive(Component, Clone, Copy, Debug)]
 pub enum GizmoConfig {
     Pointer,
     None,
@@ -179,9 +179,10 @@ pub use plugin::GizmoPlugin;
 pub use rotate::{
     despawn_rotate_gizmo, handle_init_rotate_drag, handle_rotate_dragging, handle_rotate_input,
     handle_rotate_reset, register_embedded_rotate_gizmo_mesh, spawn_rotate_gizmo, 
+    update_gizmo_rotation_for_mode as update_rotate_gizmo_rotation_for_mode,
     RotateGizmo, RotateGizmoParent,
 };
 pub use transform::{
-    despawn_transform_gizmo, spawn_transform_gizmo, update_gizmo_rotation_for_mode, 
+    despawn_transform_gizmo, spawn_transform_gizmo, update_gizmo_rotation_for_mode as update_transform_gizmo_rotation_for_mode, 
     PreviousTransformGizmo, TransformGizmo, TransformGizmoParent,
 };
