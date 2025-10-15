@@ -59,40 +59,21 @@ pub fn spawn_rotate_gizmo(
     if let Ok(parent_global_transform) = query.get(parent) {
         let gizmo_translation = offset;
 
-        let sphere = Sphere::new(ROTATE_VISUAL_RADIUS).mesh().ico(7).unwrap();
-        let sphere_handle = meshes.add(sphere);
-        let material = materials.add(StandardMaterial {
-            base_color: Color::srgba(0.6, 0.6, 0.6, 0.24),
-            unlit: true,
-            alpha_mode: AlphaMode::AlphaToCoverage,
-            ..Default::default()
-        });
-
-        // Set initial gizmo rotation based on mode
         let initial_rotation = match config.mode() {
             GizmoMode::Global => {
-                // Counter-rotate to stay aligned with world axes
                 parent_global_transform
                     .to_scale_rotation_translation()
                     .1
                     .inverse()
             }
             GizmoMode::Local => {
-                // Align with entity's rotation (identity in local space)
                 Quat::IDENTITY
             }
         };
 
+        // Create the gizmo parent entity 
         let gizmo_entity = commands
             .spawn((
-                Mesh3d(sphere_handle),
-                MeshMaterial3d(material.clone()),
-                NotShadowCaster,
-                NotShadowReceiver,
-                Pickable {
-                    is_hoverable: true,
-                    should_block_lower: false,
-                },
                 Transform {
                     translation: gizmo_translation,
                     rotation: initial_rotation,
@@ -104,12 +85,13 @@ pub fn spawn_rotate_gizmo(
                 config,
             ))
             .insert(Name::new("RotateGizmo"))
-            .insert(RotateGizmo)
             .insert(RotateGizmoParent)
             .insert(TreeHiddenEntity)
+            .insert(RotateGizmo)
             .id();
 
-        // commands.entity(gizmo_entity).insert(ParentTo(parent));
+        // Build the visual sphere as a child
+        build_visual_sphere(parent, commands, materials, gizmo_entity, meshes);
 
         build_free_sphere(
             parent,
@@ -177,6 +159,41 @@ pub fn despawn_rotate_gizmo(
             "Despawned Rotate Gizmo"
         );
     }
+}
+
+fn build_visual_sphere(
+    target: Entity,
+    commands: &mut Commands,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    parent: Entity,
+    meshes: &mut ResMut<Assets<Mesh>>,
+) {
+    let sphere = Sphere::new(ROTATE_VISUAL_RADIUS).mesh().ico(7).unwrap();
+    let sphere_handle = meshes.add(sphere);
+    let material = materials.add(StandardMaterial {
+        base_color: Color::srgba(0.6, 0.6, 0.6, 0.24),
+        unlit: true,
+        alpha_mode: AlphaMode::AlphaToCoverage,
+        ..Default::default()
+    });
+
+    commands.spawn((
+        Mesh3d(sphere_handle),
+        MeshMaterial3d(material.clone()),
+        Transform::default(),
+        NotShadowCaster,
+        NotShadowReceiver,
+        Pickable {
+            is_hoverable: true,
+            should_block_lower: false,
+        },
+        Name::new("Gizmo Visual Sphere"),
+        GizmoAxis::None,
+        RotateGizmo,
+        ChildOf(parent),
+        GizmoOf(target),
+        GizmoRoot(parent),
+    ));
 }
 
 fn build_free_sphere(
@@ -271,10 +288,10 @@ pub fn update_gizmo_rotation_for_mode(
             match config.mode() {
                 GizmoMode::Global => {
                     // Mimic GlobalTransform
-                    // We want this to happen immediately, but GlobalTransform propagates later. So this is a workaround so we dont get gizmo off by one rotation 
+                    // We want this to happen immediately, but GlobalTransform propagates later. So this is a workaround so we dont get gizmo off by one rotation
                     let mut global_rotation = entity_transform.rotation;
                     let mut current_entity = gizmo_of.0;
-                    
+
                     while let Ok(parent_of) = parent_query.get(current_entity) {
                         let parent_entity = parent_of.parent();
                         if let Ok(parent_transform) = transform_query.get(parent_entity) {
@@ -284,7 +301,7 @@ pub fn update_gizmo_rotation_for_mode(
                             break;
                         }
                     }
-                    
+
                     gizmo_transform.rotation = global_rotation.inverse();
                 }
                 GizmoMode::Local => {

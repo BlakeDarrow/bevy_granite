@@ -254,6 +254,7 @@ pub fn handle_rotate_dragging(
     gizmo_data: Query<(&GizmoAxis, &GizmoRoot)>,
     gizmo_config_query: Query<&GizmoConfig>,
     mut drag_state: ResMut<DragState>,
+    mut gizmo_visibility_query: Query<(&GizmoAxis, &mut Visibility, &GizmoRoot), With<RotateGizmo>>,
 ) {
     if event.button != PointerButton::Primary {
         return;
@@ -261,6 +262,19 @@ pub fn handle_rotate_dragging(
     let Ok((gizmo_axis, gizmo_root)) = gizmo_data.get(event.entity) else {
         return;
     };
+    
+    if !drag_state.dragging {
+        drag_state.dragging = true;
+        for (axis, mut visibility, root) in gizmo_visibility_query.iter_mut() {
+            if root.0 == gizmo_root.0 {
+                *visibility = if *axis == *gizmo_axis {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                };
+            }
+        }
+    }
     
     let config = gizmo_config_query.get(gizmo_root.0).ok();
     
