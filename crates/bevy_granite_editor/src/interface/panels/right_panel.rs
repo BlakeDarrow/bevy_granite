@@ -38,6 +38,13 @@ impl Default for SideDockState {
     }
 }
 
+#[derive(PartialEq)]
+pub enum SideTabType {
+    EntityEditor,
+    NodeTree,
+    EditorSettings,
+}
+
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum SideTab {
     EntityEditor {
@@ -52,6 +59,30 @@ pub enum SideTab {
         #[serde(skip)]
         data: Box<EditorSettingsTabData>,
     },
+}
+
+impl SideTab {
+    pub fn get_type(&self) -> SideTabType {
+        match self {
+            SideTab::EntityEditor { .. } => SideTabType::EntityEditor,
+            SideTab::NodeTree { .. } => SideTabType::NodeTree,
+            SideTab::EditorSettings { .. } => SideTabType::EditorSettings,
+        }
+    }
+
+    pub fn default_from_type(tab_type: SideTabType) -> Self {
+        match tab_type {
+            SideTabType::EntityEditor => SideTab::EntityEditor {
+                data: Box::default(),
+            },
+            SideTabType::NodeTree => SideTab::NodeTree {
+                data: Box::default(),
+            },
+            SideTabType::EditorSettings => SideTab::EditorSettings {
+                data: Box::default(),
+            },
+        }
+    }
 }
 
 #[derive(Resource)]

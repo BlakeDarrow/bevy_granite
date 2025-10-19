@@ -37,6 +37,13 @@ impl Default for BottomDockState {
     }
 }
 
+#[derive(PartialEq)]
+pub enum BottomTabType {
+    Log,
+    Debug,
+    Events,
+}
+
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub enum BottomTab {
     Log {
@@ -53,6 +60,29 @@ pub enum BottomTab {
     },
 }
 
+impl BottomTab {
+    pub fn get_type(&self) -> BottomTabType {
+        match self {
+            BottomTab::Log { .. } => BottomTabType::Log,
+            BottomTab::Debug { .. } => BottomTabType::Debug,
+            BottomTab::Events { .. } => BottomTabType::Events,
+        }
+    }
+
+    pub fn default_from_type(tab_type: BottomTabType) -> Self {
+        match tab_type {
+            BottomTabType::Log => BottomTab::Log {
+                data: Default::default(),
+            },
+            BottomTabType::Debug => BottomTab::Debug {
+                data: Default::default(),
+            },
+            BottomTabType::Events => BottomTab::Events {
+                data: Default::default(),
+            },
+        }
+    }
+}
 #[derive(Resource)]
 pub struct BottomTabViewer;
 
