@@ -10,6 +10,7 @@ use crate::interface::tabs::{
 #[derive(Resource, Clone)]
 pub struct BottomDockState {
     pub dock_state: DockState<BottomTab>,
+    pub height: Option<f32>,
 }
 
 impl Default for BottomDockState {
@@ -32,7 +33,7 @@ impl Default for BottomDockState {
             surface.split_right(NodeIndex::root(), 0.33, vec![events_tab]);
         let [_events_node, _log_node] = surface.split_right(remaining, 0.5, vec![log_tab]);
 
-        Self { dock_state }
+        Self { dock_state, height: None }
     }
 }
 

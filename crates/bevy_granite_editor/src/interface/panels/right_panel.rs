@@ -14,6 +14,7 @@ use crate::interface::{
 #[derive(Resource, Clone)]
 pub struct SideDockState {
     pub dock_state: DockState<SideTab>,
+    pub width: Option<f32>,
 }
 
 impl Default for SideDockState {
@@ -33,7 +34,7 @@ impl Default for SideDockState {
         let [_old_node, _entity_editor_node] =
             surface.split_below(NodeIndex::root(), 0.3, vec![entity_editor_tab]);
 
-        Self { dock_state }
+        Self { dock_state, width: None }
     }
 }
 

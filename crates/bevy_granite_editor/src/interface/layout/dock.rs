@@ -95,10 +95,10 @@ pub fn dock_ui_system(
     let screen_width = screen_rect.width();
     let screen_height = screen_rect.height();
 
-    let default_side_panel_width = (screen_width * 0.10).clamp(200., 1000.);
+    let default_side_panel_width = side_dock.width.unwrap_or((screen_width * 0.10).clamp(200., 1000.));
     // we need a way to calculate the minimum size the bottom panel can be so if we change it in the future it wont start crashing again
-    let max_side_panel_width = screen_width - 270.; // 270 is the minimum size to fit bottom panel it will crash is smaller than this
-    let bottom_panel_height = (screen_height * 0.05).clamp(100., 400.);
+    let max_side_panel_width = screen_width - 270.; // 270 is the minimum size to fit bottom panel it will crash if smaller than this
+    let default_bottom_panel_height = bottom_dock.height.unwrap_or((screen_height * 0.05).clamp(100., 400.));
 
     let space = get_interface_config_float("ui.spacing");
     egui::TopBottomPanel::top("tool_panel")
@@ -120,7 +120,7 @@ pub fn dock_ui_system(
         });
 
     let side_panel_position = editor_state.config.dock.side_panel_position;
-    match side_panel_position {
+    let panel_response = match side_panel_position {
         SidePanelPosition::Left => {
             egui::SidePanel::left("left_dock_panel")
                 .resizable(true)
@@ -130,7 +130,7 @@ pub fn dock_ui_system(
                     DockArea::new(&mut side_dock.dock_state)
                         .id(egui::Id::new("left_dock_area"))
                         .show_inside(ui, &mut SideTabViewer);
-                });
+                })
         }
         SidePanelPosition::Right => {
             egui::SidePanel::right("right_dock_panel")
@@ -141,13 +141,18 @@ pub fn dock_ui_system(
                     DockArea::new(&mut side_dock.dock_state)
                         .id(egui::Id::new("right_dock_area"))
                         .show_inside(ui, &mut SideTabViewer);
-                });
+                })
         }
+    };
+
+    let new_width = panel_response.response.rect.width();
+    if new_width != default_side_panel_width {
+        side_dock.width = Some(new_width);
     }
 
-    egui::TopBottomPanel::bottom("bottom_dock_panel")
+    let bottom_response = egui::TopBottomPanel::bottom("bottom_dock_panel")
         .resizable(true)
-        .default_height(bottom_panel_height)
+        .default_height(default_bottom_panel_height)
         .height_range(150.0..=(screen_height * 0.9))
         .show(ctx, |ui| {
             ui.add_space(space);
@@ -155,4 +160,9 @@ pub fn dock_ui_system(
                 .id(egui::Id::new("bottom_dock_area"))
                 .show_inside(ui, &mut BottomTabViewer);
         });
+
+    let new_height = bottom_response.response.rect.height();
+    if new_height != default_bottom_panel_height {
+        bottom_dock.height = Some(new_height);
+    }
 }
