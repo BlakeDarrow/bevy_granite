@@ -130,7 +130,7 @@ pub fn handle_movement(
 
     for event in mouse_wheel_events.read() {
         *movement_speed *= 1.1_f32.powf(event.y);
-        *movement_speed = movement_speed.clamp(base_movement_speed, 2000.0);
+        *movement_speed = movement_speed.clamp(0.1, 2000.0);
     }
 
     let rotation_sensitivity = base_rotation_sensitivity;

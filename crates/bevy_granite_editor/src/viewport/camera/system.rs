@@ -710,7 +710,8 @@ pub fn mouse_button_iter(
             time,
             movement_speed,
         );
-    } else {
+    } else if !user_input.mouse_middle.pressed {
+        // Only handle zoom when not in FPS mode (right mouse) and not panning (middle mouse)
         handle_zoom(&mut query, &mut mouse_wheel_events, &mut target_pos);
     }
 }
