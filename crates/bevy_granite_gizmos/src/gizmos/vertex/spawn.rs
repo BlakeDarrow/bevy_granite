@@ -7,6 +7,7 @@ use crate::{
     selection::Selected,
 };
 use bevy::{
+    camera::visibility::RenderLayers,
     ecs::hierarchy::ChildOf,
     light::{NotShadowCaster, NotShadowReceiver},
     mesh::{Mesh3d, VertexAttributeValues},
@@ -112,6 +113,7 @@ pub fn spawn_vertex_visualizations(
                 EditorIgnore::PICKING,
                 NotShadowCaster,
                 NotShadowReceiver,
+                RenderLayers::layer(14), // Layer 14 for gizmos - always renders on top
                 ChildOf(parent),
                 TreeHiddenEntity,
                 Name::new(format!("Vertex_{}", index)),
