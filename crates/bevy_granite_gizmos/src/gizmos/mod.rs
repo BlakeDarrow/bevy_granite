@@ -10,6 +10,7 @@ pub mod manager;
 pub mod plugin;
 pub mod rotate;
 pub mod transform;
+pub mod vertex;
 
 #[derive(Clone, Default, Debug, Copy, PartialEq)]
 pub enum GizmoType {

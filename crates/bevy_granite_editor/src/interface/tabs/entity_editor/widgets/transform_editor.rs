@@ -1,4 +1,6 @@
 use crate::interface::tabs::EntityEditorTabData;
+use arboard::Clipboard;
+use bevy::math::Affine3A;
 use bevy::prelude::{EulerRot, Quat, Vec3};
 use bevy_egui::egui;
 use bevy_granite_core::TransformData;
@@ -79,41 +81,69 @@ fn display_transform_data(ui: &mut egui::Ui, data: &mut EntityEditorTabData) {
     let btn_height = font_id.size + style.spacing.button_padding.y * 2.0;
     let drag_size = [60., btn_height];
 
-    egui::Grid::new("transform_grid")
-        .num_columns(3)
-        .spacing([large_spacing, small_spacing])
-        .striped(true)
-        .show(ui, |ui| {
-            ui.set_min_width(ui.available_width());
+    ui.vertical(|ui| {
+        egui::Grid::new("transform_grid")
+            .num_columns(3)
+            .spacing([large_spacing, small_spacing])
+            .striped(true)
+            .show(ui, |ui| {
+                ui.set_min_width(ui.available_width());
 
-            // Position
-            ui.vertical(|ui| {
-                display_position_ui(ui, pos, changed, drag_size);
-            });
-            ui.end_row();
+                // Position
+                ui.vertical(|ui| {
+                    display_position_ui(ui, pos, changed, drag_size);
+                });
+                ui.end_row();
 
-            // Rotation
-            ui.vertical(|ui| {
-                display_rotation_ui(
-                    ui,
-                    euler,
-                    euler_radians,
-                    quat_rot,
-                    last_synced_quat,
-                    changed,
-                    editing,
-                    gizmo_locked_axis,
-                    drag_size,
-                );
-            });
-            ui.end_row();
+                // Rotation
+                ui.vertical(|ui| {
+                    display_rotation_ui(
+                        ui,
+                        euler,
+                        euler_radians,
+                        quat_rot,
+                        last_synced_quat,
+                        changed,
+                        editing,
+                        gizmo_locked_axis,
+                        drag_size,
+                    );
+                });
+                ui.end_row();
 
-            // Scale
-            ui.vertical(|ui| {
-                display_scale_ui(ui, scale, changed, drag_size);
+                // Scale
+                ui.vertical(|ui| {
+                    display_scale_ui(ui, scale, changed, drag_size);
+                });
+                ui.end_row();
             });
-            ui.end_row();
-        });
+
+        // Paste Matrix button below the transform grid
+        ui.add_space(large_spacing);
+        if ui.button("Paste Matrix").clicked() {
+            if let Ok(mut clipboard) = Clipboard::new() {
+                if let Ok(text) = clipboard.get_text() {
+                    if let Some((new_pos, new_rot, new_scale)) = parse_matrix_from_string(&text) {
+                        *pos = new_pos;
+                        *quat_rot = new_rot;
+                        *scale = new_scale;
+
+                        // Update euler angles from the new quaternion
+                        let (x, y, z) = quat_rot.to_euler(EulerRot::YXZ);
+                        let degrees = [x, y, z].map(|r| r * 180.0 / PI);
+                        *euler = Vec3::new(degrees[1], degrees[0], degrees[2]); // YXZ -> XYZ
+                        *euler_radians = Vec3::new(
+                            euler.x * PI / 180.0,
+                            euler.y * PI / 180.0,
+                            euler.z * PI / 180.0,
+                        );
+                        *last_synced_quat = *quat_rot;
+                        *changed = true;
+                    }
+                }
+            }
+        }
+    });
 
     if !ui.input(|i| i.pointer.any_down()) {
         *editing = [false; 3];
@@ -180,6 +210,7 @@ fn display_rotation_ui(
                     ui_changed[i] = ui_changed[i] || response.changed();
                 }
 
+                ui.add_space(spacing);
                 let zero = ui.add_sized(drag_size, egui::Button::new("Reset"));
 
                 let is_editing = editing.iter().any(|&e| e);
@@ -321,6 +352,7 @@ fn display_position_ui(ui: &mut egui::Ui, pos: &mut Vec3, changed: &mut bool, dr
                     }
                 });
 
+                ui.add_space(spacing);
                 let zero = ui.add_sized(drag_size, egui::Button::new("Reset"));
 
                 if zero.clicked() {
@@ -406,6 +438,7 @@ fn display_scale_ui(ui: &mut egui::Ui, scale: &mut Vec3, changed: &mut bool, dra
                     }
                 });
 
+                ui.add_space(spacing);
                 let reset = ui.add_sized(drag_size, egui::Button::new("Reset"));
 
                 if reset.clicked() {
@@ -459,4 +492,64 @@ fn normalize_euler_visual(euler: Vec3) -> Vec3 {
         normalize_angle_visual(euler.y),
         normalize_angle_visual(euler.z),
     )
+}
+
+/// Parse a 4x4 transformation matrix from the clipboard format
+/// Expected format:
+/// [m00, m01, m02, 0.0]
+/// [m10, m11, m12, 0.0]
+/// [m20, m21, m22, 0.0]
+/// [tx,  ty,  tz,  1.0]
+fn parse_matrix_from_string(text: &str) -> Option<(Vec3, Quat, Vec3)> {
+    let lines: Vec<&str> = text.lines().collect();
+    if lines.len() != 4 {
+        return None;
+    }
+
+    let mut matrix_values: Vec<Vec<f32>> = Vec::new();
+
+    for line in lines {
+        // Remove brackets and split by comma
+        let cleaned = line.trim().trim_start_matches('[').trim_end_matches(']');
+        let values: Result<Vec<f32>, _> = cleaned
+            .split(',')
+            .map(|s| s.trim().parse::<f32>())
+            .collect();
+
+        let values = values.ok()?;
+        if values.len() != 4 {
+            return None;
+        }
+        matrix_values.push(values);
+    }
+
+    // Reconstruct the affine transform
+    let matrix3 = bevy::math::Mat3::from_cols(
+        bevy::math::Vec3::new(
+            matrix_values[0][0],
+            matrix_values[0][1],
+            matrix_values[0][2],
+        ),
+        bevy::math::Vec3::new(
+            matrix_values[1][0],
+            matrix_values[1][1],
+            matrix_values[1][2],
+        ),
+        bevy::math::Vec3::new(
+            matrix_values[2][0],
+            matrix_values[2][1],
+            matrix_values[2][2],
+        ),
+    );
+
+    let translation = bevy::math::Vec3::new(
+        matrix_values[3][0],
+        matrix_values[3][1],
+        matrix_values[3][2],
+    );
+
+    let affine = Affine3A::from_mat3_translation(matrix3, translation);
+    let (scale, rotation, position) = affine.to_scale_rotation_translation();
+
+    Some((position, rotation, scale))
 }

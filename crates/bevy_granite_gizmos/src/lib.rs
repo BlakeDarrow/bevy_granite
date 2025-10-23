@@ -24,6 +24,7 @@ pub use selection::{
 };
 
 // Internal plugins
+use gizmos::vertex::VertexVisualizationPlugin;
 use gizmos::GizmoPlugin;
 use input::InputPlugin;
 use selection::SelectionPlugin;
@@ -55,6 +56,7 @@ impl Plugin for BevyGraniteGizmos {
             //
             // internal
             .add_plugins(GizmoPlugin)
+            .add_plugins(VertexVisualizationPlugin) // Vertex picking must be BEFORE SelectionPlugin for priority
             .add_plugins(SelectionPlugin)
             .add_plugins(UIPlugin)
             .add_plugins(InputPlugin) // Optional

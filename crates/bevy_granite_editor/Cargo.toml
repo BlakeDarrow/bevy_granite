@@ -14,6 +14,7 @@ serde = { workspace =  true}
 native-dialog = { workspace = true }
 ron = { workspace = true }
 lazy_static = { workspace = true }
+arboard = "3.4"
 
 bevy_granite_gizmos = { path = "../bevy_granite_gizmos"}
 bevy_granite_core = { path = "../bevy_granite_core"}

@@ -308,7 +308,7 @@ fn build_debug_icons_section(ui: &mut egui::Ui, viewport: &mut ViewportState) {
                         ui,
                         "Icon Size:",
                         &mut vis.icon_size,
-                        0.1..=5.0,
+                        0.025..=5.0,
                         0.1,
                         1,
                         None,

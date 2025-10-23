@@ -24,6 +24,7 @@ pub enum HitType {
     Gizmo,
     Icon,
     Mesh,
+    Vertex,
     Void,
     None,
 }
