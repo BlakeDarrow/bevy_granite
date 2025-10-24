@@ -70,6 +70,7 @@ fn display_transform_data(ui: &mut egui::Ui, data: &mut EntityEditorTabData) {
     let gizmo_locked_axis = transform.gizmo_axis;
     let large_spacing = crate::UI_CONFIG.large_spacing;
     let small_spacing = crate::UI_CONFIG.small_spacing;
+    let spacing = crate::UI_CONFIG.spacing;
     let style = ui.ctx().style().clone();
     let default_font_id = egui::FontId::default();
 
@@ -118,31 +119,53 @@ fn display_transform_data(ui: &mut egui::Ui, data: &mut EntityEditorTabData) {
                 ui.end_row();
             });
 
-        // Paste Matrix button below the transform grid
+        // Copy and Paste Matrix buttons below the transform grid
         ui.add_space(large_spacing);
-        if ui.button("Paste Matrix").clicked() {
-            if let Ok(mut clipboard) = Clipboard::new() {
-                if let Ok(text) = clipboard.get_text() {
-                    if let Some((new_pos, new_rot, new_scale)) = parse_matrix_from_string(&text) {
-                        *pos = new_pos;
-                        *quat_rot = new_rot;
-                        *scale = new_scale;
+        ui.horizontal(|ui| {
+            if ui.button("Copy").clicked() {
+                let affine = Affine3A::from_scale_rotation_translation(*scale, *quat_rot, *pos);
+                let matrix = affine.matrix3;
+                let translation = affine.translation;
+                let matrix_text =
+                    format!(
+                    "[{}, {}, {}, 0.0]\n[{}, {}, {}, 0.0]\n[{}, {}, {}, 0.0]\n[{}, {}, {}, 1.0]",
+                    matrix.x_axis.x, matrix.x_axis.y, matrix.x_axis.z,
+                    matrix.y_axis.x, matrix.y_axis.y, matrix.y_axis.z,
+                    matrix.z_axis.x, matrix.z_axis.y, matrix.z_axis.z,
+                    translation.x, translation.y, translation.z,
+                );
 
-                        // Update euler angles from the new quaternion
-                        let (x, y, z) = quat_rot.to_euler(EulerRot::YXZ);
-                        let degrees = [x, y, z].map(|r| r * 180.0 / PI);
-                        *euler = Vec3::new(degrees[1], degrees[0], degrees[2]); // YXZ -> XYZ
-                        *euler_radians = Vec3::new(
-                            euler.x * PI / 180.0,
-                            euler.y * PI / 180.0,
-                            euler.z * PI / 180.0,
-                        );
-                        *last_synced_quat = *quat_rot;
-                        *changed = true;
+                if let Ok(mut clipboard) = Clipboard::new() {
+                    let _ = clipboard.set_text(matrix_text);
+                }
+            }
+
+            ui.add_space(spacing);
+            if ui.button("Paste").clicked() {
+                if let Ok(mut clipboard) = Clipboard::new() {
+                    if let Ok(text) = clipboard.get_text() {
+                        if let Some((new_pos, new_rot, new_scale)) = parse_matrix_from_string(&text)
+                        {
+                            *pos = new_pos;
+                            *quat_rot = new_rot;
+                            *scale = new_scale;
+
+                            // Update euler angles from the new quaternion
+                            let (x, y, z) = quat_rot.to_euler(EulerRot::YXZ);
+                            let degrees = [x, y, z].map(|r| r * 180.0 / PI);
+                            *euler = Vec3::new(degrees[1], degrees[0], degrees[2]); // YXZ -> XYZ
+                            *euler_radians = Vec3::new(
+                                euler.x * PI / 180.0,
+                                euler.y * PI / 180.0,
+                                euler.z * PI / 180.0,
+                            );
+                            *last_synced_quat = *quat_rot;
+                            *changed = true;
+                        }
                     }
                 }
             }
-        }
+        });
     });
 
     if !ui.input(|i| i.pointer.any_down()) {
