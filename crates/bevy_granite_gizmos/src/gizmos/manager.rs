@@ -65,12 +65,12 @@ pub fn gizmo_changed_watcher(
     active_selection: Query<Entity, With<ActiveSelection>>,
 ) {
     if **selected_gizmo != last_selected_gizmo.value {
-        log!(
-            LogType::Editor,
-            LogLevel::OK,
-            LogCategory::Entity,
-            "Gizmo changed"
-        );
+        //log!(
+       //     LogType::Editor,
+        //    LogLevel::OK,
+        //    LogCategory::Entity,
+        //    "Gizmo changed"
+        //);
         despawn_writer.write(DespawnGizmoEvent(last_selected_gizmo.value));
         last_selected_gizmo.value = **selected_gizmo;
 

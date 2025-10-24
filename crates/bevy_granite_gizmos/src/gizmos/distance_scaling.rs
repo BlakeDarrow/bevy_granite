@@ -51,10 +51,11 @@ pub fn scale_gizmo_by_camera_distance_system(
             .translation()
             .distance(gizmo_global_transform.translation());
 
-        let base_scale = 0.35; // scale of gizmo's initially
-        let distance_scale = 0.08; // factor to scale via distance
-        let scale_factor = (distance * distance_scale).clamp(base_scale, 9.0); // 9.0 is max size of gizmo
-        let final_scale = (base_scale * scale_factor).clamp(base_scale, f32::INFINITY);
+        let base_scale = 0.5; 
+        let distance_scale = 0.08; 
+        let min_scale = 0.01; 
+        let scale_factor = (distance * distance_scale).clamp(min_scale, 9.0); 
+        let final_scale = (base_scale * scale_factor).clamp(min_scale, f32::INFINITY);
 
         // Apply the final scale while accounting for parent transforms
         gizmo_transform.scale = baseline_local_scale * final_scale;
