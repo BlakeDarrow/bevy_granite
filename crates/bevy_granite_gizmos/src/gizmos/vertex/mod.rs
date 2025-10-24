@@ -5,7 +5,6 @@ pub mod midpoint;
 pub mod plugin;
 pub mod spawn;
 
-// Re-exports
 pub use components::{SelectedVertex, VertexMarker, VertexVisualizationParent};
 pub use config::{VertexSelectionState, VertexVisualizationConfig};
 pub use plugin::VertexVisualizationPlugin;

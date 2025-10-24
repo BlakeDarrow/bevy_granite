@@ -4,7 +4,6 @@ use super::{
 };
 use bevy::prelude::{GlobalTransform, Query, ResMut, Vec3, With};
 
-/// System that calculates the midpoint of all selected vertices
 pub fn calculate_vertex_midpoint(
     mut selection_state: ResMut<VertexSelectionState>,
     selected_vertices: Query<&GlobalTransform, (With<VertexMarker>, With<SelectedVertex>)>,
