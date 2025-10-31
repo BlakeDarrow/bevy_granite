@@ -80,9 +80,8 @@ pub enum EditableMaterialField {
     BaseColor,
     BaseColorTexture,
     Roughness,
-    RoughnessTexture,
     Metalness,
-    MetalnessTexture,
+    MetallicRoughnessTexture,
     Emissive,
     EmissiveTexture,
     EmissiveExposureWeight,
@@ -113,9 +112,8 @@ impl EditableMaterialField {
             BaseColor,
             BaseColorTexture,
             Roughness,
-            RoughnessTexture,
             Metalness,
-            MetalnessTexture,
+            MetallicRoughnessTexture,
             Emissive,
             EmissiveTexture,
             EmissiveExposureWeight,
@@ -217,9 +215,8 @@ impl EditableMaterial {
                     EditableMaterialField::BaseColor => def.base_color.is_some(),
                     EditableMaterialField::BaseColorTexture => def.base_color_texture.is_some(),
                     EditableMaterialField::Roughness => def.roughness.is_some(),
-                    EditableMaterialField::RoughnessTexture => def.roughness_texture.is_some(),
                     EditableMaterialField::Metalness => def.metalness.is_some(),
-                    EditableMaterialField::MetalnessTexture => def.metalness_texture.is_some(),
+                    EditableMaterialField::MetallicRoughnessTexture => def.metallic_roughness_texture.is_some(),
                     EditableMaterialField::Emissive => def.emissive.is_some(),
                     EditableMaterialField::EmissiveTexture => def.emissive_texture.is_some(),
                     EditableMaterialField::EmissiveExposureWeight => {
@@ -256,9 +253,8 @@ impl EditableMaterial {
                         EditableMaterialField::BaseColor => def.base_color = None,
                         EditableMaterialField::BaseColorTexture => def.base_color_texture = None,
                         EditableMaterialField::Roughness => def.roughness = None,
-                        EditableMaterialField::RoughnessTexture => def.roughness_texture = None,
                         EditableMaterialField::Metalness => def.metalness = None,
-                        EditableMaterialField::MetalnessTexture => def.metalness_texture = None,
+                        EditableMaterialField::MetallicRoughnessTexture => def.metallic_roughness_texture = None,
                         EditableMaterialField::Emissive => def.emissive = None,
                         EditableMaterialField::EmissiveTexture => def.emissive_texture = None,
                         EditableMaterialField::EmissiveExposureWeight => {
@@ -428,7 +424,7 @@ impl EditableMaterial {
 
                 if let Some(path) = &def.base_color_texture {
                     if !path.is_empty() {
-                        let handle = load_texture_with_repeat(asset_server, path.clone());
+                        let handle = load_texture_with_repeat(asset_server, path.clone(), true);
                         existing_material.base_color_texture = Some(handle.clone());
                         changed = true;
                         if !fields.contains(&EditableMaterialField::BaseColorTexture) {
@@ -454,23 +450,6 @@ impl EditableMaterial {
                     existing_material.perceptual_roughness = defaults.perceptual_roughness;
                 }
 
-                if let Some(path) = &def.roughness_texture {
-                    if !path.is_empty() {
-                        if !fields.contains(&EditableMaterialField::RoughnessTexture) {
-                            fields.push(EditableMaterialField::RoughnessTexture);
-                        }
-                        let handle = load_texture_with_repeat(asset_server, path.clone());
-                        existing_material.metallic_roughness_texture = Some(handle.clone());
-
-                        changed = true;
-                        available_obj_materials
-                            .image_paths
-                            .insert(handle, path.clone());
-                    }
-                } else if def.metalness_texture.is_none() {
-                    existing_material.metallic_roughness_texture = None;
-                }
-
                 // Metalness
                 if let Some(metalness) = def.metalness {
                     if !fields.contains(&EditableMaterialField::Metalness) {
@@ -483,12 +462,13 @@ impl EditableMaterial {
                     existing_material.metallic = defaults.metallic;
                 }
 
-                if let Some(path) = &def.metalness_texture {
+                // Metallic Roughness Texture (combined)
+                if let Some(path) = &def.metallic_roughness_texture {
                     if !path.is_empty() {
-                        if !fields.contains(&EditableMaterialField::MetalnessTexture) {
-                            fields.push(EditableMaterialField::MetalnessTexture);
+                        if !fields.contains(&EditableMaterialField::MetallicRoughnessTexture) {
+                            fields.push(EditableMaterialField::MetallicRoughnessTexture);
                         }
-                        let handle = load_texture_with_repeat(asset_server, path.clone());
+                        let handle = load_texture_with_repeat(asset_server, path.clone(), false);
                         existing_material.metallic_roughness_texture = Some(handle.clone());
 
                         changed = true;
@@ -496,6 +476,8 @@ impl EditableMaterial {
                             .image_paths
                             .insert(handle, path.clone());
                     }
+                } else {
+                    existing_material.metallic_roughness_texture = None;
                 }
 
                 // Emissive
@@ -527,7 +509,7 @@ impl EditableMaterial {
                         if !fields.contains(&EditableMaterialField::EmissiveTexture) {
                             fields.push(EditableMaterialField::EmissiveTexture);
                         }
-                        let handle = load_texture_with_repeat(asset_server, path.clone());
+                        let handle = load_texture_with_repeat(asset_server, path.clone(), true);
 
                         changed = true;
                         existing_material.emissive_texture = Some(handle.clone());
@@ -545,7 +527,7 @@ impl EditableMaterial {
                         if !fields.contains(&EditableMaterialField::NormalMapTexture) {
                             fields.push(EditableMaterialField::NormalMapTexture);
                         }
-                        let handle = load_texture_with_repeat(asset_server, path.clone());
+                        let handle = load_texture_with_repeat(asset_server, path.clone(), false);
 
                         changed = true;
                         existing_material.normal_map_texture = Some(handle.clone());
@@ -563,7 +545,7 @@ impl EditableMaterial {
                         if !fields.contains(&EditableMaterialField::OcclusionMap) {
                             fields.push(EditableMaterialField::OcclusionMap);
                         }
-                        let handle = load_texture_with_repeat(asset_server, path.clone());
+                        let handle = load_texture_with_repeat(asset_server, path.clone(), false);
 
                         changed = true;
                         existing_material.occlusion_texture = Some(handle.clone());
@@ -1016,10 +998,7 @@ pub struct StandardMaterialDef {
     pub base_color_texture: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub roughness_texture: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub metalness_texture: Option<String>,
+    pub metallic_roughness_texture: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub emissive_texture: Option<String>,
@@ -1054,8 +1033,7 @@ impl Default for StandardMaterialDef {
             cull_mode: None,
             uv_transform: None,
             base_color_texture: None,
-            roughness_texture: None,
-            metalness_texture: None,
+            metallic_roughness_texture: None,
             emissive_texture: None,
             normal_map_texture: None,
         }

@@ -77,14 +77,11 @@ fn init_default_field(field: &EditableMaterialField, def: &mut StandardMaterialD
         EditableMaterialField::Roughness => {
             material.roughness = Some(defaults.perceptual_roughness);
         }
-        EditableMaterialField::RoughnessTexture => {
-            material.roughness_texture = Some(String::new());
-        }
         EditableMaterialField::Metalness => {
             material.metalness = Some(defaults.metallic);
         }
-        EditableMaterialField::MetalnessTexture => {
-            material.metalness_texture = Some(String::new());
+        EditableMaterialField::MetallicRoughnessTexture => {
+            material.metallic_roughness_texture = Some(String::new());
         }
         EditableMaterialField::BaseColorTexture => {
             material.base_color_texture = Some(String::new());
@@ -803,17 +800,6 @@ pub fn display_standard_material_field(
             );
         }
 
-        EditableMaterialField::RoughnessTexture => {
-            changed |= display_text_field(
-                ui,
-                "Roughness Texture",
-                &mut def.roughness_texture,
-                Some(""),
-                true,
-                true,
-            )
-        }
-
         EditableMaterialField::Metalness => {
             changed |= display_slider_field(
                 ui,
@@ -825,11 +811,11 @@ pub fn display_standard_material_field(
             );
         }
 
-        EditableMaterialField::MetalnessTexture => {
+        EditableMaterialField::MetallicRoughnessTexture => {
             changed |= display_text_field(
                 ui,
-                "Metalness Texture",
-                &mut def.metalness_texture,
+                "Metallic Roughness Texture",
+                &mut def.metallic_roughness_texture,
                 Some(""),
                 true,
                 true,
