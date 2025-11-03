@@ -1,4 +1,4 @@
-use super::{update_camera_3d_system, UserUpdatedCamera3DEvent};
+use super::{update_camera_3d_system, UserUpdatedCamera3DEvent, AtmosphereSettings};
 use crate::Camera3D;
 use bevy::app::{App, Plugin, Update};
 
@@ -14,6 +14,7 @@ impl Plugin for Camera3DPlugin {
             // Register
             //
             .register_type::<Camera3D>()
+            .register_type::<AtmosphereSettings>()
             //
             // Schedule system
             //

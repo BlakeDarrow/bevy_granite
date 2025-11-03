@@ -10,6 +10,7 @@ use bevy::{
         system::{Commands, Query},
     },
     light::{FogVolume, VolumetricFog as VolumetricFogSettings},
+    pbr::{Atmosphere, AtmosphereSettings as BevyAtmosphereSettings}, render::view::Hdr,
 };
 
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
@@ -60,6 +61,9 @@ pub fn update_camera_3d_system(
             } else {
                 camera.is_active = false;
             }
+            
+            // Update camera render order
+            camera.order = new.order;
 
             if new.has_volumetric_fog {
                 let fog_config = new.volumetric_fog_settings.clone().unwrap_or_default();
@@ -87,10 +91,50 @@ pub fn update_camera_3d_system(
                     .remove::<(VolumetricFogSettings, FogVolume)>();
             }
 
+            // Handle atmosphere settings
+            if new.has_atmosphere {
+                let atmos_config = new.atmosphere_settings.clone().unwrap_or_default();
+
+                // Add Atmosphere component (using EARTH preset if enabled, otherwise use custom values)
+                let atmosphere = if atmos_config.use_earth_preset {
+                    Atmosphere::EARTH
+                } else {
+                    Atmosphere {
+                        bottom_radius: atmos_config.bottom_radius,
+                        top_radius: atmos_config.top_radius,
+                        ground_albedo: atmos_config.ground_albedo.into(),
+                        rayleigh_density_exp_scale: atmos_config.rayleigh_density_exp_scale,
+                        rayleigh_scattering: atmos_config.rayleigh_scattering.into(),
+                        mie_density_exp_scale: atmos_config.mie_density_exp_scale,
+                        mie_scattering: atmos_config.mie_scattering,
+                        mie_absorption: atmos_config.mie_absorption,
+                        mie_asymmetry: atmos_config.mie_asymmetry,
+                        ozone_layer_altitude: atmos_config.ozone_layer_altitude,
+                        ozone_layer_width: atmos_config.ozone_layer_width,
+                        ozone_absorption: atmos_config.ozone_absorption.into(),
+                    }
+                };
+
+                commands.entity(entity).insert(Hdr);
+                commands.entity(entity).insert(atmosphere);
+
+                // Add AtmosphereSettings component
+                commands.entity(entity).insert(BevyAtmosphereSettings {
+                    aerial_view_lut_max_distance: atmos_config.aerial_view_lut_max_distance,
+                    scene_units_to_m: atmos_config.scene_units_to_m,
+                    ..Default::default()
+                });
+            } else {
+                commands
+                    .entity(entity)
+                    .remove::<(Atmosphere, BevyAtmosphereSettings)>();
+            }
+
             // Update the IdentityData to match new changes
             if let GraniteTypes::Camera3D(ref mut camera_data) = identity_data.class {
                 camera_data.is_active = new.is_active;
                 camera_data.has_volumetric_fog = new.has_volumetric_fog;
+                camera_data.has_atmosphere = new.has_atmosphere;
 
                 if new.has_volumetric_fog {
                     // Ensure volumetric_fog_settings is populated
@@ -99,6 +143,16 @@ pub fn update_camera_3d_system(
                     }
                 } else {
                     camera_data.volumetric_fog_settings = None;
+                }
+
+                if new.has_atmosphere {
+                    // Ensure atmosphere_settings is populated
+                    if camera_data.atmosphere_settings.is_none() {
+                        camera_data.atmosphere_settings =
+                            Some(super::AtmosphereSettings::default());
+                    }
+                } else {
+                    camera_data.atmosphere_settings = None;
                 }
             }
         } else {

@@ -122,9 +122,40 @@ impl ComponentEditor {
                                     LogType::Editor,
                                     LogLevel::Error,
                                     LogCategory::Entity,
-                                    "Failed to clone reflected data for component: {}",
-                                    type_name
+                                    "Failed to clone reflected data for component: {}\nReflect info: {:?}\nType info: {:?}",
+                                    type_name,
+                                    reflected.reflect_kind(),
+                                    registration.type_info()
                                 );
+                                
+                                // Try to get more details about what field is causing the issue
+                                if let bevy::reflect::ReflectKind::Struct = reflected.reflect_kind() {
+                                    if let Ok(struct_ref) = reflected.reflect_ref().as_struct() {
+                                        log!(
+                                            LogType::Editor,
+                                            LogLevel::Error,
+                                            LogCategory::Entity,
+                                            "Struct has {} fields",
+                                            struct_ref.field_len()
+                                        );
+                                        for i in 0..struct_ref.field_len() {
+                                            if let Some(field) = struct_ref.field_at(i) {
+                                                let field_name = struct_ref.name_at(i).unwrap_or("unknown");
+                                                if field.reflect_clone().is_err() {
+                                                    log!(
+                                                        LogType::Editor,
+                                                        LogLevel::Error,
+                                                        LogCategory::Entity,
+                                                        "  Field '{}' (index {}) failed to clone. Type: {:?}",
+                                                        field_name,
+                                                        i,
+                                                        field.reflect_type_path()
+                                                    );
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -173,12 +204,12 @@ impl ComponentEditor {
         world: &World,
         entity: Entity,
     ) -> HashMap<String, String> {
-        log!(
-            LogType::Game,
-            LogLevel::Info,
-            LogCategory::System,
-            "Serialize entity components called"
-        );
+        //log!(
+        //    LogType::Game,
+        //    LogLevel::Info,
+        //    LogCategory::System,
+        //    "Serialize entity components called"
+        //);
         let mut serialized_components = HashMap::new();
         let type_registry = self.type_registry.read();
 

@@ -4,10 +4,7 @@ use crate::{
     HasRuntimeData, IdentityData,
 };
 use bevy::{
-    camera::{Camera, Camera3d},
-    ecs::{bundle::Bundle, entity::Entity, system::Commands},
-    prelude::Name,
-    transform::components::Transform,
+    camera::{Camera, Camera3d}, ecs::{bundle::Bundle, entity::Entity, system::Commands}, prelude::Name, render::view::Hdr, transform::components::Transform
 };
 use uuid::Uuid;
 
@@ -78,6 +75,41 @@ impl Camera3D {
             //I don't know if the fog volume should be attached to the camera or its own entity
             entity.insert((fog, fog_volume));
         }
+
+        // Handle atmosphere settings
+        if self.has_atmosphere {
+            if let Some(atmos_settings) = &self.atmosphere_settings {
+                // Add Atmosphere component (using EARTH preset if enabled, otherwise use custom values)
+                let atmosphere = if atmos_settings.use_earth_preset {
+                    bevy::pbr::Atmosphere::EARTH
+                } else {
+                    bevy::pbr::Atmosphere {
+                        bottom_radius: atmos_settings.bottom_radius,
+                        top_radius: atmos_settings.top_radius,
+                        ground_albedo: atmos_settings.ground_albedo.into(),
+                        rayleigh_density_exp_scale: atmos_settings.rayleigh_density_exp_scale,
+                        rayleigh_scattering: atmos_settings.rayleigh_scattering.into(),
+                        mie_density_exp_scale: atmos_settings.mie_density_exp_scale,
+                        mie_scattering: atmos_settings.mie_scattering,
+                        mie_absorption: atmos_settings.mie_absorption,
+                        mie_asymmetry: atmos_settings.mie_asymmetry,
+                        ozone_layer_altitude: atmos_settings.ozone_layer_altitude,
+                        ozone_layer_width: atmos_settings.ozone_layer_width,
+                        ozone_absorption: atmos_settings.ozone_absorption.into(),
+                    }
+                };
+                entity.insert(Hdr);
+                entity.insert(atmosphere);
+
+                // Add AtmosphereSettings component
+                entity.insert(bevy::pbr::AtmosphereSettings {
+                    aerial_view_lut_max_distance: atmos_settings.aerial_view_lut_max_distance,
+                    scene_units_to_m: atmos_settings.scene_units_to_m,
+                    ..Default::default()
+                });
+            }
+        }
+
         entity.id()
     }
 
@@ -91,6 +123,7 @@ impl Camera3D {
             Camera3d::default(),
             Camera {
                 is_active: camera_3d.is_active,
+                order: camera_3d.order,
                 ..Default::default()
             },
             transform,

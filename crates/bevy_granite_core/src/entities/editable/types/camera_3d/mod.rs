@@ -10,7 +10,8 @@ use bevy::{
     },
     mesh::Mesh,
     pbr::StandardMaterial,
-    prelude::Reflect,
+    prelude::{Reflect, ReflectDefault},
+    reflect::FromReflect,
     transform::components::Transform,
 };
 use bevy_egui::egui;
@@ -36,20 +37,29 @@ pub struct UserUpdatedCamera3DEvent {
 /// Actual serialized class data thats stored inside IdentityData
 /// is_active is Bevy Camera3D data
 /// has_volumetric_fog and counterpart settings are custom to inject volumetrics easier
+/// has_atmosphere and counterpart settings are custom to inject atmosphere easier
 #[derive(Serialize, Deserialize, Reflect, Debug, Clone, PartialEq)]
 pub struct Camera3D {
     pub is_active: bool,
+    pub order: isize, // Camera render order - higher values render on top
     pub has_volumetric_fog: bool, // if true, our next update even will insert volumetric fog settings
+    pub has_atmosphere: bool,     // if true, our next update event will insert atmosphere settings
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub volumetric_fog_settings: Option<VolumetricFog>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub atmosphere_settings: Option<AtmosphereSettings>,
 }
 impl Default for Camera3D {
     fn default() -> Self {
         Self {
             is_active: true,
+            order: 0, 
             has_volumetric_fog: false,
             volumetric_fog_settings: None,
+            has_atmosphere: false,
+            atmosphere_settings: None,
         }
     }
 }
@@ -84,6 +94,50 @@ impl Default for VolumetricFog {
             scattering_asymmetry: 0.8,
             light_tint: Color::WHITE,
             light_intensity: 0.1,
+        }
+    }
+}
+
+/// Wrapper for bevy atmosphere settings that's serializable and optional
+/// Will need to keep in parity if Bevy changes how it stores these settings
+#[derive(Serialize, Deserialize, Reflect, Debug, Clone, PartialEq)]
+pub struct AtmosphereSettings {
+    pub aerial_view_lut_max_distance: f32,
+    pub scene_units_to_m: f32,
+    pub use_earth_preset: bool, // If true, uses Atmosphere::EARTH preset
+    // Atmosphere component fields
+    pub bottom_radius: f32,
+    pub top_radius: f32,
+    pub ground_albedo: (f32, f32, f32), // Vec3 as tuple for serialization
+    pub rayleigh_density_exp_scale: f32,
+    pub rayleigh_scattering: (f32, f32, f32), // Vec3 as tuple
+    pub mie_density_exp_scale: f32,
+    pub mie_scattering: f32,
+    pub mie_absorption: f32,
+    pub mie_asymmetry: f32,
+    pub ozone_layer_altitude: f32,
+    pub ozone_layer_width: f32,
+    pub ozone_absorption: (f32, f32, f32), // Vec3 as tuple
+}
+impl Default for AtmosphereSettings {
+    fn default() -> Self {
+        // Scaled for small scenes (100m x 100m)
+        Self {
+            aerial_view_lut_max_distance:  3.2e5,
+            scene_units_to_m: 1.0,                // 1 scene unit = 1 meter
+            use_earth_preset: true,              // Use custom values for small scenes
+            bottom_radius: 6360000.0,
+            top_radius:  6460000.0,
+            ground_albedo: (0.3, 0.3, 0.3),
+            rayleigh_density_exp_scale: -0.125,
+            rayleigh_scattering: (0.005802, 0.013558, 0.033100),
+            mie_density_exp_scale: -0.833333,
+            mie_scattering: 0.003996,
+            mie_absorption: 0.000444,
+            mie_asymmetry: 0.8,
+            ozone_layer_altitude: 25000.0,
+            ozone_layer_width: 15000.0,
+            ozone_absorption: (0.000650, 0.001881, 0.000085),
         }
     }
 }
