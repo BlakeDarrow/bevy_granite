@@ -104,7 +104,7 @@ fn generic_selector_popup<T: SelectableItem>(
 
         let area_response = egui::Area::new(popup_id)
             .fixed_pos(popup_pos)
-            .order(egui::Order::Foreground)
+            .order(egui::Order::TOP)
             .show(ui.ctx(), |ui: &mut egui::Ui| {
                 let frame = super::make_frame_solid(egui::Frame::popup(ui.style()), ui);
                 frame.show(ui, |ui: &mut egui::Ui| {

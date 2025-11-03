@@ -10,8 +10,7 @@ use bevy::{
     },
     mesh::Mesh,
     pbr::StandardMaterial,
-    prelude::{Reflect, ReflectDefault},
-    reflect::FromReflect,
+    prelude::Reflect,
     transform::components::Transform,
 };
 use bevy_egui::egui;
@@ -98,13 +97,33 @@ impl Default for VolumetricFog {
     }
 }
 
+/// Serializable version of Bevy's AtmosphereMode enum
+#[derive(Serialize, Deserialize, Reflect, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum AtmosphereRenderingMethod {
+    #[default]
+    LookupTexture,
+    Raymarched,
+}
+
 /// Wrapper for bevy atmosphere settings that's serializable and optional
 /// Will need to keep in parity if Bevy changes how it stores these settings
 #[derive(Serialize, Deserialize, Reflect, Debug, Clone, PartialEq)]
 pub struct AtmosphereSettings {
+    // LUT (Look-Up Table) Settings
+    pub transmittance_lut_size: (u32, u32),     // UVec2 as tuple
+    pub multiscattering_lut_size: (u32, u32),   // UVec2 as tuple
+    pub sky_view_lut_size: (u32, u32),          // UVec2 as tuple
+    pub aerial_view_lut_size: (u32, u32, u32),  // UVec3 as tuple
+    pub transmittance_lut_samples: u32,
+    pub multiscattering_lut_dirs: u32,
+    pub multiscattering_lut_samples: u32,
+    pub sky_view_lut_samples: u32,
+    pub aerial_view_lut_samples: u32,
     pub aerial_view_lut_max_distance: f32,
     pub scene_units_to_m: f32,
-    pub use_earth_preset: bool, // If true, uses Atmosphere::EARTH preset
+    pub sky_max_samples: u32,
+    pub rendering_method: AtmosphereRenderingMethod,
+    
     // Atmosphere component fields
     pub bottom_radius: f32,
     pub top_radius: f32,
@@ -121,13 +140,26 @@ pub struct AtmosphereSettings {
 }
 impl Default for AtmosphereSettings {
     fn default() -> Self {
-        // Scaled for small scenes (100m x 100m)
+        // Default values based on Bevy's AtmosphereSettings::default()
         Self {
-            aerial_view_lut_max_distance:  3.2e5,
-            scene_units_to_m: 1.0,                // 1 scene unit = 1 meter
-            use_earth_preset: true,              // Use custom values for small scenes
+            // LUT Settings (from Bevy defaults)
+            transmittance_lut_size: (256, 64),
+            multiscattering_lut_size: (32, 32),
+            sky_view_lut_size: (192, 108),
+            aerial_view_lut_size: (32, 32, 32),
+            transmittance_lut_samples: 40,
+            multiscattering_lut_dirs: 64,
+            multiscattering_lut_samples: 20,
+            sky_view_lut_samples: 16,
+            aerial_view_lut_samples: 8,
+            aerial_view_lut_max_distance: 3.2e5,
+            scene_units_to_m: 1.0,
+            sky_max_samples: 16,
+            rendering_method: AtmosphereRenderingMethod::LookupTexture,
+            
+            // Atmosphere settings (Earth-like defaults)
             bottom_radius: 6360000.0,
-            top_radius:  6460000.0,
+            top_radius: 6460000.0,
             ground_albedo: (0.3, 0.3, 0.3),
             rayleigh_density_exp_scale: -0.125,
             rayleigh_scattering: (0.005802, 0.013558, 0.033100),
