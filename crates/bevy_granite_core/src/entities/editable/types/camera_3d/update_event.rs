@@ -1,4 +1,4 @@
-use super::{UserUpdatedCamera3DEvent, VolumetricFog};
+use super::{AtmosphereRenderingMethod, UserUpdatedCamera3DEvent, VolumetricFog};
 use crate::{
     entities::editable::RequestEntityUpdateFromClass, Camera3D, GraniteTypes, IdentityData,
 };
@@ -10,6 +10,9 @@ use bevy::{
         system::{Commands, Query},
     },
     light::{FogVolume, VolumetricFog as VolumetricFogSettings},
+    math::{UVec2, UVec3},
+    pbr::{Atmosphere, AtmosphereMode, AtmosphereSettings as BevyAtmosphereSettings},
+    render::view::Hdr,
 };
 
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
@@ -51,8 +54,9 @@ pub fn update_camera_3d_system(
             LogType::Editor,
             LogLevel::Info,
             LogCategory::Entity,
-            "Heard camera3d update event: {}",
-            requested_entity
+            "Heard camera3d update event: {} - has_atmosphere: {}",
+            requested_entity,
+            new.has_atmosphere
         );
         if let Ok((entity, mut camera, mut identity_data)) = query.get_mut(*requested_entity) {
             if new.is_active {
@@ -60,6 +64,9 @@ pub fn update_camera_3d_system(
             } else {
                 camera.is_active = false;
             }
+            
+            // Update camera render order
+            camera.order = new.order;
 
             if new.has_volumetric_fog {
                 let fog_config = new.volumetric_fog_settings.clone().unwrap_or_default();
@@ -87,18 +94,103 @@ pub fn update_camera_3d_system(
                     .remove::<(VolumetricFogSettings, FogVolume)>();
             }
 
-            // Update the IdentityData to match new changes
+            // Handle atmosphere settings
+            if new.has_atmosphere {
+                let atmos_config = new.atmosphere_settings.clone().unwrap_or_default();
+
+                log!(
+                    LogType::Editor,
+                    LogLevel::Info,
+                    LogCategory::Entity,
+                    "Applying atmosphere - bottom_radius: {}, top_radius: {}",
+                    atmos_config.bottom_radius,
+                    atmos_config.top_radius
+                );
+
+                // The UI can populate these with EARTH preset values if the checkbox is enabled
+                let atmosphere = Atmosphere {
+                    bottom_radius: atmos_config.bottom_radius,
+                    top_radius: atmos_config.top_radius,
+                    ground_albedo: atmos_config.ground_albedo.into(),
+                    rayleigh_density_exp_scale: atmos_config.rayleigh_density_exp_scale,
+                    rayleigh_scattering: atmos_config.rayleigh_scattering.into(),
+                    mie_density_exp_scale: atmos_config.mie_density_exp_scale,
+                    mie_scattering: atmos_config.mie_scattering,
+                    mie_absorption: atmos_config.mie_absorption,
+                    mie_asymmetry: atmos_config.mie_asymmetry,
+                    ozone_layer_altitude: atmos_config.ozone_layer_altitude,
+                    ozone_layer_width: atmos_config.ozone_layer_width,
+                    ozone_absorption: atmos_config.ozone_absorption.into(),
+                };
+
+                commands.entity(entity).insert(Hdr);
+                commands.entity(entity).insert(atmosphere);
+
+                // Convert rendering method
+                let rendering_mode = match atmos_config.rendering_method {
+                    AtmosphereRenderingMethod::LookupTexture => AtmosphereMode::LookupTexture,
+                    AtmosphereRenderingMethod::Raymarched => AtmosphereMode::Raymarched,
+                };
+
+                commands.entity(entity).insert(BevyAtmosphereSettings {
+                    transmittance_lut_size: UVec2::new(
+                        atmos_config.transmittance_lut_size.0,
+                        atmos_config.transmittance_lut_size.1,
+                    ),
+                    multiscattering_lut_size: UVec2::new(
+                        atmos_config.multiscattering_lut_size.0,
+                        atmos_config.multiscattering_lut_size.1,
+                    ),
+                    sky_view_lut_size: UVec2::new(
+                        atmos_config.sky_view_lut_size.0,
+                        atmos_config.sky_view_lut_size.1,
+                    ),
+                    aerial_view_lut_size: UVec3::new(
+                        atmos_config.aerial_view_lut_size.0,
+                        atmos_config.aerial_view_lut_size.1,
+                        atmos_config.aerial_view_lut_size.2,
+                    ),
+                    transmittance_lut_samples: atmos_config.transmittance_lut_samples,
+                    multiscattering_lut_dirs: atmos_config.multiscattering_lut_dirs,
+                    multiscattering_lut_samples: atmos_config.multiscattering_lut_samples,
+                    sky_view_lut_samples: atmos_config.sky_view_lut_samples,
+                    aerial_view_lut_samples: atmos_config.aerial_view_lut_samples,
+                    aerial_view_lut_max_distance: atmos_config.aerial_view_lut_max_distance,
+                    scene_units_to_m: atmos_config.scene_units_to_m,
+                    sky_max_samples: atmos_config.sky_max_samples,
+                    rendering_method: rendering_mode,
+                    ..Default::default()
+                });
+            } else {
+                commands
+                    .entity(entity)
+                    .remove::<(Atmosphere, BevyAtmosphereSettings, Hdr)>();
+                
+                log!(
+                    LogType::Editor,
+                    LogLevel::Info,
+                    LogCategory::Entity,
+                    "Removed atmosphere from camera: {}",
+                    entity
+                );
+            }
+
             if let GraniteTypes::Camera3D(ref mut camera_data) = identity_data.class {
                 camera_data.is_active = new.is_active;
+                camera_data.order = new.order;
                 camera_data.has_volumetric_fog = new.has_volumetric_fog;
+                camera_data.has_atmosphere = new.has_atmosphere;
 
                 if new.has_volumetric_fog {
-                    // Ensure volumetric_fog_settings is populated
-                    if camera_data.volumetric_fog_settings.is_none() {
-                        camera_data.volumetric_fog_settings = Some(VolumetricFog::default());
-                    }
+                    camera_data.volumetric_fog_settings = new.volumetric_fog_settings.clone();
                 } else {
                     camera_data.volumetric_fog_settings = None;
+                }
+
+                if new.has_atmosphere {
+                    camera_data.atmosphere_settings = new.atmosphere_settings.clone();
+                } else {
+                    camera_data.atmosphere_settings = None;
                 }
             }
         } else {

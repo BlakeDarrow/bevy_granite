@@ -4,10 +4,7 @@ use crate::{
     HasRuntimeData, IdentityData,
 };
 use bevy::{
-    camera::{Camera, Camera3d},
-    ecs::{bundle::Bundle, entity::Entity, system::Commands},
-    prelude::Name,
-    transform::components::Transform,
+    camera::{Camera, Camera3d}, ecs::{bundle::Bundle, entity::Entity, system::Commands}, prelude::Name, render::view::Hdr, transform::components::Transform
 };
 use uuid::Uuid;
 
@@ -78,6 +75,64 @@ impl Camera3D {
             //I don't know if the fog volume should be attached to the camera or its own entity
             entity.insert((fog, fog_volume));
         }
+
+        // Handle atmosphere settings
+        if self.has_atmosphere {
+            if let Some(atmos_settings) = &self.atmosphere_settings {
+                // Always use custom values from the settings
+                let atmosphere = bevy::pbr::Atmosphere {
+                    bottom_radius: atmos_settings.bottom_radius,
+                    top_radius: atmos_settings.top_radius,
+                    ground_albedo: atmos_settings.ground_albedo.into(),
+                    rayleigh_density_exp_scale: atmos_settings.rayleigh_density_exp_scale,
+                    rayleigh_scattering: atmos_settings.rayleigh_scattering.into(),
+                    mie_density_exp_scale: atmos_settings.mie_density_exp_scale,
+                    mie_scattering: atmos_settings.mie_scattering,
+                    mie_absorption: atmos_settings.mie_absorption,
+                    mie_asymmetry: atmos_settings.mie_asymmetry,
+                    ozone_layer_altitude: atmos_settings.ozone_layer_altitude,
+                    ozone_layer_width: atmos_settings.ozone_layer_width,
+                    ozone_absorption: atmos_settings.ozone_absorption.into(),
+                };
+                entity.insert(Hdr);
+                entity.insert(atmosphere);
+
+                // Add AtmosphereSettings component with all LUT settings
+                entity.insert(bevy::pbr::AtmosphereSettings {
+                    transmittance_lut_size: bevy::math::UVec2::new(
+                        atmos_settings.transmittance_lut_size.0,
+                        atmos_settings.transmittance_lut_size.1,
+                    ),
+                    multiscattering_lut_size: bevy::math::UVec2::new(
+                        atmos_settings.multiscattering_lut_size.0,
+                        atmos_settings.multiscattering_lut_size.1,
+                    ),
+                    sky_view_lut_size: bevy::math::UVec2::new(
+                        atmos_settings.sky_view_lut_size.0,
+                        atmos_settings.sky_view_lut_size.1,
+                    ),
+                    aerial_view_lut_size: bevy::math::UVec3::new(
+                        atmos_settings.aerial_view_lut_size.0,
+                        atmos_settings.aerial_view_lut_size.1,
+                        atmos_settings.aerial_view_lut_size.2,
+                    ),
+                    transmittance_lut_samples: atmos_settings.transmittance_lut_samples,
+                    multiscattering_lut_dirs: atmos_settings.multiscattering_lut_dirs,
+                    multiscattering_lut_samples: atmos_settings.multiscattering_lut_samples,
+                    sky_view_lut_samples: atmos_settings.sky_view_lut_samples,
+                    aerial_view_lut_samples: atmos_settings.aerial_view_lut_samples,
+                    aerial_view_lut_max_distance: atmos_settings.aerial_view_lut_max_distance,
+                    scene_units_to_m: atmos_settings.scene_units_to_m,
+                    sky_max_samples: atmos_settings.sky_max_samples,
+                    rendering_method: match atmos_settings.rendering_method {
+                        super::AtmosphereRenderingMethod::LookupTexture => bevy::pbr::AtmosphereMode::LookupTexture,
+                        super::AtmosphereRenderingMethod::Raymarched => bevy::pbr::AtmosphereMode::Raymarched,
+                    },
+                    ..Default::default()
+                });
+            }
+        }
+
         entity.id()
     }
 
@@ -91,6 +146,7 @@ impl Camera3D {
             Camera3d::default(),
             Camera {
                 is_active: camera_3d.is_active,
+                order: camera_3d.order,
                 ..Default::default()
             },
             transform,

@@ -42,7 +42,7 @@ impl SpotLightData {
                     changed |= ui
                         .add(
                             egui::DragValue::new(&mut data.intensity)
-                                .range(0.0..=1_000_000.0)
+                                .range(0.0..=4_000_000.0)
                                 .speed(100.0)
                                 .suffix(" lm"),
                         )
