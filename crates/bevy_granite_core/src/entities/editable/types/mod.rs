@@ -3,6 +3,7 @@ pub mod directional_light;
 pub mod empty;
 pub mod obj;
 pub mod point_light;
+pub mod spot_light;
 pub mod unknown;
 pub mod rect_brush;
 
@@ -15,6 +16,7 @@ pub use directional_light::{DirLight, DirLightPlugin, UserUpdatedDirectionalLigh
 pub use empty::{Empty, EmptyPlugin, UserUpdatedEmptyEvent};
 pub use obj::{OBJPlugin, UserUpdatedOBJEvent, OBJ};
 pub use point_light::{PointLightData, PointLightPlugin, UserUpdatedPointLightEvent};
+pub use spot_light::{SpotLightData, SpotLightPlugin, UserUpdatedSpotLightEvent};
 pub use unknown::Unknown;
 pub use rect_brush::{UserUpdatedRectBrushEvent, RectBrush, RectBrushPlugin};
 

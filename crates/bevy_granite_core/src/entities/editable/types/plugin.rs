@@ -9,6 +9,7 @@ impl Plugin for ClassTypePlugin {
             .add_plugins(Camera3DPlugin)
             .add_plugins(DirLightPlugin)
             .add_plugins(PointLightPlugin)
+            .add_plugins(SpotLightPlugin)
             .add_plugins(RectBrushPlugin)
             .add_plugins(EmptyPlugin)
             .add_plugins(OBJPlugin);
