@@ -106,3 +106,4 @@ impl Plugin for InterfacePlugin {
             .add_systems(Update, send_queued_events_system.run_if(is_editor_active));
     }
 }
+

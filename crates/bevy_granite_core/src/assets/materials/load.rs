@@ -17,8 +17,10 @@ use bevy_granite_logging::{
 
 // This was brutal to figure out and I CANNOT believe the is a .load_with_settings() method...
 /// Helper function to load textures with REPEAT address mode
-pub fn load_texture_with_repeat(asset_server: &AssetServer, path: String) -> Handle<Image> {
-    asset_server.load_with_settings(path, |settings: &mut ImageLoaderSettings| {
+/// `is_srgb` should be true for color textures (base_color, emissive), false for data textures (normal, metallic, roughness, etc.)
+pub fn load_texture_with_repeat(asset_server: &AssetServer, path: String, is_srgb: bool) -> Handle<Image> {
+    asset_server.load_with_settings(path, move |settings: &mut ImageLoaderSettings| {
+        settings.is_srgb = is_srgb;
         settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
             address_mode_u: ImageAddressMode::Repeat,
             address_mode_v: ImageAddressMode::Repeat,
@@ -89,7 +91,7 @@ pub fn material_from_path_into_scene(
     }
     if let Some(texture_path) = &mat_def.base_color_texture {
         if !texture_path.is_empty() {
-            let handle = load_texture_with_repeat(asset_server, texture_path.clone());
+            let handle = load_texture_with_repeat(asset_server, texture_path.clone(), true); // sRGB for color
             mat.base_color_texture = Some(handle.clone());
             available_materials
                 .image_paths
@@ -103,30 +105,22 @@ pub fn material_from_path_into_scene(
         mat.perceptual_roughness = roughness;
         found_fields.push(EditableMaterialField::Roughness);
     }
-    if let Some(texture_path) = &mat_def.roughness_texture {
-        if !texture_path.is_empty() {
-            let handle = load_texture_with_repeat(asset_server, texture_path.clone());
-            mat.metallic_roughness_texture = Some(handle.clone());
-            available_materials
-                .image_paths
-                .insert(handle, texture_path.clone());
-            found_fields.push(EditableMaterialField::RoughnessTexture);
-        }
-    }
 
     // Metalness
     if let Some(metalness) = mat_def.metalness {
         mat.metallic = metalness;
         found_fields.push(EditableMaterialField::Metalness);
     }
-    if let Some(texture_path) = &mat_def.metalness_texture {
+
+    // Metallic Roughness Texture (combined)
+    if let Some(texture_path) = &mat_def.metallic_roughness_texture {
         if !texture_path.is_empty() {
-            let handle = load_texture_with_repeat(asset_server, texture_path.clone());
+            let handle = load_texture_with_repeat(asset_server, texture_path.clone(), false); // Linear for data
             mat.metallic_roughness_texture = Some(handle.clone());
             available_materials
                 .image_paths
                 .insert(handle, texture_path.clone());
-            found_fields.push(EditableMaterialField::MetalnessTexture);
+            found_fields.push(EditableMaterialField::MetallicRoughnessTexture);
         }
     }
 
@@ -141,7 +135,7 @@ pub fn material_from_path_into_scene(
     }
     if let Some(texture_path) = &mat_def.emissive_texture {
         if !texture_path.is_empty() {
-            let handle = load_texture_with_repeat(asset_server, texture_path.clone());
+            let handle = load_texture_with_repeat(asset_server, texture_path.clone(), true); // sRGB for emissive color
             mat.emissive_texture = Some(handle.clone());
             available_materials
                 .image_paths
@@ -153,7 +147,7 @@ pub fn material_from_path_into_scene(
     // Normal Map
     if let Some(texture_path) = &mat_def.normal_map_texture {
         if !texture_path.is_empty() {
-            let handle = load_texture_with_repeat(asset_server, texture_path.clone());
+            let handle = load_texture_with_repeat(asset_server, texture_path.clone(), false); // Linear for normal data
             mat.normal_map_texture = Some(handle.clone());
             available_materials
                 .image_paths
@@ -165,7 +159,7 @@ pub fn material_from_path_into_scene(
     // Occlusion Map
     if let Some(texture_path) = &mat_def.occlusion_map {
         if !texture_path.is_empty() {
-            let handle = load_texture_with_repeat(asset_server, texture_path.clone());
+            let handle = load_texture_with_repeat(asset_server, texture_path.clone(), false); // Linear for occlusion data
             mat.occlusion_texture = Some(handle.clone());
             available_materials
                 .image_paths
