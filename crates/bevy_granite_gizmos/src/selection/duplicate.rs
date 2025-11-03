@@ -9,6 +9,7 @@ use bevy::{
     },
     mesh::{Mesh, Mesh3d},
     prelude::{AppTypeRegistry, ChildOf, Children, MessageReader, ReflectComponent, Res, World},
+    render::sync_world::SyncToRenderWorld,
 };
 use bevy_granite_core::{
     entities::GraniteType, EditorIgnore, HasRuntimeData, IconProxy, IdentityData,
@@ -114,6 +115,12 @@ fn duplicate_entity_recursive(
         &entity_info.component_type_ids,
         registry,
     );
+
+    // Explicitly remove SyncToRenderWorld if it was copied
+    // This prevents the "already synchronized" panic
+    if let Ok(mut entity_mut) = world.get_entity_mut(new_entity) {
+        entity_mut.remove::<SyncToRenderWorld>();
+    }
 
     log_copied_components(world, new_entity);
 
@@ -244,6 +251,7 @@ fn copy_components_safe(
     let mut skip_components = vec![
         std::any::TypeId::of::<ChildOf>(),
         std::any::TypeId::of::<Children>(),
+        std::any::TypeId::of::<SyncToRenderWorld>(),
     ];
 
     // Things like rectangle brushes need unique handles, as we directly edit the vert data in editor
@@ -275,6 +283,19 @@ fn copy_components_safe(
                 continue;
             }
         };
+
+        // Skip all bevy_render and bevy_camera components - they're managed by render systems
+        let type_name = type_registration.type_info().type_path();
+        if type_name.starts_with("bevy_render::") || type_name.starts_with("bevy_camera::") {
+            log!(
+                LogType::Editor,
+                LogLevel::Info,
+                LogCategory::Entity,
+                "Skipping render managed component: {}",
+                type_name
+            );
+            continue;
+        }
 
         let reflect_component = match type_registration.data::<ReflectComponent>() {
             Some(rc) => rc,
