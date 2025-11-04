@@ -1,5 +1,5 @@
 use crate::GraniteType;
-use super::{AtmosphereRenderingMethod, Camera3D};
+use super::{AtmosphereRenderingMethod, BloomCompositeMode, Camera3D};
 use bevy_egui::egui;
 
 impl Camera3D {
@@ -23,6 +23,7 @@ impl Camera3D {
         let mut changed = false;
         let mut fog_enabled = &mut data.has_volumetric_fog;
         let mut atmosphere_enabled = &mut data.has_atmosphere;
+        let mut bloom_enabled = &mut data.has_bloom;
         ui.vertical(|ui| {
             egui::Grid::new("camera_settings_grid")
                 .num_columns(2)
@@ -38,6 +39,9 @@ impl Camera3D {
                     ui.label("Dither:");
                     changed |= ui.checkbox(&mut data.dither, "").changed();
                     ui.end_row();
+                    ui.label("Bloom:");
+                    changed |= ui.checkbox(&mut bloom_enabled, "").changed();
+                    ui.end_row();
                     ui.label("Volumetric Fog:");
                     changed |= ui.checkbox(&mut fog_enabled, "").changed();
                     ui.end_row();
@@ -46,6 +50,83 @@ impl Camera3D {
                     ui.end_row();
                 });
             ui.add_space(large_spacing);
+            
+            if *bloom_enabled {
+                ui.collapsing("Bloom", |ui| {
+                    egui::Grid::new("bloom_settings_grid")
+                        .num_columns(2)
+                        .spacing([large_spacing, large_spacing])
+                        .striped(true)
+                        .show(ui, |ui| {
+                            let bloom_settings = data.bloom_settings.get_or_insert_with(Default::default);
+
+                            ui.label("Intensity:");
+                            changed |= ui
+                                .add(
+                                    egui::DragValue::new(&mut bloom_settings.intensity)
+                                        .range(0.0..=1.0)
+                                        .speed(0.01),
+                                )
+                                .changed();
+                            ui.end_row();
+
+                            ui.label("Low Frequency Boost:");
+                            changed |= ui
+                                .add(
+                                    egui::DragValue::new(&mut bloom_settings.low_frequency_boost)
+                                        .range(0.0..=1.0)
+                                        .speed(0.01),
+                                )
+                                .changed();
+                            ui.end_row();
+
+                            ui.label("Low Frequency Boost Curvature:");
+                            changed |= ui
+                                .add(
+                                    egui::DragValue::new(&mut bloom_settings.low_frequency_boost_curvature)
+                                        .range(0.0..=1.0)
+                                        .speed(0.01),
+                                )
+                                .changed();
+                            ui.end_row();
+
+                            ui.label("High Pass Frequency:");
+                            changed |= ui
+                                .add(
+                                    egui::DragValue::new(&mut bloom_settings.high_pass_frequency)
+                                        .range(0.0..=1.0)
+                                        .speed(0.01),
+                                )
+                                .changed();
+                            ui.end_row();
+
+                            ui.label("Composite Mode:");
+                            egui::ComboBox::from_id_salt("bloom_composite_mode")
+                                .selected_text(format!("{:?}", bloom_settings.composite_mode))
+                                .show_ui(ui, |ui| {
+                                    changed |= ui.selectable_value(&mut bloom_settings.composite_mode, super::BloomCompositeMode::Additive, "Additive").changed();
+                                    changed |= ui.selectable_value(&mut bloom_settings.composite_mode, super::BloomCompositeMode::EnergyConserving, "EnergyConserving").changed();
+                                });
+                            ui.end_row();
+                        });
+                    
+                    ui.add_space(small_spacing);
+                    
+                    // Reset to default button
+                    if ui.button("Reset to Default").clicked() {
+                        if let Some(bloom_settings) = &mut data.bloom_settings {
+                            let default = super::BloomSettings::default();
+                            bloom_settings.intensity = default.intensity;
+                            bloom_settings.low_frequency_boost = default.low_frequency_boost;
+                            bloom_settings.low_frequency_boost_curvature = default.low_frequency_boost_curvature;
+                            bloom_settings.high_pass_frequency = default.high_pass_frequency;
+                            bloom_settings.composite_mode = default.composite_mode;
+                            changed = true;
+                        }
+                    }
+                });
+            }
+
             if *fog_enabled {
                 ui.collapsing("Volumetric Fog", |ui| {
                     egui::Grid::new("volumetric_fog_grid")
@@ -208,6 +289,7 @@ impl Camera3D {
                             let found_atmosphere = &mut data.atmosphere_settings;
 
                             if let Some(atmos_settings) = found_atmosphere {
+                                ui.add_space(small_spacing);
                                 ui.horizontal(|ui| {
                                     // Button to reset to Earth preset values from Bevy::Atmosphere::EARTH
                                     if ui.button("Earth").clicked() {
