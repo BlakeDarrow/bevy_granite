@@ -210,6 +210,8 @@ impl Camera3D {
                                     if ui.button("Earth").clicked() {
                                         let earth = bevy::pbr::Atmosphere::EARTH;
                                         atmos_settings.bottom_radius = earth.bottom_radius;
+                                        atmos_settings.scene_units_to_m = 1e+4;
+                                        atmos_settings.aerial_view_lut_max_distance = 3.2e5;
                                         atmos_settings.top_radius = earth.top_radius;
                                         atmos_settings.ground_albedo = (earth.ground_albedo.x, earth.ground_albedo.y, earth.ground_albedo.z);
                                         atmos_settings.rayleigh_density_exp_scale = earth.rayleigh_density_exp_scale;
@@ -229,6 +231,8 @@ impl Camera3D {
                                         let earth = bevy::pbr::Atmosphere::EARTH;
                                         atmos_settings.bottom_radius = 6_360_000.;
                                         atmos_settings.top_radius = 6_370_000.;
+                                        atmos_settings.scene_units_to_m = 1.;
+                                        atmos_settings.aerial_view_lut_max_distance = 10_000.0;
                                         atmos_settings.ground_albedo = (earth.ground_albedo.x, earth.ground_albedo.y, earth.ground_albedo.z);
                                         atmos_settings.rayleigh_density_exp_scale = earth.rayleigh_density_exp_scale;
                                         atmos_settings.rayleigh_scattering = (earth.rayleigh_scattering.x, earth.rayleigh_scattering.y, earth.rayleigh_scattering.z);

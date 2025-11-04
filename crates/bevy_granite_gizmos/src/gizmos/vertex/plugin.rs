@@ -3,7 +3,7 @@ use super::{
     interaction::{deselect_all_vertices, handle_vertex_click, update_vertex_colors},
     midpoint::calculate_vertex_midpoint,
     spawn::{
-        cleanup_deselected_entity_vertices, despawn_vertex_visualizations,
+        cleanup_deselected_entity_vertices, cull_vertices_by_distance, despawn_vertex_visualizations,
         spawn_vertex_visualizations,
     },
 };
@@ -25,6 +25,7 @@ impl Plugin for VertexVisualizationPlugin {
                     spawn_vertex_visualizations,
                     despawn_vertex_visualizations,
                     cleanup_deselected_entity_vertices,
+                    cull_vertices_by_distance,
                     update_vertex_colors,
                     deselect_all_vertices,
                     calculate_vertex_midpoint,

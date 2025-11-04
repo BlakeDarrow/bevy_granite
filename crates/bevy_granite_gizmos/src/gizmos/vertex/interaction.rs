@@ -59,22 +59,20 @@ pub fn handle_vertex_click(
 
 pub fn update_vertex_colors(
     config: Res<VertexVisualizationConfig>,
-    selected_vertices: Query<&MeshMaterial3d<StandardMaterial>, With<SelectedVertex>>,
-    unselected_vertices: Query<
-        &MeshMaterial3d<StandardMaterial>,
-        (With<VertexMarker>, Without<SelectedVertex>),
-    >,
-    mut materials: ResMut<bevy::prelude::Assets<StandardMaterial>>,
+    mut selected_vertices: Query<&mut MeshMaterial3d<StandardMaterial>, (With<SelectedVertex>, With<VertexMarker>)>,
+    mut unselected_vertices: Query<&mut MeshMaterial3d<StandardMaterial>, (With<VertexMarker>, Without<SelectedVertex>)>,
 ) {
-    for material_handle in selected_vertices.iter() {
-        if let Some(material) = materials.get_mut(&material_handle.0) {
-            material.base_color = config.selected_color;
+    // Swap material handles to selected material for selected vertices
+    if let Some(selected_mat) = &config.selected_material {
+        for mut material in selected_vertices.iter_mut() {
+            material.0 = selected_mat.clone();
         }
     }
-
-    for material_handle in unselected_vertices.iter() {
-        if let Some(material) = materials.get_mut(&material_handle.0) {
-            material.base_color = config.unselected_color;
+    
+    // Swap material handles to unselected material for unselected vertices
+    if let Some(unselected_mat) = &config.unselected_material {
+        for mut material in unselected_vertices.iter_mut() {
+            material.0 = unselected_mat.clone();
         }
     }
 }
