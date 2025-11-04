@@ -32,7 +32,7 @@ pub fn load_texture_with_repeat(asset_server: &AssetServer, path: String, is_srg
         settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
             address_mode_u: ImageAddressMode::Repeat,
             address_mode_v: ImageAddressMode::Repeat,
-            mag_filter: ImageFilterMode::Linear,
+            mag_filter: ImageFilterMode::Nearest,
             min_filter: ImageFilterMode::Linear,
             mipmap_filter: ImageFilterMode::Linear,
             ..Default::default()

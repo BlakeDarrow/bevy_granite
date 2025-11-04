@@ -41,6 +41,7 @@ pub struct UserUpdatedCamera3DEvent {
 pub struct Camera3D {
     pub is_active: bool,
     pub order: isize, // Camera render order - higher values render on top
+    pub dither: bool, // Enable dithering to reduce banding artifacts
     pub has_volumetric_fog: bool, // if true, our next update even will insert volumetric fog settings
     pub has_atmosphere: bool,     // if true, our next update event will insert atmosphere settings
 
@@ -55,6 +56,7 @@ impl Default for Camera3D {
         Self {
             is_active: true,
             order: 0, 
+            dither: true, // Enable dithering by default
             has_volumetric_fog: false,
             volumetric_fog_settings: None,
             has_atmosphere: false,

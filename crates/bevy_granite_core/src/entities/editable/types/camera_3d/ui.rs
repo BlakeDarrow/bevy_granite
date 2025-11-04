@@ -35,6 +35,9 @@ impl Camera3D {
                     ui.label("Render Order:");
                     changed |= ui.add(egui::DragValue::new(&mut data.order).speed(1)).changed();
                     ui.end_row();
+                    ui.label("Dither:");
+                    changed |= ui.checkbox(&mut data.dither, "").changed();
+                    ui.end_row();
                     ui.label("Volumetric Fog:");
                     changed |= ui.checkbox(&mut fog_enabled, "").changed();
                     ui.end_row();

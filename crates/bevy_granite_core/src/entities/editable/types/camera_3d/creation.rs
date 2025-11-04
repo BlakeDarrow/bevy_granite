@@ -51,6 +51,11 @@ impl Camera3D {
         let mut entity =
             commands.spawn(Self::get_bundle(self.clone(), identity.clone(), transform));
 
+        // Handle dithering
+        if self.dither {
+            entity.insert(bevy::core_pipeline::tonemapping::DebandDither::Enabled);
+        }
+
         if self.has_volumetric_fog {
             let mut fog = bevy::light::VolumetricFog::default();
             let mut fog_volume = bevy::light::FogVolume::default();

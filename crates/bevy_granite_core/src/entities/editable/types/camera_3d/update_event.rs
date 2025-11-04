@@ -1,4 +1,4 @@
-use super::{AtmosphereRenderingMethod, UserUpdatedCamera3DEvent, VolumetricFog};
+use super::{AtmosphereRenderingMethod, UserUpdatedCamera3DEvent};
 use crate::{
     entities::editable::RequestEntityUpdateFromClass, Camera3D, GraniteTypes, IdentityData,
 };
@@ -67,6 +67,13 @@ pub fn update_camera_3d_system(
             
             // Update camera render order
             camera.order = new.order;
+
+            // Handle dithering
+            if new.dither {
+                commands.entity(entity).insert(bevy::core_pipeline::tonemapping::DebandDither::Enabled);
+            } else {
+                commands.entity(entity).remove::<bevy::core_pipeline::tonemapping::DebandDither>();
+            }
 
             if new.has_volumetric_fog {
                 let fog_config = new.volumetric_fog_settings.clone().unwrap_or_default();
@@ -178,6 +185,7 @@ pub fn update_camera_3d_system(
             if let GraniteTypes::Camera3D(ref mut camera_data) = identity_data.class {
                 camera_data.is_active = new.is_active;
                 camera_data.order = new.order;
+                camera_data.dither = new.dither;
                 camera_data.has_volumetric_fog = new.has_volumetric_fog;
                 camera_data.has_atmosphere = new.has_atmosphere;
 
