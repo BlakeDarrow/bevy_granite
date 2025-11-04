@@ -9,7 +9,7 @@ orbit_camera_sensitivity = 0.4
 # Zoom is mouse scroll wheel 
 zoom_camera_sensitivity = 1.25
 # Minimum distance mouse zoom can get to an object
-zoom_clip_distance = 1.0
+zoom_clip_distance = 0.1
 
 
 [ui]
