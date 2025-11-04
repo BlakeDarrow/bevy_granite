@@ -1,5 +1,5 @@
-use crate::GraniteType;
 use super::{AtmosphereRenderingMethod, BloomCompositeMode, Camera3D};
+use crate::GraniteType;
 use bevy_egui::egui;
 
 impl Camera3D {
@@ -34,23 +34,43 @@ impl Camera3D {
                     changed |= ui.checkbox(&mut data.is_active, "").changed();
                     ui.end_row();
                     ui.label("Render Order:");
-                    changed |= ui.add(egui::DragValue::new(&mut data.order).speed(1)).changed();
+                    changed |= ui
+                        .add(egui::DragValue::new(&mut data.order).speed(1))
+                        .changed();
                     ui.end_row();
                     ui.label("Dither:");
                     changed |= ui.checkbox(&mut data.dither, "").changed();
                     ui.end_row();
                     ui.label("Bloom:");
-                    changed |= ui.checkbox(&mut bloom_enabled, "").changed();
+                    if ui.checkbox(&mut bloom_enabled, "").changed() {
+                        changed = true;
+                        // Initialize settings when toggled on
+                        if *bloom_enabled && data.bloom_settings.is_none() {
+                            data.bloom_settings = Some(super::BloomSettings::default());
+                        }
+                    }
                     ui.end_row();
                     ui.label("Volumetric Fog:");
-                    changed |= ui.checkbox(&mut fog_enabled, "").changed();
+                    if ui.checkbox(&mut fog_enabled, "").changed() {
+                        changed = true;
+                        // Initialize settings when toggled on
+                        if *fog_enabled && data.volumetric_fog_settings.is_none() {
+                            data.volumetric_fog_settings = Some(super::VolumetricFog::default());
+                        }
+                    }
                     ui.end_row();
                     ui.label("Atmosphere:");
-                    changed |= ui.checkbox(&mut atmosphere_enabled, "").changed();
+                    if ui.checkbox(&mut atmosphere_enabled, "").changed() {
+                        changed = true;
+                        // Initialize settings when toggled on
+                        if *atmosphere_enabled && data.atmosphere_settings.is_none() {
+                            data.atmosphere_settings = Some(super::AtmosphereSettings::default());
+                        }
+                    }
                     ui.end_row();
                 });
             ui.add_space(large_spacing);
-            
+
             if *bloom_enabled {
                 ui.collapsing("Bloom", |ui| {
                     egui::Grid::new("bloom_settings_grid")
@@ -58,7 +78,8 @@ impl Camera3D {
                         .spacing([large_spacing, large_spacing])
                         .striped(true)
                         .show(ui, |ui| {
-                            let bloom_settings = data.bloom_settings.get_or_insert_with(Default::default);
+                            let bloom_settings =
+                                data.bloom_settings.get_or_insert_with(Default::default);
 
                             ui.label("Intensity:");
                             changed |= ui
@@ -83,9 +104,11 @@ impl Camera3D {
                             ui.label("Low Frequency Boost Curvature:");
                             changed |= ui
                                 .add(
-                                    egui::DragValue::new(&mut bloom_settings.low_frequency_boost_curvature)
-                                        .range(0.0..=1.0)
-                                        .speed(0.01),
+                                    egui::DragValue::new(
+                                        &mut bloom_settings.low_frequency_boost_curvature,
+                                    )
+                                    .range(0.0..=1.0)
+                                    .speed(0.01),
                                 )
                                 .changed();
                             ui.end_row();
@@ -104,21 +127,34 @@ impl Camera3D {
                             egui::ComboBox::from_id_salt("bloom_composite_mode")
                                 .selected_text(format!("{:?}", bloom_settings.composite_mode))
                                 .show_ui(ui, |ui| {
-                                    changed |= ui.selectable_value(&mut bloom_settings.composite_mode, super::BloomCompositeMode::Additive, "Additive").changed();
-                                    changed |= ui.selectable_value(&mut bloom_settings.composite_mode, super::BloomCompositeMode::EnergyConserving, "EnergyConserving").changed();
+                                    changed |= ui
+                                        .selectable_value(
+                                            &mut bloom_settings.composite_mode,
+                                            super::BloomCompositeMode::Additive,
+                                            "Additive",
+                                        )
+                                        .changed();
+                                    changed |= ui
+                                        .selectable_value(
+                                            &mut bloom_settings.composite_mode,
+                                            super::BloomCompositeMode::EnergyConserving,
+                                            "EnergyConserving",
+                                        )
+                                        .changed();
                                 });
                             ui.end_row();
                         });
-                    
+
                     ui.add_space(small_spacing);
-                    
+
                     // Reset to default button
                     if ui.button("Reset to Default").clicked() {
                         if let Some(bloom_settings) = &mut data.bloom_settings {
                             let default = super::BloomSettings::default();
                             bloom_settings.intensity = default.intensity;
                             bloom_settings.low_frequency_boost = default.low_frequency_boost;
-                            bloom_settings.low_frequency_boost_curvature = default.low_frequency_boost_curvature;
+                            bloom_settings.low_frequency_boost_curvature =
+                                default.low_frequency_boost_curvature;
                             bloom_settings.high_pass_frequency = default.high_pass_frequency;
                             bloom_settings.composite_mode = default.composite_mode;
                             changed = true;
@@ -281,6 +317,7 @@ impl Camera3D {
                     ui.label("Need to change order to be higher than other cameras.");
                     ui.label("Toggle Editor/On off to get back to viewport camera.");
                     ui.separator();
+                    ui.add_space(large_spacing);
                     egui::Grid::new("atmosphere_grid")
                         .num_columns(2)
                         .spacing([large_spacing, large_spacing])
@@ -289,7 +326,6 @@ impl Camera3D {
                             let found_atmosphere = &mut data.atmosphere_settings;
 
                             if let Some(atmos_settings) = found_atmosphere {
-                                ui.add_space(small_spacing);
                                 ui.horizontal(|ui| {
                                     // Button to reset to Earth preset values from Bevy::Atmosphere::EARTH
                                     if ui.button("Earth").clicked() {
@@ -298,41 +334,71 @@ impl Camera3D {
                                         atmos_settings.scene_units_to_m = 1e+4;
                                         atmos_settings.aerial_view_lut_max_distance = 3.2e5;
                                         atmos_settings.top_radius = earth.top_radius;
-                                        atmos_settings.ground_albedo = (earth.ground_albedo.x, earth.ground_albedo.y, earth.ground_albedo.z);
-                                        atmos_settings.rayleigh_density_exp_scale = earth.rayleigh_density_exp_scale;
-                                        atmos_settings.rayleigh_scattering = (earth.rayleigh_scattering.x, earth.rayleigh_scattering.y, earth.rayleigh_scattering.z);
-                                        atmos_settings.mie_density_exp_scale = earth.mie_density_exp_scale;
+                                        atmos_settings.ground_albedo = (
+                                            earth.ground_albedo.x,
+                                            earth.ground_albedo.y,
+                                            earth.ground_albedo.z,
+                                        );
+                                        atmos_settings.rayleigh_density_exp_scale =
+                                            earth.rayleigh_density_exp_scale;
+                                        atmos_settings.rayleigh_scattering = (
+                                            earth.rayleigh_scattering.x,
+                                            earth.rayleigh_scattering.y,
+                                            earth.rayleigh_scattering.z,
+                                        );
+                                        atmos_settings.mie_density_exp_scale =
+                                            earth.mie_density_exp_scale;
                                         atmos_settings.mie_scattering = earth.mie_scattering;
                                         atmos_settings.mie_absorption = earth.mie_absorption;
                                         atmos_settings.mie_asymmetry = earth.mie_asymmetry;
-                                        atmos_settings.ozone_layer_altitude = earth.ozone_layer_altitude;
+                                        atmos_settings.ozone_layer_altitude =
+                                            earth.ozone_layer_altitude;
                                         atmos_settings.ozone_layer_width = earth.ozone_layer_width;
-                                        atmos_settings.ozone_absorption = (earth.ozone_absorption.x, earth.ozone_absorption.y, earth.ozone_absorption.z);
+                                        atmos_settings.ozone_absorption = (
+                                            earth.ozone_absorption.x,
+                                            earth.ozone_absorption.y,
+                                            earth.ozone_absorption.z,
+                                        );
                                         changed = true;
                                     }
                                     ui.add_space(small_spacing);
-                                    
+
                                     if ui.button("Earth - Ground").clicked() {
                                         let earth = bevy::pbr::Atmosphere::EARTH;
                                         atmos_settings.bottom_radius = 6_360_000.;
                                         atmos_settings.top_radius = 6_370_000.;
                                         atmos_settings.scene_units_to_m = 1.;
                                         atmos_settings.aerial_view_lut_max_distance = 10_000.0;
-                                        atmos_settings.ground_albedo = (earth.ground_albedo.x, earth.ground_albedo.y, earth.ground_albedo.z);
-                                        atmos_settings.rayleigh_density_exp_scale = earth.rayleigh_density_exp_scale;
-                                        atmos_settings.rayleigh_scattering = (earth.rayleigh_scattering.x, earth.rayleigh_scattering.y, earth.rayleigh_scattering.z);
-                                        atmos_settings.mie_density_exp_scale = earth.mie_density_exp_scale;
+                                        atmos_settings.ground_albedo = (
+                                            earth.ground_albedo.x,
+                                            earth.ground_albedo.y,
+                                            earth.ground_albedo.z,
+                                        );
+                                        atmos_settings.rayleigh_density_exp_scale =
+                                            earth.rayleigh_density_exp_scale;
+                                        atmos_settings.rayleigh_scattering = (
+                                            earth.rayleigh_scattering.x,
+                                            earth.rayleigh_scattering.y,
+                                            earth.rayleigh_scattering.z,
+                                        );
+                                        atmos_settings.mie_density_exp_scale =
+                                            earth.mie_density_exp_scale;
                                         atmos_settings.mie_scattering = earth.mie_scattering;
                                         atmos_settings.mie_absorption = earth.mie_absorption;
                                         atmos_settings.mie_asymmetry = earth.mie_asymmetry;
-                                        atmos_settings.ozone_layer_altitude = earth.ozone_layer_altitude;
+                                        atmos_settings.ozone_layer_altitude =
+                                            earth.ozone_layer_altitude;
                                         atmos_settings.ozone_layer_width = earth.ozone_layer_width;
-                                        atmos_settings.ozone_absorption = (earth.ozone_absorption.x, earth.ozone_absorption.y, earth.ozone_absorption.z);
+                                        atmos_settings.ozone_absorption = (
+                                            earth.ozone_absorption.x,
+                                            earth.ozone_absorption.y,
+                                            earth.ozone_absorption.z,
+                                        );
                                         changed = true;
                                     }
                                 });
                                 ui.end_row();
-                                
+
                                 ui.separator();
                                 ui.end_row();
 
@@ -340,17 +406,31 @@ impl Camera3D {
                                 egui::ComboBox::from_id_salt("atmosphere_rendering_method")
                                     .selected_text(format!("{:?}", atmos_settings.rendering_method))
                                     .show_ui(ui, |ui| {
-                                        changed |= ui.selectable_value(&mut atmos_settings.rendering_method, AtmosphereRenderingMethod::LookupTexture, "LookupTexture").changed();
-                                        changed |= ui.selectable_value(&mut atmos_settings.rendering_method, AtmosphereRenderingMethod::Raymarched, "Raymarched").changed();
+                                        changed |= ui
+                                            .selectable_value(
+                                                &mut atmos_settings.rendering_method,
+                                                AtmosphereRenderingMethod::LookupTexture,
+                                                "LookupTexture",
+                                            )
+                                            .changed();
+                                        changed |= ui
+                                            .selectable_value(
+                                                &mut atmos_settings.rendering_method,
+                                                AtmosphereRenderingMethod::Raymarched,
+                                                "Raymarched",
+                                            )
+                                            .changed();
                                     });
                                 ui.end_row();
 
                                 ui.label("Aerial View LUT Max Distance:");
                                 changed |= ui
                                     .add(
-                                        egui::DragValue::new(&mut atmos_settings.aerial_view_lut_max_distance)
-                                            .range(1000.0..=1000000.0)
-                                            .speed(1000.0),
+                                        egui::DragValue::new(
+                                            &mut atmos_settings.aerial_view_lut_max_distance,
+                                        )
+                                        .range(1000.0..=1000000.0)
+                                        .speed(1000.0),
                                     )
                                     .changed();
                                 ui.end_row();
@@ -389,38 +469,99 @@ impl Camera3D {
 
                                 ui.label("Ground Albedo:");
                                 ui.horizontal(|ui| {
-                                    changed |= ui.add(egui::DragValue::new(&mut atmos_settings.ground_albedo.0).range(0.0..=1.0).speed(0.01).prefix("R: ")).changed();
-                                    changed |= ui.add(egui::DragValue::new(&mut atmos_settings.ground_albedo.1).range(0.0..=1.0).speed(0.01).prefix("G: ")).changed();
-                                    changed |= ui.add(egui::DragValue::new(&mut atmos_settings.ground_albedo.2).range(0.0..=1.0).speed(0.01).prefix("B: ")).changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(
+                                                &mut atmos_settings.ground_albedo.0,
+                                            )
+                                            .range(0.0..=1.0)
+                                            .speed(0.01)
+                                            .prefix("R: "),
+                                        )
+                                        .changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(
+                                                &mut atmos_settings.ground_albedo.1,
+                                            )
+                                            .range(0.0..=1.0)
+                                            .speed(0.01)
+                                            .prefix("G: "),
+                                        )
+                                        .changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(
+                                                &mut atmos_settings.ground_albedo.2,
+                                            )
+                                            .range(0.0..=1.0)
+                                            .speed(0.01)
+                                            .prefix("B: "),
+                                        )
+                                        .changed();
                                 });
                                 ui.end_row();
 
                                 ui.label("Rayleigh Density Exp Scale:");
                                 changed |= ui
                                     .add(
-                                        egui::DragValue::new(&mut atmos_settings.rayleigh_density_exp_scale)
-                                            .range(0.0..=1.0)
-                                            .speed(0.01)
-                                            .custom_formatter(|n, _| format!("{:.3}", n)),
+                                        egui::DragValue::new(
+                                            &mut atmos_settings.rayleigh_density_exp_scale,
+                                        )
+                                        .range(0.0..=1.0)
+                                        .speed(0.01)
+                                        .custom_formatter(|n, _| format!("{:.3}", n)),
                                     )
                                     .changed();
                                 ui.end_row();
 
                                 ui.label("Rayleigh Scattering:");
                                 ui.horizontal(|ui| {
-                                    changed |= ui.add(egui::DragValue::new(&mut atmos_settings.rayleigh_scattering.0).range(0.0..=0.1).speed(0.00001).custom_formatter(|n, _| format!("{:.6}", n)).prefix("R: ")).changed();
-                                    changed |= ui.add(egui::DragValue::new(&mut atmos_settings.rayleigh_scattering.1).range(0.0..=0.1).speed(0.00001).custom_formatter(|n, _| format!("{:.6}", n)).prefix("G: ")).changed();
-                                    changed |= ui.add(egui::DragValue::new(&mut atmos_settings.rayleigh_scattering.2).range(0.0..=0.1).speed(0.00001).custom_formatter(|n, _| format!("{:.6}", n)).prefix("B: ")).changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(
+                                                &mut atmos_settings.rayleigh_scattering.0,
+                                            )
+                                            .range(0.0..=0.1)
+                                            .speed(0.00001)
+                                            .custom_formatter(|n, _| format!("{:.6}", n))
+                                            .prefix("R: "),
+                                        )
+                                        .changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(
+                                                &mut atmos_settings.rayleigh_scattering.1,
+                                            )
+                                            .range(0.0..=0.1)
+                                            .speed(0.00001)
+                                            .custom_formatter(|n, _| format!("{:.6}", n))
+                                            .prefix("G: "),
+                                        )
+                                        .changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(
+                                                &mut atmos_settings.rayleigh_scattering.2,
+                                            )
+                                            .range(0.0..=0.1)
+                                            .speed(0.00001)
+                                            .custom_formatter(|n, _| format!("{:.6}", n))
+                                            .prefix("B: "),
+                                        )
+                                        .changed();
                                 });
                                 ui.end_row();
 
                                 ui.label("Mie Density Exp Scale:");
                                 changed |= ui
                                     .add(
-                                        egui::DragValue::new(&mut atmos_settings.mie_density_exp_scale)
-                                            .range(0.0..=10.0)
-                                            .speed(0.05)
-                                            .custom_formatter(|n, _| format!("{:.3}", n)),
+                                        egui::DragValue::new(
+                                            &mut atmos_settings.mie_density_exp_scale,
+                                        )
+                                        .range(0.0..=10.0)
+                                        .speed(0.05)
+                                        .custom_formatter(|n, _| format!("{:.3}", n)),
                                     )
                                     .changed();
                                 ui.end_row();
@@ -461,10 +602,12 @@ impl Camera3D {
                                 ui.label("Ozone Layer Altitude:");
                                 changed |= ui
                                     .add(
-                                        egui::DragValue::new(&mut atmos_settings.ozone_layer_altitude)
-                                            .range(0.0..=100000.0)
-                                            .speed(500.0)
-                                            .suffix(" m"),
+                                        egui::DragValue::new(
+                                            &mut atmos_settings.ozone_layer_altitude,
+                                        )
+                                        .range(0.0..=100000.0)
+                                        .speed(500.0)
+                                        .suffix(" m"),
                                     )
                                     .changed();
                                 ui.end_row();
@@ -482,9 +625,39 @@ impl Camera3D {
 
                                 ui.label("Ozone Absorption:");
                                 ui.horizontal(|ui| {
-                                    changed |= ui.add(egui::DragValue::new(&mut atmos_settings.ozone_absorption.0).range(0.0..=0.01).speed(0.000001).custom_formatter(|n, _| format!("{:.6}", n)).prefix("R: ")).changed();
-                                    changed |= ui.add(egui::DragValue::new(&mut atmos_settings.ozone_absorption.1).range(0.0..=0.01).speed(0.000001).custom_formatter(|n, _| format!("{:.6}", n)).prefix("G: ")).changed();
-                                    changed |= ui.add(egui::DragValue::new(&mut atmos_settings.ozone_absorption.2).range(0.0..=0.01).speed(0.000001).custom_formatter(|n, _| format!("{:.6}", n)).prefix("B: ")).changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(
+                                                &mut atmos_settings.ozone_absorption.0,
+                                            )
+                                            .range(0.0..=0.01)
+                                            .speed(0.000001)
+                                            .custom_formatter(|n, _| format!("{:.6}", n))
+                                            .prefix("R: "),
+                                        )
+                                        .changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(
+                                                &mut atmos_settings.ozone_absorption.1,
+                                            )
+                                            .range(0.0..=0.01)
+                                            .speed(0.000001)
+                                            .custom_formatter(|n, _| format!("{:.6}", n))
+                                            .prefix("G: "),
+                                        )
+                                        .changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(
+                                                &mut atmos_settings.ozone_absorption.2,
+                                            )
+                                            .range(0.0..=0.01)
+                                            .speed(0.000001)
+                                            .custom_formatter(|n, _| format!("{:.6}", n))
+                                            .prefix("B: "),
+                                        )
+                                        .changed();
                                 });
                                 ui.end_row();
                             } else {
