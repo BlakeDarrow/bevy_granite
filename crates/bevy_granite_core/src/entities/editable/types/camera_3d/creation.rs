@@ -4,7 +4,12 @@ use crate::{
     HasRuntimeData, IdentityData,
 };
 use bevy::{
-    camera::{Camera, Camera3d}, ecs::{bundle::Bundle, entity::Entity, system::Commands}, prelude::Name, render::view::Hdr, transform::components::Transform
+    camera::{Camera, Camera3d},
+    ecs::{bundle::Bundle, entity::Entity, system::Commands},
+    post_process::bloom::{Bloom, BloomCompositeMode as BevyBloomCompositeMode},
+    prelude::Name,
+    render::view::Hdr,
+    transform::components::Transform,
 };
 use uuid::Uuid;
 
@@ -50,6 +55,34 @@ impl Camera3D {
     ) -> Entity {
         let mut entity =
             commands.spawn(Self::get_bundle(self.clone(), identity.clone(), transform));
+
+        // Handle dithering
+        if self.dither {
+            entity.insert(bevy::core_pipeline::tonemapping::DebandDither::Enabled);
+        }
+
+        // Handle bloom - requires HDR
+        if self.has_bloom {
+            // Bloom requires HDR to be enabled
+            entity.insert(Hdr);
+            
+            if let Some(bloom_settings) = &self.bloom_settings {
+                let bloom = Bloom {
+                    intensity: bloom_settings.intensity,
+                    low_frequency_boost: bloom_settings.low_frequency_boost,
+                    low_frequency_boost_curvature: bloom_settings.low_frequency_boost_curvature,
+                    high_pass_frequency: bloom_settings.high_pass_frequency,
+                    composite_mode: match bloom_settings.composite_mode {
+                        super::BloomCompositeMode::EnergyConserving => BevyBloomCompositeMode::EnergyConserving,
+                        super::BloomCompositeMode::Additive => BevyBloomCompositeMode::Additive,
+                    },
+                    ..Default::default()
+                };
+                entity.insert(bloom);
+            } else {
+                entity.insert(Bloom::default());
+            }
+        }
 
         if self.has_volumetric_fog {
             let mut fog = bevy::light::VolumetricFog::default();

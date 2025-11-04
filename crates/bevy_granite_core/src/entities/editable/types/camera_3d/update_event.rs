@@ -1,4 +1,4 @@
-use super::{AtmosphereRenderingMethod, UserUpdatedCamera3DEvent, VolumetricFog};
+use super::{AtmosphereRenderingMethod, UserUpdatedCamera3DEvent};
 use crate::{
     entities::editable::RequestEntityUpdateFromClass, Camera3D, GraniteTypes, IdentityData,
 };
@@ -12,6 +12,7 @@ use bevy::{
     light::{FogVolume, VolumetricFog as VolumetricFogSettings},
     math::{UVec2, UVec3},
     pbr::{Atmosphere, AtmosphereMode, AtmosphereSettings as BevyAtmosphereSettings},
+    post_process::bloom::{Bloom, BloomCompositeMode as BevyBloomCompositeMode},
     render::view::Hdr,
 };
 
@@ -67,6 +68,36 @@ pub fn update_camera_3d_system(
             
             // Update camera render order
             camera.order = new.order;
+
+            // Handle dithering
+            if new.dither {
+                commands.entity(entity).insert(bevy::core_pipeline::tonemapping::DebandDither::Enabled);
+            } else {
+                commands.entity(entity).remove::<bevy::core_pipeline::tonemapping::DebandDither>();
+            }
+
+            // Handle bloom - requires HDR
+            if new.has_bloom {
+                // Bloom requires HDR to be enabled
+                commands.entity(entity).insert(Hdr);
+                
+                let bloom_config = new.bloom_settings.clone().unwrap_or_default();
+                let bloom = Bloom {
+                    intensity: bloom_config.intensity,
+                    low_frequency_boost: bloom_config.low_frequency_boost,
+                    low_frequency_boost_curvature: bloom_config.low_frequency_boost_curvature,
+                    high_pass_frequency: bloom_config.high_pass_frequency,
+                    composite_mode: match bloom_config.composite_mode {
+                        super::BloomCompositeMode::EnergyConserving => BevyBloomCompositeMode::EnergyConserving,
+                        super::BloomCompositeMode::Additive => BevyBloomCompositeMode::Additive,
+                    },
+                    ..Default::default()
+                };
+                commands.entity(entity).insert(bloom);
+            } else {
+                commands.entity(entity).remove::<Bloom>();
+                // Note: We don't remove HDR here as it might be needed for atmosphere
+            }
 
             if new.has_volumetric_fog {
                 let fog_config = new.volumetric_fog_settings.clone().unwrap_or_default();
@@ -178,8 +209,16 @@ pub fn update_camera_3d_system(
             if let GraniteTypes::Camera3D(ref mut camera_data) = identity_data.class {
                 camera_data.is_active = new.is_active;
                 camera_data.order = new.order;
+                camera_data.dither = new.dither;
+                camera_data.has_bloom = new.has_bloom;
                 camera_data.has_volumetric_fog = new.has_volumetric_fog;
                 camera_data.has_atmosphere = new.has_atmosphere;
+
+                if new.has_bloom {
+                    camera_data.bloom_settings = new.bloom_settings.clone();
+                } else {
+                    camera_data.bloom_settings = None;
+                }
 
                 if new.has_volumetric_fog {
                     camera_data.volumetric_fog_settings = new.volumetric_fog_settings.clone();

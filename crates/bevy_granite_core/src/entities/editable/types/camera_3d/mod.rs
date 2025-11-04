@@ -41,8 +41,13 @@ pub struct UserUpdatedCamera3DEvent {
 pub struct Camera3D {
     pub is_active: bool,
     pub order: isize, // Camera render order - higher values render on top
+    pub dither: bool, // Enable dithering to reduce banding artifacts
+    pub has_bloom: bool, // Enable bloom effect for HDR lighting
     pub has_volumetric_fog: bool, // if true, our next update even will insert volumetric fog settings
     pub has_atmosphere: bool,     // if true, our next update event will insert atmosphere settings
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bloom_settings: Option<BloomSettings>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub volumetric_fog_settings: Option<VolumetricFog>,
@@ -55,12 +60,46 @@ impl Default for Camera3D {
         Self {
             is_active: true,
             order: 0, 
+            dither: true, // Enable dithering by default
+            has_bloom: false,
+            bloom_settings: None,
             has_volumetric_fog: false,
             volumetric_fog_settings: None,
             has_atmosphere: false,
             atmosphere_settings: None,
         }
     }
+}
+
+/// Wrapper for bevy bloom settings that's serializable and optional
+/// Will need to keep in parity if Bevy changes how it stores these settings
+#[derive(Serialize, Deserialize, Reflect, Debug, Clone, PartialEq)]
+pub struct BloomSettings {
+    pub intensity: f32,
+    pub low_frequency_boost: f32,
+    pub low_frequency_boost_curvature: f32,
+    pub high_pass_frequency: f32,
+    pub composite_mode: BloomCompositeMode,
+}
+
+impl Default for BloomSettings {
+    fn default() -> Self {
+        Self {
+            intensity: 0.05,
+            low_frequency_boost: 0.7,
+            low_frequency_boost_curvature: 0.95,
+            high_pass_frequency: 1.0,
+            composite_mode: BloomCompositeMode::Additive,
+        }
+    }
+}
+
+/// Serializable version of Bevy's BloomCompositeMode enum
+#[derive(Serialize, Deserialize, Reflect, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum BloomCompositeMode {
+    EnergyConserving,
+    #[default]
+    Additive,
 }
 
 /// Wrapper for bevy volumetric fog thats serializable and optional
@@ -110,10 +149,10 @@ pub enum AtmosphereRenderingMethod {
 #[derive(Serialize, Deserialize, Reflect, Debug, Clone, PartialEq)]
 pub struct AtmosphereSettings {
     // LUT (Look-Up Table) Settings
-    pub transmittance_lut_size: (u32, u32),     // UVec2 as tuple
-    pub multiscattering_lut_size: (u32, u32),   // UVec2 as tuple
-    pub sky_view_lut_size: (u32, u32),          // UVec2 as tuple
-    pub aerial_view_lut_size: (u32, u32, u32),  // UVec3 as tuple
+    pub transmittance_lut_size: (u32, u32),     
+    pub multiscattering_lut_size: (u32, u32),   
+    pub sky_view_lut_size: (u32, u32),          
+    pub aerial_view_lut_size: (u32, u32, u32),  
     pub transmittance_lut_samples: u32,
     pub multiscattering_lut_dirs: u32,
     pub multiscattering_lut_samples: u32,
@@ -127,16 +166,16 @@ pub struct AtmosphereSettings {
     // Atmosphere component fields
     pub bottom_radius: f32,
     pub top_radius: f32,
-    pub ground_albedo: (f32, f32, f32), // Vec3 as tuple for serialization
+    pub ground_albedo: (f32, f32, f32), 
     pub rayleigh_density_exp_scale: f32,
-    pub rayleigh_scattering: (f32, f32, f32), // Vec3 as tuple
+    pub rayleigh_scattering: (f32, f32, f32), 
     pub mie_density_exp_scale: f32,
     pub mie_scattering: f32,
     pub mie_absorption: f32,
     pub mie_asymmetry: f32,
     pub ozone_layer_altitude: f32,
     pub ozone_layer_width: f32,
-    pub ozone_absorption: (f32, f32, f32), // Vec3 as tuple
+    pub ozone_absorption: (f32, f32, f32),
 }
 impl Default for AtmosphereSettings {
     fn default() -> Self {

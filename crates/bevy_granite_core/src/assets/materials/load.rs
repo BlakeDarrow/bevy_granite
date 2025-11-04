@@ -3,13 +3,13 @@ use super::{
     StandardMaterialDef,
 };
 use bevy::image::{
-    ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor,
+    ImageAddressMode, ImageFilterMode, ImageFormat, ImageFormatSetting, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor
 };
 use bevy::math::Affine2;
 use bevy::prelude::{
     AlphaMode, AssetServer, Assets, Color, Handle, Image, Res, ResMut, StandardMaterial,
 };
-use bevy::render::render_resource::Face;
+use bevy::render::render_resource::{Face, TextureFormat};
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -19,14 +19,24 @@ use bevy_granite_logging::{
 /// Helper function to load textures with REPEAT address mode
 /// `is_srgb` should be true for color textures (base_color, emissive), false for data textures (normal, metallic, roughness, etc.)
 pub fn load_texture_with_repeat(asset_server: &AssetServer, path: String, is_srgb: bool) -> Handle<Image> {
+    let path_clone = path.clone();
     asset_server.load_with_settings(path, move |settings: &mut ImageLoaderSettings| {
         settings.is_srgb = is_srgb;
+
+        if let Some(ext) = path_clone.rsplit('.').next() {
+            settings.format = ImageFormatSetting::Format(
+                ImageFormat::from_extension(ext).unwrap_or(ImageFormat::Png)
+            );
+        }
+        
         settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
             address_mode_u: ImageAddressMode::Repeat,
             address_mode_v: ImageAddressMode::Repeat,
+            address_mode_w: ImageAddressMode::Repeat,
             mag_filter: ImageFilterMode::Linear,
             min_filter: ImageFilterMode::Linear,
             mipmap_filter: ImageFilterMode::Linear,
+            anisotropy_clamp: 64,
             ..Default::default()
         });
     })
