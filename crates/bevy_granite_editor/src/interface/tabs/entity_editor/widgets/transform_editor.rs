@@ -233,7 +233,6 @@ fn display_rotation_ui(
                     ui_changed[i] = ui_changed[i] || response.changed();
                 }
 
-                ui.add_space(spacing);
                 let zero = ui.add_sized(drag_size, egui::Button::new("Reset"));
 
                 let is_editing = editing.iter().any(|&e| e);
@@ -375,7 +374,6 @@ fn display_position_ui(ui: &mut egui::Ui, pos: &mut Vec3, changed: &mut bool, dr
                     }
                 });
 
-                ui.add_space(spacing);
                 let zero = ui.add_sized(drag_size, egui::Button::new("Reset"));
 
                 if zero.clicked() {
@@ -461,7 +459,6 @@ fn display_scale_ui(ui: &mut egui::Ui, scale: &mut Vec3, changed: &mut bool, dra
                     }
                 });
 
-                ui.add_space(spacing);
                 let reset = ui.add_sized(drag_size, egui::Button::new("Reset"));
 
                 if reset.clicked() {
