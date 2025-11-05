@@ -7,7 +7,8 @@ use bevy::{
 use super::editor::update_editor_vis_system;
 use crate::{
     editor_state::{
-        load_editor_settings_toml, save_dock_on_window_close_system, update_active_world_system,
+        load_editor_settings_toml, save_dock_on_window_close_system, auto_save_dock_layout_system, 
+        update_active_world_system, DockLayoutTracker,
     },
     interface::EditorSettingsTabData,
     setup::is_editor_active,
@@ -51,6 +52,7 @@ impl Plugin for ConfigPlugin {
                 layout_loaded: false,
                 loaded_sources: std::collections::HashSet::new(),
             })
+            .insert_resource(DockLayoutTracker::default())
             //
             // Systems
             //
@@ -58,6 +60,7 @@ impl Plugin for ConfigPlugin {
             .add_systems(PostStartup, load_editor_settings_toml)
             .add_systems(Update, update_active_world_system.run_if(is_editor_active))
             .add_systems(Update, save_dock_on_window_close_system)
+            .add_systems(Update, auto_save_dock_layout_system.run_if(is_editor_active))
             .add_systems(Update, update_editor_vis_system);
     }
 }

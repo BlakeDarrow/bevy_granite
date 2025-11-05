@@ -3,8 +3,9 @@ use crate::{
         BottomDockState, EditorSettingsTabData, SideDockState, SideTab
     }
 };
-use bevy::{asset::io::file::FileAssetReader, prelude::{MessageReader, Res}};
+use bevy::{asset::io::file::FileAssetReader, prelude::{MessageReader, Res, ResMut, Resource}};
 use bevy::window::WindowClosing;
+use bevy::time::Time;
 use crate::utils::{load_from_toml_file, save_to_toml_file};
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
@@ -27,6 +28,22 @@ pub struct DockLayoutStr {
     pub bottom_dock_height: Option<f32>,
 }
 
+/// Resource to track periodic auto-saving of dock layout
+#[derive(Resource, Clone)]
+pub struct DockLayoutTracker {
+    pub time_since_last_save: f32,
+    pub save_interval: f32, // Auto-save interval in seconds
+}
+
+impl Default for DockLayoutTracker {
+    fn default() -> Self {
+        Self {
+            time_since_last_save: 0.0,
+            save_interval: 60.0, 
+        }
+    }
+}
+
 pub fn save_dock_on_window_close_system(
     mut window_close_events: MessageReader<WindowClosing>,
     editor_state: Res<EditorState>,
@@ -39,6 +56,27 @@ pub fn save_dock_on_window_close_system(
             side_dock_res.clone(),
             bottom_dock_res.clone(),
         );
+    }
+}
+
+/// System that automatically saves dock layout every minute
+pub fn auto_save_dock_layout_system(
+    time: Res<Time>,
+    editor_state: Res<EditorState>,
+    side_dock_res: Res<SideDockState>,
+    bottom_dock_res: Res<BottomDockState>,
+    mut tracker: ResMut<DockLayoutTracker>,
+) {
+    tracker.time_since_last_save += time.delta_secs();
+    
+    // Save every x seconds
+    if tracker.time_since_last_save >= tracker.save_interval {
+        save_dock_layout_toml(
+            editor_state.deref().clone(),
+            side_dock_res.clone(),
+            bottom_dock_res.clone(),
+        );
+        tracker.time_since_last_save = 0.0;
     }
 }
 
