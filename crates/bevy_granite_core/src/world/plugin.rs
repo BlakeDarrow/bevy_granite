@@ -1,4 +1,4 @@
-use super::{open_world_reader, SaveWorldRequestData,
+use super::{open_world_reader, open_world_batch_reader, SaveWorldRequestData,
     collect_components_system, reload_world_system, save_request_system, save_data_ready_system,
 };
 use bevy::{
@@ -16,7 +16,7 @@ impl Plugin for WorldPlugin {
             //
             // Schedule system
             //
-            .add_systems(Update, open_world_reader)
+            .add_systems(Update, (open_world_reader, open_world_batch_reader))
             .add_systems(
                 Update,
                 (
