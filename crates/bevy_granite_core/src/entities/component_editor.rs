@@ -327,10 +327,35 @@ impl ComponentEditor {
         component_name: &str,
         serialized_data: &str,
     ) -> Option<String> {
+        log!(
+            LogType::Game,
+            LogLevel::Info,
+            LogCategory::System,
+            "Extract component data called for '{}' with data: {}",
+            component_name,
+            serialized_data
+        );
+        
         // First, try to parse the original data as RON to see if we can extract the component directly
         if let Some(extracted) = self.try_extract_ron_component(component_name, serialized_data) {
+            log!(
+                LogType::Game,
+                LogLevel::Info,
+                LogCategory::System,
+                "Successfully extracted via try_extract_ron_component"
+            );
             return Some(extracted);
         }
+        
+        log!(
+            LogType::Game,
+            LogLevel::Info,
+            LogCategory::System,
+            "try_extract_ron_component returned None, falling back to map parsing"
+        );
+
+        // Store the original serialized data for Unit value lookups
+        let original_data = serialized_data;
 
         // Fallback to the existing JSON-based approach for backwards compatibility
         let parsed = ron::from_str::<HashMap<String, ron::Value>>(serialized_data).ok()?;
@@ -406,7 +431,7 @@ impl ComponentEditor {
                     LogCategory::System,
                     "Converting Map to RON struct syntax"
                 );
-                Some(self.convert_map_to_ron_struct(map))
+                Some(self.convert_map_to_ron_struct(map, original_data))
             }
             // For Sequence values, convert to tuple format for tuple structs
             ron::Value::Seq(seq) => {
@@ -466,50 +491,165 @@ impl ComponentEditor {
         component_name: &str,
         serialized_data: &str,
     ) -> Option<String> {
+        log!(
+            LogType::Game,
+            LogLevel::Info,
+            LogCategory::System,
+            "try_extract_ron_component: Looking for component '{}'",
+            component_name
+        );
+        
+        // The data format is: {"component_name": (struct_data)}
+        // We need to extract just the (struct_data) part
         let search_pattern = format!("\"{}\":", component_name);
         if let Some(start) = serialized_data.find(&search_pattern) {
+            log!(
+                LogType::Game,
+                LogLevel::Info,
+                LogCategory::System,
+                "Found pattern at position {}",
+                start
+            );
+            
             let after_colon = start + search_pattern.len();
-            let remaining = &serialized_data[after_colon..];
-
-            // Skip whitespace and quotes
-            let trimmed = remaining.trim_start();
-            if trimmed.starts_with('"') {
-                // Handle quoted RON data - extract everything between the quotes
-                if let Some(quote_start) = trimmed.find('"') {
-                    let after_quote = &trimmed[quote_start + 1..];
-                    if let Some(quote_end) = after_quote.rfind('"') {
-                        let ron_data = &after_quote[..quote_end];
-                        // Unescape the RON data
-                        let unescaped = ron_data.replace("\\\"", "\"");
-                        log!(
-                            LogType::Game,
-                            LogLevel::Info,
-                            LogCategory::System,
-                            "Extracted RON component data: {}",
-                            unescaped
-                        );
-                        return Some(unescaped);
+            let remaining = &serialized_data[after_colon..].trim_start();
+            
+            // The data should be like: (manufacturer:Some(...),components:[(unit:W,...)])
+            // Just extract from the opening ( to the closing }
+            if remaining.starts_with('(') {
+                // Find the matching closing paren
+                let mut depth = 0;
+                let mut end_pos = None;
+                
+                for (i, ch) in remaining.chars().enumerate() {
+                    match ch {
+                        '(' | '[' => depth += 1,
+                        ')' | ']' => {
+                            depth -= 1;
+                            if depth == 0 {
+                                end_pos = Some(i + 1);
+                                break;
+                            }
+                        }
+                        _ => {}
                     }
+                }
+                
+                if let Some(end) = end_pos {
+                    let extracted = &remaining[..end];
+                    
+                    // Clean up Float() wrappers
+                    let cleaned = self.clean_extracted_ron(extracted);
+                    
+                    log!(
+                        LogType::Game,
+                        LogLevel::Info,
+                        LogCategory::System,
+                        "Successfully extracted RON data: {}",
+                        &cleaned[..cleaned.len().min(200)]
+                    );
+                    
+                    return Some(cleaned);
                 }
             }
         }
+        
+        log!(
+            LogType::Game,
+            LogLevel::Info,
+            LogCategory::System,
+            "try_extract_ron_component: Failed to extract"
+        );
         None
+    }
+    
+    /// Clean extracted RON data by removing Float() wrappers while preserving structure
+    fn clean_extracted_ron(&self, ron_data: &str) -> String {
+        let mut result = ron_data.to_string();
+        
+        // Remove Float() wrappers
+        while result.contains("Float(") {
+            // Find Float( and its matching closing )
+            if let Some(start) = result.find("Float(") {
+                // Find the matching closing paren
+                let after_float = start + 6; // length of "Float("
+                let remaining = &result[after_float..];
+                
+                // Simple approach: find the first closing paren (works for simple numbers)
+                if let Some(end_offset) = remaining.find(')') {
+                    let number = &remaining[..end_offset];
+                    let before = &result[..start];
+                    let after = &remaining[end_offset + 1..];
+                    result = format!("{}{}{}", before, number, after);
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        
+        result
     }
 
     /// Convert a RON Map to proper struct syntax
-    fn convert_map_to_ron_struct(&self, map: &ron::Map) -> String {
+    fn convert_map_to_ron_struct(&self, map: &ron::Map, original_data: &str) -> String {
         let mut fields = Vec::new();
 
         for (key, value) in map.iter() {
             if let ron::Value::String(field_name) = key {
-                // Just serialize the value and clean up any RON wrapper types
-                let field_value = ron::to_string(value).unwrap_or_default();
-                let cleaned_value = self.clean_ron_value(&field_value);
-                fields.push(format!("{}:{}", field_name, cleaned_value));
+                // Recursively convert the value to proper RON format
+                let field_value = self.convert_ron_value_to_struct(value, original_data);
+                fields.push(format!("{}:{}", field_name, field_value));
             }
         }
 
         format!("({})", fields.join(","))
+    }
+
+    /// Convert a RON value to proper struct syntax recursively
+    fn convert_ron_value_to_struct(&self, value: &ron::Value, original_data: &str) -> String {
+        match value {
+            ron::Value::Map(map) => {
+                // Recursively convert nested maps to struct syntax
+                self.convert_map_to_ron_struct(map, original_data)
+            }
+            ron::Value::Seq(seq) => {
+                // Check if this is a numeric array (Vec2, Vec3, Vec4, etc.)
+                let is_numeric_array = seq.iter().all(|v| matches!(v, ron::Value::Number(_)));
+                
+                // Convert sequence elements recursively
+                let elements: Vec<String> = seq
+                    .iter()
+                    .map(|v| self.convert_ron_value_to_struct(v, original_data))
+                    .collect();
+                
+                if is_numeric_array {
+                    // Use tuple syntax for numeric arrays (Vec2, Vec3, etc.)
+                    format!("({})", elements.join(","))
+                } else {
+                    // Use array syntax for struct arrays
+                    format!("[{}]", elements.join(","))
+                }
+            }
+            ron::Value::Option(opt) => {
+                match opt {
+                    Some(inner) => format!("Some({})", self.convert_ron_value_to_struct(inner, original_data)),
+                    None => "None".to_string()
+                }
+            }
+            ron::Value::Unit => {
+                // For Unit values, try to extract the original enum variant name from the source
+                // This is a workaround because ron::Value::Unit loses the variant name
+                // We'll return a placeholder that needs to be handled by a smarter parser
+                "()".to_string()
+            }
+            other => {
+                // For primitives, serialize and clean up
+                let serialized = ron::to_string(other).unwrap_or_default();
+                self.clean_ron_value(&serialized)
+            }
+        }
     }
 
     /// Convert a RON Seq to tuple format for tuple structs
@@ -526,7 +666,7 @@ impl ComponentEditor {
         format!("({})", values.join(","))
     }
 
-    /// Clean up RON serialized values by removing wrapper types and converting arrays to tuples
+    /// Clean up RON serialized values by removing wrapper types
     fn clean_ron_value(&self, ron_str: &str) -> String {
         let mut result = ron_str.to_string();
 
@@ -535,20 +675,8 @@ impl ComponentEditor {
             result = result.replace("Float(", "").replace(")", "");
         }
 
-        // Convert arrays [a,b,c] to tuples (a,b,c) for Vec3, Vec2, etc.
-        if result.starts_with('[') && result.ends_with(']') {
-            result = format!("({})", &result[1..result.len() - 1]);
-        }
-
-        // Handle nested maps recursively by parsing and reconverting
-        if let Ok(parsed) = ron::from_str::<ron::Value>(&result) {
-            match parsed {
-                ron::Value::Map(map) => {
-                    return self.convert_map_to_ron_struct(&map);
-                }
-                _ => {}
-            }
-        }
+        // Don't convert arrays to tuples - leave them as arrays
+        // RON deserializer expects proper array syntax for sequence fields
 
         result
     }

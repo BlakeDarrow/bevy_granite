@@ -36,7 +36,7 @@ pub fn deserialize_entities(
     commands: &mut Commands,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     available_materials: &mut ResMut<AvailableEditableMaterials>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    meshes: &mut ResMut<Assets<Mesh>>,
     path: impl Into<Cow<'static, str>>, //absolute or rel
     save_settings: SaveSettings,
     transform_override: Option<Transform>,
@@ -65,7 +65,7 @@ pub fn deserialize_entities(
             commands,
             materials,
             available_materials,
-            &mut meshes,
+            meshes,
             save_data,
             transform_override,
         );

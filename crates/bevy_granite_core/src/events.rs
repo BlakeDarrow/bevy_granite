@@ -11,6 +11,9 @@ pub struct CollectRuntimeDataEvent(pub String);
 pub struct WorldLoadSuccessEvent(pub String);
 
 #[derive(Message)]
+pub struct WorldLoadBatchSuccessEvent(pub Vec<String>);
+
+#[derive(Message)]
 pub struct WorldSaveSuccessEvent(pub String);
 
 // User callable events begin with "Request"
@@ -24,6 +27,10 @@ pub struct RequestReloadEvent(pub String);
 /// Request the loading of serialized save data from a file. Optionally takes a Transform override to act as new loaded origin
 #[derive(Message)]
 pub struct RequestLoadEvent(pub String, pub SaveSettings, pub Option<Transform>);
+
+/// Request the loading of multiple serialized save data files. Each tuple contains (path, save_settings, transform_override)
+#[derive(Message)]
+pub struct RequestLoadBatchEvent(pub Vec<(String, SaveSettings, Option<Transform>)>);
 
 #[derive(Message)]
 pub struct RequestDespawnSerializableEntities;
