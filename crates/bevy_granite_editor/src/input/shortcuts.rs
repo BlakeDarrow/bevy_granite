@@ -7,7 +7,9 @@ use bevy_granite_core::{
 };
 use bevy_granite_gizmos::{selection::events::EntityEvents, Selected};
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
-use native_dialog::FileDialog;
+
+#[cfg(not(target_arch = "wasm32"))]
+use rfd::FileDialog;
 
 use crate::{
     editor_state::EditorState,
@@ -145,6 +147,7 @@ fn handle_shortcuts(
 
     // Ctrl-O
     // Load
+    #[cfg(not(target_arch = "wasm32"))]
     if input.ctrl_left.pressed && input.key_o.just_pressed && !input.mouse_right.any {
         log!(
             LogType::Editor,
@@ -154,8 +157,7 @@ fn handle_shortcuts(
         );
         if let Some(path) = FileDialog::new()
             .add_filter("Granite Scene", &["scene"])
-            .show_open_single_file()
-            .unwrap()
+            .pick_file()
         {
             events.load.write(RequestLoadEvent(
                 path.display().to_string(),

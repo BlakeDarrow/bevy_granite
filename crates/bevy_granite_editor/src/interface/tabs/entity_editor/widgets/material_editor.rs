@@ -9,7 +9,9 @@ use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
 };
-use native_dialog::FileDialog;
+
+#[cfg(not(target_arch = "wasm32"))]
+use rfd::FileDialog;
 
 pub fn display_add_material_field_dropdown(
     ui: &mut egui::Ui,
@@ -264,24 +266,26 @@ pub fn display_material_creation(ui: &mut egui::Ui, new: &mut NewEditableMateria
                 ui.horizontal(|ui| {
                     changed |= ui.text_edit_singleline(&mut new.file_dir).changed();
 
-                    ui.spacing_mut().button_padding = egui::Vec2::new(2.0, 2.0);
-                    if ui.button("📁").clicked() {
-                        let current_dir = std::env::current_dir().unwrap();
-                        let assets_dir = current_dir.join("assets");
-                        let base_dir = assets_dir.join("materials");
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        ui.spacing_mut().button_padding = egui::Vec2::new(2.0, 2.0);
+                        if ui.button("📁").clicked() {
+                            let current_dir = std::env::current_dir().unwrap();
+                            let assets_dir = current_dir.join("assets");
+                            let base_dir = assets_dir.join("materials");
 
-                        if let Some(folder) = FileDialog::new()
-                            .set_location(&base_dir)
-                            .show_open_single_dir()
-                            .unwrap()
-                        {
-                            let relative_path = folder
-                                .strip_prefix(&assets_dir)
-                                .map(|p| p.to_string_lossy().replace("\\", "/"))
-                                .unwrap_or_else(|_| folder.to_string_lossy().into());
+                            if let Some(folder) = FileDialog::new()
+                                .set_directory(&base_dir)
+                                .pick_folder()
+                            {
+                                let relative_path = folder
+                                    .strip_prefix(&assets_dir)
+                                    .map(|p| p.to_string_lossy().replace("\\", "/"))
+                                    .unwrap_or_else(|_| folder.to_string_lossy().into());
 
-                            new.file_dir = relative_path;
-                            changed = true;
+                                new.file_dir = relative_path;
+                                changed = true;
+                            }
                         }
                     }
                 });
@@ -631,35 +635,38 @@ fn display_text_field(
                     changed = true;
                 }
 
-                ui.spacing_mut().button_padding = egui::Vec2::new(2.0, 2.0);
-                if ui.button("📁").clicked() {
-                    let current_dir = std::env::current_dir().unwrap();
-                    let assets_dir = current_dir.join("assets");
-                    let tex_path = assets_dir.join("textures");
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    ui.spacing_mut().button_padding = egui::Vec2::new(2.0, 2.0);
+                    if ui.button("📁").clicked() {
+                        let current_dir = std::env::current_dir().unwrap();
+                        let assets_dir = current_dir.join("assets");
+                        let tex_path = assets_dir.join("textures");
 
-                    // Use textures dir if it exists or can be created, otherwise use current dir
-                    let dialog_path =
-                        if tex_path.exists() || std::fs::create_dir_all(&tex_path).is_ok() {
-                            tex_path
-                        } else {
-                            current_dir.clone()
-                        };
+                        // Use textures dir if it exists or can be created, otherwise use current dir
+                        let dialog_path =
+                            if tex_path.exists() || std::fs::create_dir_all(&tex_path).is_ok() {
+                                tex_path
+                            } else {
+                                current_dir.clone()
+                            };
 
-                    if let Ok(Some(path)) = FileDialog::new()
-                        .add_filter("Texture Files", &["png", "jpg", "jpeg"])
-                        .set_location(&dialog_path)
-                        .show_open_single_file()
-                    {
-                        let relative_path = if let Ok(rel_path) = path.strip_prefix(&assets_dir) {
-                            rel_path.to_string_lossy().to_string().replace("\\", "/")
-                        } else {
-                            path.to_string_lossy().to_string()
-                        };
-                        *val = relative_path;
+                        if let Some(path) = FileDialog::new()
+                            .add_filter("Texture Files", &["png", "jpg", "jpeg"])
+                            .set_directory(&dialog_path)
+                            .pick_file()
+                        {
+                            let relative_path = if let Ok(rel_path) = path.strip_prefix(&assets_dir) {
+                                rel_path.to_string_lossy().to_string().replace("\\", "/")
+                            } else {
+                                path.to_string_lossy().to_string()
+                            };
+                            *val = relative_path;
 
-                        changed = true;
+                            changed = true;
+                        }
+                        ui.close();
                     }
-                    ui.close();
                 }
 
                 ui.add_space(small_spacing);

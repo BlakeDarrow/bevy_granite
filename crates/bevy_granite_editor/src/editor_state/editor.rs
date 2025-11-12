@@ -5,7 +5,11 @@ use crate::{
 
 use crate::utils::{load_from_toml_file, save_to_toml_file};
 use bevy::ecs::message::MessageReader;
-use bevy::{asset::io::file::FileAssetReader, prelude::ResMut};
+use bevy::prelude::ResMut;
+
+#[cfg(not(target_arch = "wasm32"))]
+use bevy::asset::io::file::FileAssetReader;
+
 use bevy_granite_core::{
     absolute_asset_to_rel,
     events::{
@@ -126,8 +130,12 @@ pub fn save_editor_settings_from_widget_data(
     right_dock: SideDockState,
     bottom_dock: BottomDockState,
 ) {
+    #[cfg(not(target_arch = "wasm32"))]
     let config_path_buf =
         FileAssetReader::get_base_path().join("assets/".to_string() + &editor_state.config_path);
+    
+    #[cfg(target_arch = "wasm32")]
+    let config_path_buf = std::path::PathBuf::from("assets/".to_string() + &editor_state.config_path);
 
     editor_settings.dock.layout_str = get_dock_state_str(right_dock, bottom_dock);
 
@@ -174,8 +182,12 @@ pub fn update_editor_config_field<F>(
 where
     F: FnOnce(&mut EditorSettingsTabData),
 {
+    #[cfg(not(target_arch = "wasm32"))]
     let config_path_buf =
         FileAssetReader::get_base_path().join("assets/".to_string() + &editor_state.config_path);
+    
+    #[cfg(target_arch = "wasm32")]
+    let config_path_buf = std::path::PathBuf::from("assets/".to_string() + &editor_state.config_path);
 
     if let Some(config_path_str) = config_path_buf.to_str() {
         // Apply the update function to modify the config
@@ -218,8 +230,13 @@ where
 }
 
 pub fn load_editor_settings_toml(mut editor_state: ResMut<EditorState>) {
+    #[cfg(not(target_arch = "wasm32"))]
     let config_path_buf =
         FileAssetReader::get_base_path().join("assets/".to_string() + &editor_state.config_path);
+    
+    #[cfg(target_arch = "wasm32")]
+    let config_path_buf = std::path::PathBuf::from("assets/".to_string() + &editor_state.config_path);
+    
     if let Some(config_path_str) = config_path_buf.to_str() {
         match load_from_toml_file(config_path_str) {
             Ok(editor_config_content) => {

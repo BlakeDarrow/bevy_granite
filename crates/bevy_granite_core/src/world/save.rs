@@ -5,11 +5,14 @@ use crate::{
     WorldSaveSuccessEvent,
 };
 use bevy::{
-    asset::io::file::FileAssetReader,
     ecs::entity::Entity,
     prelude::{ChildOf, Commands, MessageReader, MessageWriter, Query, ResMut, Resource, World},
     transform::components::Transform,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use bevy::asset::io::file::FileAssetReader;
+
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -94,9 +97,13 @@ pub fn save_request_system(
             spawn_source
         );
 
+        #[cfg(not(target_arch = "wasm32"))]
         let asset_path = FileAssetReader::get_base_path()
             .join("assets")
             .join(path.clone());
+
+        #[cfg(target_arch = "wasm32")]
+        let asset_path = PathBuf::from("assets").join(path.clone());
 
         log!(
             LogType::Editor,

@@ -1,5 +1,6 @@
 pub mod materials;
 pub mod plugin;
+pub mod scene_asset;
 
 pub use materials::{
     get_material_from_path, load_texture_with_repeat, material_from_path_into_scene,
@@ -8,3 +9,4 @@ pub use materials::{
     NewEditableMaterial, RequiredMaterialData, RequiredMaterialDataMut, StandardMaterialDef,
 };
 pub use plugin::AssetPlugin;
+pub use scene_asset::{SceneAsset, SceneAssetLoader, SceneMetadata as SceneAssetMetadata, EntityData as SceneEntityData};

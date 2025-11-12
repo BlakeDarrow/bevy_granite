@@ -7,12 +7,14 @@ edition = "2021"
 bevy = { workspace = true, features = ["bevy_gizmos", "bevy_picking"] }
 bevy_egui = { workspace = true }
 bevy_obj = { workspace = true }
-native-dialog = { workspace = true }
 uuid = { workspace = true }
 bevy-inspector-egui = { workspace = true }
 
 bevy_granite_logging = { path = "../bevy_granite_logging"}
 bevy_granite_core = { path = "../bevy_granite_core"}
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rfd = { workspace = true }
 
 [lib]
 name = "bevy_granite_gizmos"

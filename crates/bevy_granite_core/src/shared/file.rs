@@ -1,9 +1,12 @@
+#[cfg(not(target_arch = "wasm32"))]
 use bevy::asset::io::file::FileAssetReader;
+
 use std::{
     borrow::Cow,
     path::{Path, PathBuf},
 };
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn rel_asset_to_absolute(rel_string: &str) -> Cow<'static, str> {
     let normalized_rel = rel_string.replace('\\', "/");
     
@@ -18,6 +21,20 @@ pub fn rel_asset_to_absolute(rel_string: &str) -> Cow<'static, str> {
     abs_path.to_string_lossy().replace('\\', "/").into()
 }
 
+#[cfg(target_arch = "wasm32")]
+pub fn rel_asset_to_absolute(rel_string: &str) -> Cow<'static, str> {
+    let normalized_rel = rel_string.replace('\\', "/");
+    
+    let abs_path: PathBuf = if !Path::new(&normalized_rel).is_absolute() {
+        PathBuf::from("assets").join(&normalized_rel)
+    } else {
+        PathBuf::from(&normalized_rel)
+    };
+
+    abs_path.to_string_lossy().replace('\\', "/").into()
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub fn absolute_asset_to_rel(abs_string: String) -> Cow<'static, str> {
     let abs_path = Path::new(&abs_string).canonicalize().unwrap_or_else(|_| PathBuf::from(&abs_string));
 
@@ -33,6 +50,18 @@ pub fn absolute_asset_to_rel(abs_string: String) -> Cow<'static, str> {
             .to_string_lossy()
             .replace('\\', "/")
             .into()
+    } else {
+        abs_path.to_string_lossy().replace('\\', "/").into()
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn absolute_asset_to_rel(abs_string: String) -> Cow<'static, str> {
+    let abs_path = Path::new(&abs_string);
+    let base_assets_path = PathBuf::from("assets");
+
+    if let Ok(stripped) = abs_path.strip_prefix(&base_assets_path) {
+        stripped.to_string_lossy().replace('\\', "/").into()
     } else {
         abs_path.to_string_lossy().replace('\\', "/").into()
     }

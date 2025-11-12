@@ -1,8 +1,8 @@
-use super::AvailableEditableMaterials;
+use super::{AvailableEditableMaterials, SceneAsset, SceneAssetLoader};
 use crate::EditableMaterial;
 use bevy::{
     app::{App, Plugin, PreStartup},
-    asset::{AssetServer, Assets, Handle},
+    asset::{AssetApp, AssetServer, Assets, Handle},
     ecs::system::{Res, ResMut},
     pbr::StandardMaterial,
 };
@@ -43,6 +43,11 @@ pub struct AssetPlugin;
 impl Plugin for AssetPlugin {
     fn build(&self, app: &mut App) {
         app
+            //
+            // Asset Loaders
+            //
+            .init_asset::<SceneAsset>()
+            .init_asset_loader::<SceneAssetLoader>()
             //
             // Resources
             //

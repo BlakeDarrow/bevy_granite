@@ -9,7 +9,6 @@ bevy-inspector-egui = {workspace = true}
 bevy_egui = {workspace = true}
 bevy_obj = {workspace = true}
 lazy_static = {workspace = true}
-native-dialog = {workspace = true}
 ron = {workspace = true}
 serde = {workspace = true}
 toml = {workspace = true}
@@ -20,6 +19,9 @@ bevy_granite_macros = {path = "../bevy_granite_macros"}
 
 bitflags = "*"
 enum_dispatch = "0.3.13"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rfd = {workspace = true}
 
 [lib]
 name = "bevy_granite_core"
