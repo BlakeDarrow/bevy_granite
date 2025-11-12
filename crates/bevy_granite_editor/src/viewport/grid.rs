@@ -1,11 +1,12 @@
 use crate::{editor_state::EditorState, viewport::camera::LAYER_GRID};
+#[cfg(target_arch = "wasm32")]
+use bevy::render::view::Msaa;
 use bevy::{
     color::Color,
     gizmos::gizmos::Gizmos,
     math::Vec3,
     prelude::{
-        Commands, Component, GlobalTransform, Name, Query, Res,
-        Transform, Visibility, With,
+        Commands, Component, GlobalTransform, Name, Query, Res, Transform, Visibility, With,
     },
 };
 use bevy_granite_core::{TreeHiddenEntity, UICamera};
@@ -18,10 +19,10 @@ const GRID_EPSILON: f32 = 0.0001;
 const GRID_HEIGHT_OFFSET: f32 = 0.0;
 const LINE_SEGMENT_LENGTH: f32 = 10.0; // Break lines into segments to avoid thickness issues
 
-pub fn spawn_viewport_grid(
-    mut commands: Commands,
-) {
+pub fn spawn_viewport_grid(mut commands: Commands) {
     commands.spawn((
+        #[cfg(target_arch = "wasm32")]
+        Msaa::Off,
         Name::new("Viewport Grid"),
         ViewportGrid,
         Transform::IDENTITY,
@@ -52,18 +53,24 @@ pub fn update_grid_system(
         return;
     };
 
-    let max_distance = editor_state.config.viewport.grid_distance.max(MIN_CELL_SIZE);
-    let cell_size = editor_state
+    let max_distance = editor_state
         .config
         .viewport
-        .grid_size
+        .grid_distance
         .max(MIN_CELL_SIZE);
+    let cell_size = editor_state.config.viewport.grid_size.max(MIN_CELL_SIZE);
     let color = editor_state.config.viewport.grid_color;
     let grid_color = Color::linear_rgba(color[0], color[1], color[2], color[3]);
 
     *visibility = Visibility::Visible;
 
-    draw_grid_lines(&mut gizmos, camera_transform, max_distance, cell_size, grid_color);
+    draw_grid_lines(
+        &mut gizmos,
+        camera_transform,
+        max_distance,
+        cell_size,
+        grid_color,
+    );
 }
 
 fn draw_grid_lines(
@@ -124,10 +131,11 @@ fn render_grid_line(gizmos: &mut Gizmos, start: Vec3, end: Vec3, color: Color) {
 
     while current_distance < total_length {
         let segment_start = start + direction * current_distance;
-        let segment_end = start + direction * (current_distance + LINE_SEGMENT_LENGTH).min(total_length);
-        
+        let segment_end =
+            start + direction * (current_distance + LINE_SEGMENT_LENGTH).min(total_length);
+
         gizmos.line(segment_start, segment_end, color);
-        
+
         current_distance += LINE_SEGMENT_LENGTH;
     }
 }

@@ -3,6 +3,8 @@ use crate::{
     entities::EntitySaveReadyData, GraniteEditorSerdeEntity, GraniteType, GraniteTypes,
     HasRuntimeData, IdentityData,
 };
+#[cfg(target_arch = "wasm32")]
+use bevy::render::view::Msaa;
 use bevy::{
     camera::{Camera, Camera3d},
     ecs::{bundle::Bundle, entity::Entity, system::Commands},
@@ -56,6 +58,9 @@ impl Camera3D {
         let mut entity =
             commands.spawn(Self::get_bundle(self.clone(), identity.clone(), transform));
 
+        #[cfg(target_arch = "wasm32")]
+        entity.insert(Msaa::Off);
+
         // Handle dithering
         if self.dither {
             entity.insert(bevy::core_pipeline::tonemapping::DebandDither::Enabled);
@@ -65,7 +70,7 @@ impl Camera3D {
         if self.has_bloom {
             // Bloom requires HDR to be enabled
             entity.insert(Hdr);
-            
+
             if let Some(bloom_settings) = &self.bloom_settings {
                 let bloom = Bloom {
                     intensity: bloom_settings.intensity,
@@ -73,7 +78,9 @@ impl Camera3D {
                     low_frequency_boost_curvature: bloom_settings.low_frequency_boost_curvature,
                     high_pass_frequency: bloom_settings.high_pass_frequency,
                     composite_mode: match bloom_settings.composite_mode {
-                        super::BloomCompositeMode::EnergyConserving => BevyBloomCompositeMode::EnergyConserving,
+                        super::BloomCompositeMode::EnergyConserving => {
+                            BevyBloomCompositeMode::EnergyConserving
+                        }
                         super::BloomCompositeMode::Additive => BevyBloomCompositeMode::Additive,
                     },
                     ..Default::default()
@@ -158,8 +165,12 @@ impl Camera3D {
                     scene_units_to_m: atmos_settings.scene_units_to_m,
                     sky_max_samples: atmos_settings.sky_max_samples,
                     rendering_method: match atmos_settings.rendering_method {
-                        super::AtmosphereRenderingMethod::LookupTexture => bevy::pbr::AtmosphereMode::LookupTexture,
-                        super::AtmosphereRenderingMethod::Raymarched => bevy::pbr::AtmosphereMode::Raymarched,
+                        super::AtmosphereRenderingMethod::LookupTexture => {
+                            bevy::pbr::AtmosphereMode::LookupTexture
+                        }
+                        super::AtmosphereRenderingMethod::Raymarched => {
+                            bevy::pbr::AtmosphereMode::Raymarched
+                        }
                     },
                     ..Default::default()
                 });

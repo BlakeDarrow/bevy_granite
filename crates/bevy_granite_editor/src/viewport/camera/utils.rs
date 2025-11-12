@@ -5,6 +5,8 @@ use crate::{
         ViewportCameraState,
     },
 };
+#[cfg(target_arch = "wasm32")]
+use bevy::render::view::Msaa;
 use bevy::{
     camera::Camera3d,
     input::mouse::{MouseMotion, MouseWheel},
@@ -25,6 +27,8 @@ pub fn add_editor_camera(
 
     let editor_camera = commands
         .spawn((
+            #[cfg(target_arch = "wasm32")]
+            Msaa::Off,
             transform,
             Camera3d::default(),
             Name::new("Editor Viewport Camera"),
@@ -43,7 +47,6 @@ pub fn add_editor_camera(
         .insert(TreeHiddenEntity)
         .insert(scene_layers())
         .id();
-
     viewport_camera_state.set_editor_camera(editor_camera);
     viewport_camera_state.clear_override();
 }
@@ -51,6 +54,8 @@ pub fn add_editor_camera(
 pub fn add_gizmo_overlay_camera(mut commands: Commands) {
     commands
         .spawn((
+            #[cfg(target_arch = "wasm32")]
+            Msaa::Off,
             Transform::default(),
             Camera3d::default(),
             Name::new("Gizmo Overlay Camera"),
@@ -78,6 +83,8 @@ pub fn add_ui_camera(mut commands: Commands) {
         .spawn((
             Transform::from_xyz(2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
             Camera3d::default(),
+            #[cfg(target_arch = "wasm32")]
+            Msaa::Off,
             Name::new("UI Camera"),
             Tonemapping::None, // need this so bevy rendering doesnt break without tonemapping_luts
             Pickable {
