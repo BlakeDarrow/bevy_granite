@@ -218,6 +218,26 @@ fn build_dock_section(ui: &mut egui::Ui, dock: &mut crate::interface::layout::Do
     });
 }
 
+fn build_scene_light_section(ui: &mut egui::Ui, scene_light_enabled: &mut bool) {
+    let spacing = crate::UI_CONFIG.spacing;
+    let large_spacing = crate::UI_CONFIG.large_spacing;
+    ui.vertical(|ui| {
+        ui.group(|ui| {
+            ui.add_space(large_spacing);
+            
+            ui.vertical(|ui| {
+                ui.label("Scene Light:");
+                ui.add_space(spacing);
+                
+                ui.checkbox(scene_light_enabled, "Enable Scene Light")
+                    .on_hover_text("Adds a directional light that follows the editor camera's forward direction. Useful for viewing scenes without lights.");
+            });
+            
+            ui.add_space(spacing);
+        });
+    });
+}
+
 fn build_debug_gizmos_section(ui: &mut egui::Ui, viewport: &mut ViewportState) {
     let spacing = crate::UI_CONFIG.spacing;
     let large_spacing = crate::UI_CONFIG.large_spacing;
@@ -574,10 +594,11 @@ fn build_interface_tab(ui: &mut egui::Ui, data: &mut EditorSettingsTabData) {
 }
 
 // Viewport tab content
-fn build_viewport_tab(ui: &mut egui::Ui, viewport: &mut ViewportState) {
+fn build_viewport_tab(ui: &mut egui::Ui, viewport: &mut ViewportState, scene_light_enabled: &mut bool) {
     egui::ScrollArea::vertical()
         .auto_shrink([true; 2])
         .show(ui, |ui| {
+            build_scene_light_section(ui, scene_light_enabled);
             build_debug_gizmos_section(ui, viewport);
             build_debug_icons_section(ui, viewport);
             build_selection_bounds_section(ui, viewport);
@@ -641,7 +662,7 @@ pub fn editor_settings_tab_ui(ui: &mut egui::Ui, data: &mut EditorSettingsTabDat
                         build_interface_tab(ui, data);
                     }
                     SettingsTab::Viewport => {
-                        build_viewport_tab(ui, &mut data.viewport);
+                        build_viewport_tab(ui, &mut data.viewport, &mut data.scene_light_enabled);
                     }
                     SettingsTab::Import => build_import_tab(ui, &mut data.import_state),
                 });

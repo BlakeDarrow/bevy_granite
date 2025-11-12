@@ -47,6 +47,7 @@ impl Default for ImportState {
 #[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
 pub struct EditorSettingsTabData {
     pub viewport: ViewportState,
+    pub scene_light_enabled: bool,
     pub theme_state: ThemeState,
     pub import_state: ImportState,
     pub dock: DockState,
@@ -62,6 +63,7 @@ impl Default for EditorSettingsTabData {
             save_requested: false,
             theme_state: ThemeState::default(),
             import_state: ImportState::default(),
+            scene_light_enabled: false,
             dock: DockState {
                 active_tab: SettingsTab::Viewport,
                 layout_str: DockLayoutStr::default(),
@@ -82,6 +84,7 @@ pub fn update_editor_settings_tab_system(
     mut editor_state: ResMut<EditorState>,
     mut gizmo_config_store: ResMut<GizmoConfigStore>,
     mut prompt_import_settings: ResMut<PromptImportSettings>,
+    mut scene_light_state: ResMut<crate::viewport::SceneLightState>,
     mut events: EditorEvents,
 ) {
     let ctx = contexts.ctx_mut().expect("Egui context to exist");
@@ -115,6 +118,13 @@ pub fn update_editor_settings_tab_system(
             let theme_state = &mut data.theme_state;
             let viewport_state = &mut data.viewport;
             let import_state = &mut data.import_state;
+
+            // Sync scene light between UI and resource
+            if data.scene_light_enabled != scene_light_state.enabled {
+                scene_light_state.set_enabled(data.scene_light_enabled);
+            } else if scene_light_state.enabled != data.scene_light_enabled {
+                data.scene_light_enabled = scene_light_state.enabled;
+            }
 
             if theme_state.theme_changed || settings_desynced {
                 theme_state.theme.apply_to_context(ctx);
