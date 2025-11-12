@@ -5,6 +5,7 @@ use super::camera::{
     sync_cameras_system, sync_gizmo_camera_state, update_viewport_camera_viewports_system,
     CameraSyncState, CameraTarget, InputState, ViewportCameraState,
 };
+use super::viewmode::{cleanup_scene_light_system, scene_light_system, SceneLightState};
 use crate::{
     setup::is_editor_active,
     viewport::{
@@ -39,6 +40,7 @@ impl Plugin for ViewportPlugin {
             .insert_resource(CameraSyncState::default())
             .insert_resource(InputState::default()) // FIX: Use UserInput
             .insert_resource(ViewportCameraState::default())
+            .insert_resource(SceneLightState::default())
             //
             // Debug gizmo groups/config
             //
@@ -87,6 +89,8 @@ impl Plugin for ViewportPlugin {
             .add_systems(Update, mouse_button_iter.run_if(is_editor_active)) // FIX: Use UserInput
             .add_systems(Update, camera_frame_system.run_if(is_editor_active))
             .add_systems(Update, camera_sync_toggle_system.run_if(is_editor_active))
+            .add_systems(Update, scene_light_system.run_if(is_editor_active))
+            .add_systems(Update, cleanup_scene_light_system.run_if(not(is_editor_active)))
             .add_systems(
                 Update,
                 (handle_viewport_camera_override_requests, enforce_viewport_camera_state)

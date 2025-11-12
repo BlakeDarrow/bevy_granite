@@ -5,6 +5,7 @@ pub mod grid;
 pub mod icons;
 pub mod plugin;
 pub mod state;
+pub mod viewmode;
 
 pub use camera::{
     add_editor_camera,
@@ -33,3 +34,4 @@ pub use icons::{
     cleanup_icon_entities_system, spawn_icon_entities_system, update_icon_entities_system,
 };
 pub use plugin::ViewportPlugin;
+pub use viewmode::{cleanup_scene_light_system, scene_light_system, SceneLightState};
