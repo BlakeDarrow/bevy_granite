@@ -91,6 +91,18 @@ impl Camera3D {
             }
         }
 
+        // Volumetric fog is not supported on WASM/WebGL due to depth texture sampling limitations
+        #[cfg(target_arch = "wasm32")]
+        if self.has_volumetric_fog {
+            bevy_granite_logging::log!(
+                bevy_granite_logging::LogType::Editor,
+                bevy_granite_logging::LogLevel::Warning,
+                bevy_granite_logging::LogCategory::Entity,
+                "Volumetric fog is not supported on WASM/WebGL targets. Skipping fog setup for camera."
+            );
+        }
+
+        #[cfg(not(target_arch = "wasm32"))]
         if self.has_volumetric_fog {
             let mut fog = bevy::light::VolumetricFog::default();
             let mut fog_volume = bevy::light::FogVolume::default();
@@ -116,7 +128,19 @@ impl Camera3D {
             entity.insert((fog, fog_volume));
         }
 
+        // Atmosphere rendering is not supported on WASM/WebGL due to depth texture sampling limitations
+        #[cfg(target_arch = "wasm32")]
+        if self.has_atmosphere {
+            bevy_granite_logging::log!(
+                bevy_granite_logging::LogType::Editor,
+                bevy_granite_logging::LogLevel::Warning,
+                bevy_granite_logging::LogCategory::Entity,
+                "Atmosphere rendering is not supported on WASM/WebGL targets. Skipping atmosphere setup for camera."
+            );
+        }
+
         // Handle atmosphere settings
+        #[cfg(not(target_arch = "wasm32"))]
         if self.has_atmosphere {
             if let Some(atmos_settings) = &self.atmosphere_settings {
                 // Always use custom values from the settings
