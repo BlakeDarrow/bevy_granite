@@ -1,11 +1,33 @@
-use super::{AvailableEditableMaterials, SceneAsset, SceneAssetLoader};
+use super::{AvailableEditableMaterials, SceneAsset, SceneAssetLoader, StringAsset, StringAssetLoader};
 use crate::EditableMaterial;
 use bevy::{
     app::{App, Plugin, PreStartup},
     asset::{AssetApp, AssetServer, Assets, Handle},
     ecs::system::{Res, ResMut},
     pbr::StandardMaterial,
+    prelude::Resource,
 };
+
+/// Resource to keep scene asset handles alive for WASM.
+/// In WASM, assets need their handles to be kept alive or they'll be unloaded.
+/// Add your preloaded scene handles to this resource to keep them in memory.
+#[derive(Resource, Default)]
+pub struct PreloadedSceneHandles {
+    pub handles: Vec<Handle<SceneAsset>>,
+}
+
+impl PreloadedSceneHandles {
+    /// Add a scene handle to keep it alive
+    pub fn add(&mut self, handle: Handle<SceneAsset>) {
+        self.handles.push(handle);
+    }
+    
+    /// Preload a scene and keep its handle
+    pub fn preload(&mut self, asset_server: &AssetServer, path: impl Into<String>) {
+        let handle = asset_server.load(path.into());
+        self.handles.push(handle);
+    }
+}
 
 fn preload_fallback_material(
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -48,10 +70,13 @@ impl Plugin for AssetPlugin {
             //
             .init_asset::<SceneAsset>()
             .init_asset_loader::<SceneAssetLoader>()
+            .init_asset::<StringAsset>()
+            .init_asset_loader::<StringAssetLoader>()
             //
             // Resources
             //
             .insert_resource(AvailableEditableMaterials::default())
+            .insert_resource(PreloadedSceneHandles::default())
             //
             // Schedule system
             //

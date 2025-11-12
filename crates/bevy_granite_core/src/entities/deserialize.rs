@@ -1,10 +1,11 @@
 use super::{ComponentEditor, EntitySaveReadyData, IdentityData, SceneData, SpawnSource};
 use crate::{
-    absolute_asset_to_rel, entities::SaveSettings, materials_from_folder_into_scene,
+    assets::SceneAsset, entities::SaveSettings, materials_from_folder_into_scene,
     rel_asset_to_absolute, shared::is_scene_version_compatible, AvailableEditableMaterials,
     GraniteType, TransformData,
 };
 use bevy::{
+    asset::Handle,
     ecs::{entity::Entity, system::ResMut, world::World},
     mesh::Mesh,
     pbr::StandardMaterial,
@@ -36,11 +37,21 @@ pub fn deserialize_entities(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     meshes: &mut ResMut<Assets<Mesh>>,
+    scene_assets: &Res<Assets<SceneAsset>>,
     path: impl Into<Cow<'static, str>>, //absolute or rel
     save_settings: SaveSettings,
     transform_override: Option<Transform>,
 ) {
-    let abs_path: Cow<'static, str> = rel_asset_to_absolute(&path.into());
+    let input_path = path.into();
+
+    // For WASM, use the relative path directly (AssetServer handles assets/ prefix)
+    // For native, convert to absolute path for filesystem access
+    #[cfg(target_arch = "wasm32")]
+    let load_path = input_path.clone();
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let load_path = rel_asset_to_absolute(&input_path);
+
     // Build materials from the folder and load them into the scene
     materials_from_folder_into_scene("materials", materials, available_materials, asset_server);
 
@@ -49,7 +60,8 @@ pub fn deserialize_entities(
         asset_server,
         materials,
         available_materials,
-        abs_path.as_ref(),
+        scene_assets,
+        load_path.as_ref(),
     );
 
     // for id
@@ -73,10 +85,10 @@ pub fn deserialize_entities(
         uuid_to_entity_map.insert(save_data.identity.uuid, entity);
 
         // Tag entity with its source file
-        let relative: Cow<'static, str> = absolute_asset_to_rel(abs_path.to_string());
+        // Use the original input path for the spawn source
         commands
             .entity(entity)
-            .insert(SpawnSource::new(relative, save_settings.clone()));
+            .insert(SpawnSource::new(input_path.clone(), save_settings.clone()));
 
         // Store parent relationships for second pass
         if let Some(parent_guid) = save_data.parent {
@@ -160,6 +172,7 @@ fn gather_file_contents(
     asset_server: &Res<AssetServer>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     available_materials: &mut ResMut<AvailableEditableMaterials>,
+    scene_assets: &Res<Assets<SceneAsset>>,
     path: &str,
 ) -> Vec<EntitySaveReadyData> {
     log!(
@@ -181,22 +194,120 @@ fn gather_file_contents(
         "--------------------"
     );
 
-    let file_contents = match std::fs::read_to_string(&path) {
-        Ok(contents) => contents,
-        Err(e) => {
+    let file_contents = {
+        // For WASM, try to get from pre-loaded assets. The user should preload before startup
+        #[cfg(target_arch = "wasm32")]
+        {
+            use bevy::asset::LoadState;
+
             log!(
                 LogType::Game,
-                LogLevel::Error,
+                LogLevel::Info,
                 LogCategory::System,
-                "Failed to read file {}: {}. Are you sure it exists?",
-                path,
-                e
+                "WASM: Loading scene from path: {}",
+                path
             );
-            return vec![];
+
+            // Get or load the handle
+            let scene_handle: Handle<SceneAsset> = asset_server.load(path.to_string());
+            
+            log!(
+                LogType::Game,
+                LogLevel::Info,
+                LogCategory::System,
+                "WASM: Handle ID: {:?}",
+                scene_handle.id()
+            );
+
+            // Check load state
+            let load_state = asset_server.load_state(&scene_handle);
+            log!(
+                LogType::Game,
+                LogLevel::Info,
+                LogCategory::System,
+                "WASM: Asset load state for {}: {:?}",
+                path,
+                load_state
+            );
+            
+            // Try to get all scene assets to debug
+            let all_assets: Vec<_> = scene_assets.iter().map(|(id, asset)| {
+                (id, asset.raw_contents.len())
+            }).collect();
+            log!(
+                LogType::Game,
+                LogLevel::Info,
+                LogCategory::System,
+                "WASM: Total SceneAssets in memory: {} - {:?}",
+                all_assets.len(),
+                all_assets
+            );
+
+            match scene_assets.get(&scene_handle) {
+                Some(scene_asset) => {
+                    log!(
+                        LogType::Game,
+                        LogLevel::OK,
+                        LogCategory::System,
+                        "WASM: Successfully loaded scene asset: {}, raw_contents length: {}",
+                        path,
+                        scene_asset.raw_contents.len()
+                    );
+                    
+                    if scene_asset.raw_contents.is_empty() {
+                        log!(
+                            LogType::Game,
+                            LogLevel::Error,
+                            LogCategory::System,
+                            "WASM: raw_contents is EMPTY for: {}",
+                            path,
+                        );
+                        return vec![];
+                    }
+                    
+                    scene_asset.raw_contents.clone()
+                },
+                None => {
+                    log!(
+                        LogType::Game,
+                        LogLevel::Error,
+                        LogCategory::System,
+                        "WASM: Scene asset not loaded: {}. Make sure to preload and wait for LoadState::Loaded",
+                        path,
+                    );
+                    return vec![];
+                }
+            }
+        }
+
+        // For native, use filesystem
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            // Fallback to direct file system read
+            match std::fs::read_to_string(path) {
+                Ok(contents) => contents,
+                Err(e) => {
+                    log!(
+                        LogType::Game,
+                        LogLevel::Error,
+                        LogCategory::System,
+                        "Failed to read file {}: {}. Are you sure it exists?",
+                        path,
+                        e
+                    );
+                    return vec![];
+                }
+            }
         }
     };
 
-    parse_scene_contents(&file_contents, path, asset_server, materials, available_materials)
+    parse_scene_contents(
+        &file_contents,
+        path,
+        asset_server,
+        materials,
+        available_materials,
+    )
 }
 
 fn parse_scene_contents(

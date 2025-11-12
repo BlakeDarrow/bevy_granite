@@ -10,10 +10,15 @@ use uuid::Uuid;
 use crate::entities::{IdentityData, TransformData};
 use crate::shared::version::Version;
 
+#[cfg(target_arch = "wasm32")]
+use bevy_granite_logging::{config::{LogCategory, LogLevel, LogType}, log};
+
 #[derive(Asset, TypePath, Debug, Clone, Serialize, Deserialize)]
 pub struct SceneAsset {
     pub metadata: SceneMetadata,
     pub entities: Vec<EntityData>,
+    #[serde(skip)]
+    pub raw_contents: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,8 +56,35 @@ impl AssetLoader for SceneAssetLoader {
         let content = String::from_utf8(bytes)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
         
-        ron::de::from_str(&content)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+        #[cfg(target_arch = "wasm32")]
+        {
+            log!(
+                LogType::Game,
+                LogLevel::Info,
+                LogCategory::System,
+                "SceneAssetLoader: Loading scene, content length: {}",
+                content.len()
+            );
+        }
+        
+        let mut scene_asset: SceneAsset = ron::de::from_str(&content)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        
+        // Store the raw contents
+        scene_asset.raw_contents = content.clone();
+        
+        #[cfg(target_arch = "wasm32")]
+        {
+            log!(
+                LogType::Game,
+                LogLevel::Info,
+                LogCategory::System,
+                "SceneAssetLoader: Stored raw_contents length: {}",
+                scene_asset.raw_contents.len()
+            );
+        }
+        
+        Ok(scene_asset)
     }
 
     fn extensions(&self) -> &[&str] {
