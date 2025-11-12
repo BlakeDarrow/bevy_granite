@@ -191,7 +191,7 @@ pub fn handle_zoom(
     mouse_wheel_events: &mut MessageReader<MouseWheel>,
     target_pos: &mut ResMut<CameraTarget>,
 ) {
-    let zoom_speed = INPUT_CONFIG.zoom_camera_sensitivity;
+    let zoom_speed = INPUT_CONFIG.zoom_camera_sensitivity * super::constants::WASM_SCROLL_SENSITIVITY_MULTIPLIER;
     let clip_distance = INPUT_CONFIG.zoom_clip_distance;
 
     for event in mouse_wheel_events.read() {

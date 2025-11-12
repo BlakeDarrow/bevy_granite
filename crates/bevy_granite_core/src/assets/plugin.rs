@@ -2,7 +2,7 @@ use super::{AvailableEditableMaterials, SceneAsset, SceneAssetLoader, StringAsse
 use crate::EditableMaterial;
 use bevy::{
     app::{App, Plugin, PreStartup},
-    asset::{AssetApp, AssetServer, Assets, Handle},
+    asset::{AssetApp, AssetServer, Assets, Handle, LoadState},
     ecs::system::{Res, ResMut},
     pbr::StandardMaterial,
     prelude::Resource,
@@ -26,6 +26,20 @@ impl PreloadedSceneHandles {
     pub fn preload(&mut self, asset_server: &AssetServer, path: impl Into<String>) {
         let handle = asset_server.load(path.into());
         self.handles.push(handle);
+    }
+    
+    /// Check if all preloaded scene handles are loaded
+    pub fn are_all_loaded(&self, asset_server: &AssetServer) -> bool {
+        if self.handles.is_empty() {
+            return false;
+        }
+        
+        self.handles.iter().all(|handle| {
+            matches!(
+                asset_server.get_load_state(handle.id()),
+                Some(LoadState::Loaded)
+            )
+        })
     }
 }
 
