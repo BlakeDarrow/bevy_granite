@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::Path};
 
 use crate::shared::rel_asset_to_absolute;
-use crate::{load_texture_with_repeat, material_from_path_into_scene};
+use crate::load_texture_with_repeat;
 
 // For types that require EditableMaterials, use this struct to hold necessary info
 // Path is basically the requestor for brand new entities as the current/last wont exist in a meaningful way
@@ -782,6 +782,8 @@ impl EditableMaterial {
     }
 
     /// Check if material exist in the world and scene materials, if not create from name
+    /// On native: Loads materials on-demand synchronously
+    /// On WASM: Only looks up pre-loaded materials from available_materials
     pub fn material_exists_and_load(
         &mut self,
         available_materials: &mut ResMut<AvailableEditableMaterials>,
@@ -796,15 +798,70 @@ impl EditableMaterial {
             return false;
         }
 
-        if available_materials
-            .find_material_by_path(&self.path)
-            .is_none()
+        // First check if material already exists in available_materials
+        if let Some(existing) = available_materials.find_material_by_path(&self.path) {
+            *self = existing.clone();
+            return false;
+        }
+
+        #[cfg(not(target_arch = "wasm32"))]
         {
+            // Native: Load material on-demand by reading the file directly
+            use super::StandardMaterialDef;
+            
             log!(
                 LogType::Game,
                 LogLevel::Info,
                 LogCategory::Asset,
-                "We need a new material during spawn: {}",
+                "Loading material on-demand (native): {}",
+                fallback_path
+            );
+
+            self.update_name(fallback_name.to_lowercase());
+            self.update_path(fallback_path.to_lowercase());
+            
+            // Try to load the material file directly
+            let ron_path = "assets/".to_string() + &self.path;
+            if let Ok(ron) = std::fs::read_to_string(&ron_path) {
+                if let Ok(_mat_def) = ron::from_str::<StandardMaterialDef>(&ron) {
+                    // Successfully loaded - now create the material
+                    use super::load::material_from_path_into_scene;
+                    use crate::StringAsset;
+                    
+                    // Create dummy string_assets for the function call (won't be used on native)
+                    let dummy_string_assets = Assets::<StringAsset>::default();
+                    let string_assets_res = unsafe {
+                        // SAFETY: We're on native, material_from_path_into_scene won't use string_assets
+                        // because it has a cfg guard that uses std::fs::read_to_string instead
+                        std::mem::transmute::<&Assets<StringAsset>, &Res<Assets<StringAsset>>>(&dummy_string_assets)
+                    };
+                    
+                    if let Some(loaded_material) = material_from_path_into_scene(
+                        &self.path,
+                        materials,
+                        available_materials,
+                        asset_server,
+                        string_assets_res,
+                    ) {
+                        *self = loaded_material;
+                        return true;
+                    }
+                }
+            }
+            
+            // Material file doesn't exist or failed to parse, create it
+            self.save_to_file();
+            saved_new_material = true;
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            // WASM: Only look up pre-loaded materials
+            log!(
+                LogType::Game,
+                LogLevel::Warning,
+                LogCategory::Asset,
+                "Material {} not pre-loaded! Make sure materials_from_folder_into_scene is called first.",
                 fallback_path
             );
 
@@ -812,14 +869,8 @@ impl EditableMaterial {
             self.update_path(fallback_path.to_lowercase());
             self.save_to_file();
             saved_new_material = true;
-        };
-
-        // Ensure whatever material we have is a part of the scene
-        if let Some(material) =
-            material_from_path_into_scene(&self.path, materials, available_materials, asset_server)
-        {
-            *self = material;
         }
+
         saved_new_material
     }
 

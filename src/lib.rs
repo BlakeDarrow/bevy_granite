@@ -143,7 +143,7 @@ pub mod prelude {
             RequestDespawnBySource, RequestDespawnSerializableEntities, RequestLoadBatchEvent,
             RequestLoadEvent, RequestReloadEvent, RequestSaveEvent, SaveSettings, SpawnSource,
             StringAsset, StringAssetLoader, TreeHiddenEntity, UICamera, WorldLoadBatchSuccessEvent,
-            WorldLoadSuccessEvent, WorldSaveSuccessEvent, SceneAsset, SceneAssetLoader, PreloadedSceneHandles
+            WorldLoadSuccessEvent, WorldSaveSuccessEvent, SceneAsset, SceneAssetLoader, PreloadedSceneHandles, PreloadedMaterialHandles
         },
         bevy_granite_logging::{log, LogCategory, LogLevel, LogType},
         bevy_granite_macros::{granite_component, register_editor_components, ui_callable_events},

@@ -28,7 +28,8 @@ pub use assets::{
     materials_from_folder_into_scene, AvailableEditableMaterials, EditableMaterial,
     EditableMaterialError, EditableMaterialField, MaterialData, NewEditableMaterial,
     RequiredMaterialData, RequiredMaterialDataMut, StandardMaterialDef,
-    StringAsset, StringAssetLoader, SceneAsset, SceneAssetLoader, PreloadedSceneHandles
+    StringAsset, StringAssetLoader, SceneAsset, SceneAssetLoader, 
+    PreloadedSceneHandles, PreloadedMaterialHandles
 };
 pub use bevy_granite_macros::register_editor_components;
 

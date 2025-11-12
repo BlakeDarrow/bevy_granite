@@ -2,8 +2,10 @@ use super::{
     AvailableEditableMaterials, EditableMaterial, EditableMaterialError, EditableMaterialField,
     StandardMaterialDef,
 };
+use crate::StringAsset;
 use bevy::image::{
-    ImageAddressMode, ImageFilterMode, ImageFormat, ImageFormatSetting, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor
+    ImageAddressMode, ImageFilterMode, ImageFormat, ImageFormatSetting, ImageLoaderSettings,
+    ImageSampler, ImageSamplerDescriptor,
 };
 use bevy::math::Affine2;
 use bevy::prelude::{
@@ -18,17 +20,33 @@ use bevy_granite_logging::{
 // This was brutal to figure out and I CANNOT believe the is a .load_with_settings() method...
 /// Helper function to load textures with REPEAT address mode
 /// `is_srgb` should be true for color textures (base_color, emissive), false for data textures (normal, metallic, roughness, etc.)
-pub fn load_texture_with_repeat(asset_server: &AssetServer, path: String, is_srgb: bool) -> Handle<Image> {
+pub fn load_texture_with_repeat(
+    asset_server: &AssetServer,
+    path: String,
+    is_srgb: bool,
+) -> Handle<Image> {
     let path_clone = path.clone();
     asset_server.load_with_settings(path, move |settings: &mut ImageLoaderSettings| {
         settings.is_srgb = is_srgb;
 
         if let Some(ext) = path_clone.rsplit('.').next() {
             settings.format = ImageFormatSetting::Format(
-                ImageFormat::from_extension(ext).unwrap_or(ImageFormat::Png)
+                ImageFormat::from_extension(ext).unwrap_or(ImageFormat::Png),
             );
         }
-        
+
+        // On WASM, explicitly set 8-bit texture formats to avoid 16-bit formats
+        // which aren't supported on WebGL2 (Rgba16Unorm requires TEXTURE_FORMAT_16BIT_NORM)
+        // Since all source images should be 8-bit, this ensures they stay that way on GPU
+        #[cfg(target_arch = "wasm32")]
+        {
+            settings.texture_format = Some(if is_srgb {
+                TextureFormat::Rgba8UnormSrgb
+            } else {
+                TextureFormat::Rgba8Unorm
+            });
+        }
+
         settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
             address_mode_u: ImageAddressMode::Repeat,
             address_mode_v: ImageAddressMode::Repeat,
@@ -43,11 +61,15 @@ pub fn load_texture_with_repeat(asset_server: &AssetServer, path: String, is_srg
 }
 
 /// Creates a EditableMaterial from a definition(wrapper) file and adds it to the asset system
+/// On native: Uses std::fs for synchronous loading
+/// On WASM: Uses AssetServer with StringAsset for async loading
 pub fn material_from_path_into_scene(
     path: &str,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     asset_server: &Res<AssetServer>,
+    #[allow(unused_variables)] // Used only on WASM
+    string_assets: &Res<Assets<StringAsset>>,
 ) -> Option<EditableMaterial> {
     if let Some(existing) = available_materials.find_material_by_path(path) {
         //log!(
@@ -60,19 +82,34 @@ pub fn material_from_path_into_scene(
         return Some(existing.clone());
     }
 
-    let ron_path = "assets/".to_string() + path;
-    let ron = match std::fs::read_to_string(&ron_path) {
-        Ok(content) => content,
-        Err(e) => {
-            log!(
-                LogType::Editor,
-                LogLevel::Error,
-                LogCategory::Entity,
-                "Failed to read material file {}: {}",
-                ron_path,
-                e
-            );
-            return None;
+    // Load the material file contents
+    let ron = {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            // Native: Use synchronous file system access
+            let ron_path = "assets/".to_string() + path;
+            match std::fs::read_to_string(&ron_path) {
+                Ok(content) => content,
+                Err(e) => {
+                    log!(
+                        LogType::Editor,
+                        LogLevel::Error,
+                        LogCategory::Entity,
+                        "Failed to read material file {}: {}",
+                        ron_path,
+                        e
+                    );
+                    return None;
+                }
+            }
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            // WASM: Use AssetServer with StringAsset (async, must be pre-loaded)
+            let string_handle: Handle<StringAsset> = asset_server.load(path.to_string());
+            let string_asset = string_assets.get(&string_handle)?;
+            string_asset.contents.clone()
         }
     };
 
@@ -84,7 +121,7 @@ pub fn material_from_path_into_scene(
                 LogLevel::Error,
                 LogCategory::Entity,
                 "Failed to parse material definition from {}: {}",
-                ron_path,
+                path,
                 e
             );
             return None;
@@ -307,38 +344,91 @@ pub fn material_from_path_into_scene(
     Some(obj_material)
 }
 
+/// Creates a vector of EditableMaterial from PreloadedMaterialHandles
+/// Loops through the preloaded materials and loads each one
+pub fn materials_from_preloaded(
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    available_materials: &mut ResMut<AvailableEditableMaterials>,
+    asset_server: &Res<AssetServer>,
+    string_assets: &Res<Assets<StringAsset>>,
+    preloaded_materials: &Res<crate::PreloadedMaterialHandles>,
+) -> Vec<EditableMaterial> {
+    let mut created_materials = Vec::new();
+
+    log!(
+        LogType::Editor,
+        LogLevel::Info,
+        LogCategory::Asset,
+        "Loading {} preloaded materials",
+        preloaded_materials.materials.len()
+    );
+
+    // Process each preloaded material
+    for material_info in &preloaded_materials.materials {
+        if let Some(obj_material) = material_from_path_into_scene(
+            &material_info.path,
+            materials,
+            available_materials,
+            asset_server,
+            string_assets,
+        ) {
+            created_materials.push(obj_material);
+        }
+    }
+
+    log!(
+        LogType::Editor,
+        LogLevel::OK,
+        LogCategory::Asset,
+        "Successfully loaded {} materials from preloaded handles",
+        created_materials.len()
+    );
+
+    created_materials
+}
+
 /// Creates a vector of EditableMaterial from the given folder path
+/// On native: Uses std::fs to read the folder directly
+/// On WASM: Uses PreloadedMaterialHandles (must be preloaded before calling)
+#[cfg(not(target_arch = "wasm32"))]
 pub fn materials_from_folder_into_scene(
     folder_path: &str,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     asset_server: &Res<AssetServer>,
+    string_assets: &Res<Assets<StringAsset>>,
+    _preloaded_materials: &Res<crate::PreloadedMaterialHandles>,
 ) -> Vec<EditableMaterial> {
     let mut created_materials = Vec::new();
-    let assets_folder_path = "assets/".to_string() + folder_path;
 
-    // Recursively collect all .mat files
-    let mut ron_files = Vec::new();
-    collect_material_files_recursive(&assets_folder_path, &mut ron_files);
-    ron_files.sort();
+    // Native: Use std::fs to read folder directly
+    let full_path = format!("assets/{}", folder_path);
+    let Ok(entries) = std::fs::read_dir(&full_path) else {
+        log!(
+            LogType::Editor,
+            LogLevel::Error,
+            LogCategory::Asset,
+            "Failed to read folder: {}",
+            full_path
+        );
+        return created_materials;
+    };
 
-    log!(
-        LogType::Editor,
-        LogLevel::Info,
-        LogCategory::Entity,
-        "Found {} .mat files in folder and subdirectories: {}",
-        ron_files.len(),
-        folder_path
-    );
-
-    for ron_file_path in ron_files {
-        if let Some(obj_material) = material_from_path_into_scene(
-            &ron_file_path,
-            materials,
-            available_materials,
-            asset_server,
-        ) {
-            created_materials.push(obj_material);
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) == Some("mat") {
+            if let Some(relative_path) = path.strip_prefix("assets/").ok() {
+                let path_str = relative_path.to_string_lossy().to_string();
+                if let Some(obj_material) = material_from_path_into_scene(
+                    &path_str,
+                    materials,
+                    available_materials,
+                    asset_server,
+                    string_assets,
+                ) {
+                    created_materials.push(obj_material);
+                }
+            }
         }
     }
 
@@ -354,63 +444,54 @@ pub fn materials_from_folder_into_scene(
     created_materials
 }
 
-/// Recursively collects all material .mat files in the given directory and its subdirectories
-fn collect_material_files_recursive(current_dir: &str, ron_files: &mut Vec<String>) {
-    if !std::path::Path::new(current_dir).exists() {
-        log!(
-            LogType::Editor,
-            LogLevel::Warning,
-            LogCategory::System,
-            "Directory does not exist, skipping: {}",
-            current_dir
-        );
-        return;
-    }
+/// Creates a vector of EditableMaterial from the given folder path
+/// On native: Uses Bevy's load_folder
+/// On WASM: Uses PreloadedMaterialHandles (must be preloaded before calling)
+#[cfg(target_arch = "wasm32")]
+pub fn materials_from_folder_into_scene(
+    folder_path: &str,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    available_materials: &mut ResMut<AvailableEditableMaterials>,
+    asset_server: &Res<AssetServer>,
+    string_assets: &Res<Assets<StringAsset>>,
+    preloaded_materials: &Res<crate::PreloadedMaterialHandles>,
+) -> Vec<EditableMaterial> {
+    let mut created_materials = Vec::new();
 
-    let dir_entries = match std::fs::read_dir(current_dir) {
-        Ok(entries) => entries,
-        Err(e) => {
-            log!(
-                LogType::Editor,
-                LogLevel::Error,
-                LogCategory::System,
-                "Failed to read directory {}: {}",
-                current_dir,
-                e
-            );
-            return;
-        }
-    };
+    log!(
+        LogType::Editor,
+        LogLevel::Info,
+        LogCategory::Asset,
+        "Loading materials from folder: {} (WASM)",
+        folder_path
+    );
 
-    for entry in dir_entries {
-        let entry = match entry {
-            Ok(e) => e,
-            Err(e) => {
-                log!(
-                    LogType::Editor,
-                    LogLevel::Warning,
-                    LogCategory::System,
-                    "Failed to read directory entry: {}",
-                    e
-                );
-                continue;
-            }
-        };
-
-        let path = entry.path();
-
-        if path.is_dir() {
-            // Recursively process subdirectory
-            collect_material_files_recursive(&path.to_string_lossy(), ron_files);
-        } else if path.is_file() && path.extension().is_some_and(|ext| ext == "mat") {
-            // Get the path relative to assets/
-            let path_str = path.to_string_lossy();
-            if let Some(assets_pos) = path_str.find("assets/") {
-                let relative_path = &path_str[assets_pos + 7..]; // Skip "assets/"
-                ron_files.push(relative_path.replace('\\', "/")); // Normalize slashes
+    // Process each preloaded material that matches the folder path
+    for material_info in &preloaded_materials.materials {
+        // Check if the material path starts with the folder path
+        if material_info.path.starts_with(folder_path) && material_info.path.ends_with(".mat") {
+            if let Some(obj_material) = material_from_path_into_scene(
+                &material_info.path,
+                materials,
+                available_materials,
+                asset_server,
+                string_assets,
+            ) {
+                created_materials.push(obj_material);
             }
         }
     }
+
+    log!(
+        LogType::Editor,
+        LogLevel::OK,
+        LogCategory::Asset,
+        "Successfully loaded {} materials from folder: {}",
+        created_materials.len(),
+        folder_path
+    );
+
+    created_materials
 }
 
 /// Loads a material from a path and returns it if it exists
@@ -419,6 +500,13 @@ pub fn get_material_from_path(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     asset_server: &Res<AssetServer>,
+    string_assets: &Res<Assets<StringAsset>>,
 ) -> Option<EditableMaterial> {
-    material_from_path_into_scene(path, materials, available_materials, asset_server)
+    material_from_path_into_scene(
+        path,
+        materials,
+        available_materials,
+        asset_server,
+        string_assets,
+    )
 }

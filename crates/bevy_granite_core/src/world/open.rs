@@ -2,7 +2,7 @@ use crate::assets::SceneAsset;
 use crate::events::{
     RequestLoadBatchEvent, RequestLoadEvent, WorldLoadBatchSuccessEvent, WorldLoadSuccessEvent,
 };
-use crate::{absolute_asset_to_rel, StringAsset};
+use crate::{absolute_asset_to_rel, StringAsset, PreloadedMaterialHandles};
 use crate::{assets::AvailableEditableMaterials, entities::deserialize_entities};
 use bevy::prelude::*;
 use bevy_granite_logging::{
@@ -17,7 +17,9 @@ pub fn open_world_reader(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut available_materials: ResMut<AvailableEditableMaterials>,
-    string_assets: Res<Assets<SceneAsset>>,
+    scene_assets: Res<Assets<SceneAsset>>,
+    string_assets: Res<Assets<StringAsset>>,
+    preloaded_materials: Res<PreloadedMaterialHandles>,
     mut world_open_reader: MessageReader<RequestLoadEvent>,
     mut world_load_success_writer: MessageWriter<WorldLoadSuccessEvent>,
 ) {
@@ -31,7 +33,9 @@ pub fn open_world_reader(
             &mut materials,
             &mut available_materials,
             &mut meshes,
+            &scene_assets,
             &string_assets,
+            &preloaded_materials,
             rel.clone(),
             save_settings.clone(),
             *translation,
@@ -56,7 +60,9 @@ pub fn open_world_batch_reader(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut available_materials: ResMut<AvailableEditableMaterials>,
-    string_assets: Res<Assets<SceneAsset>>,
+    scene_assets: Res<Assets<SceneAsset>>,
+    string_assets: Res<Assets<StringAsset>>,
+    preloaded_materials: Res<PreloadedMaterialHandles>,
     mut world_batch_reader: MessageReader<RequestLoadBatchEvent>,
     mut world_load_batch_success_writer: MessageWriter<WorldLoadBatchSuccessEvent>,
 ) {
@@ -71,7 +77,9 @@ pub fn open_world_batch_reader(
                 &mut materials,
                 &mut available_materials,
                 &mut meshes,
+                &scene_assets,
                 &string_assets,
+                &preloaded_materials,
                 rel.clone(),
                 save_settings.clone(),
                 *translation,
