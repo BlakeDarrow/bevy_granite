@@ -55,6 +55,18 @@ impl DirLight {
         let mut entity =
             commands.spawn(Self::get_bundle(self.clone(), identity.clone(), transform));
 
+        // Volumetric lighting is not supported on WASM/WebGL due to depth texture sampling limitations
+        #[cfg(target_arch = "wasm32")]
+        if self.volumetric {
+            bevy_granite_logging::log!(
+                bevy_granite_logging::LogType::Editor,
+                bevy_granite_logging::LogLevel::Warning,
+                bevy_granite_logging::LogCategory::Entity,
+                "Volumetric lighting is not supported on WASM/WebGL targets. Skipping volumetric light setup."
+            );
+        }
+
+        #[cfg(not(target_arch = "wasm32"))]
         if self.volumetric {
             entity.insert(VolumetricLight);
         }

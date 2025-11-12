@@ -60,9 +60,25 @@ pub fn update_directional_light_system(
             directional_light.illuminance = new.illuminance;
             directional_light.color = Color::linear_rgb(new.color.0, new.color.1, new.color.2);
             directional_light.shadows_enabled = new.shadows_enabled;
+            
+            // Volumetric lighting is not supported on WASM/WebGL due to depth texture sampling limitations
+            #[cfg(target_arch = "wasm32")]
+            if new.volumetric {
+                log!(
+                    LogType::Editor,
+                    LogLevel::Warning,
+                    LogCategory::Entity,
+                    "Volumetric lighting is not supported on WASM/WebGL targets. Skipping volumetric light setup."
+                );
+            }
+
+            #[cfg(not(target_arch = "wasm32"))]
             if new.volumetric {
                 commands.entity(entity).insert(VolumetricLight);
-            } else {
+            }
+            
+            #[cfg(not(target_arch = "wasm32"))]
+            if !new.volumetric {
                 commands.entity(entity).remove::<VolumetricLight>();
             }
         } else {

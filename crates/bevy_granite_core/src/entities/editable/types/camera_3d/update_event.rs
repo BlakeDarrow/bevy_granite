@@ -99,6 +99,18 @@ pub fn update_camera_3d_system(
                 // Note: We don't remove HDR here as it might be needed for atmosphere
             }
 
+            // Volumetric fog is not supported on WASM/WebGL due to depth texture sampling limitations
+            #[cfg(target_arch = "wasm32")]
+            if new.has_volumetric_fog {
+                log!(
+                    LogType::Editor,
+                    LogLevel::Warning,
+                    LogCategory::Entity,
+                    "Volumetric fog is not supported on WASM/WebGL targets. Skipping fog setup for camera."
+                );
+            }
+
+            #[cfg(not(target_arch = "wasm32"))]
             if new.has_volumetric_fog {
                 let fog_config = new.volumetric_fog_settings.clone().unwrap_or_default();
                 let mut fog = VolumetricFogSettings::default();
@@ -119,13 +131,28 @@ pub fn update_camera_3d_system(
                 //     max_depth: new_fog.max_depth,
                 // });
                 commands.entity(entity).insert((fog, fog_volume));
-            } else {
+            }
+            
+            #[cfg(not(target_arch = "wasm32"))]
+            if !new.has_volumetric_fog {
                 commands
                     .entity(entity)
                     .remove::<(VolumetricFogSettings, FogVolume)>();
             }
 
+            // Atmosphere rendering is not supported on WASM/WebGL due to depth texture sampling limitations
+            #[cfg(target_arch = "wasm32")]
+            if new.has_atmosphere {
+                log!(
+                    LogType::Editor,
+                    LogLevel::Warning,
+                    LogCategory::Entity,
+                    "Atmosphere rendering is not supported on WASM/WebGL targets. Skipping atmosphere setup for camera."
+                );
+            }
+
             // Handle atmosphere settings
+            #[cfg(not(target_arch = "wasm32"))]
             if new.has_atmosphere {
                 let atmos_config = new.atmosphere_settings.clone().unwrap_or_default();
 
@@ -192,7 +219,10 @@ pub fn update_camera_3d_system(
                     rendering_method: rendering_mode,
                     ..Default::default()
                 });
-            } else {
+            }
+            
+            #[cfg(not(target_arch = "wasm32"))]
+            if !new.has_atmosphere {
                 commands
                     .entity(entity)
                     .remove::<(Atmosphere, BevyAtmosphereSettings, Hdr)>();
