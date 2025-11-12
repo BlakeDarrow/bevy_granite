@@ -4,6 +4,9 @@
 use bevy::asset::{Asset, AssetLoader, AsyncReadExt, LoadContext};
 use bevy::reflect::TypePath;
 
+#[cfg(target_arch = "wasm32")]
+use bevy_granite_logging::{config::{LogCategory, LogLevel, LogType}, log};
+
 /// A simple asset that contains the text contents of a file
 #[derive(Asset, TypePath, Debug, Clone)]
 pub struct StringAsset {
@@ -35,6 +38,17 @@ impl AssetLoader for StringAssetLoader {
         
         let contents = String::from_utf8(bytes)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        
+        #[cfg(target_arch = "wasm32")]
+        {
+            log!(
+                LogType::Game,
+                LogLevel::Info,
+                LogCategory::System,
+                "StringAssetLoader: Loading string asset, content length: {}",
+                contents.len()
+            );
+        }
         
         Ok(StringAsset { contents })
     }

@@ -43,6 +43,51 @@ impl PreloadedSceneHandles {
     }
 }
 
+/// Stores a material handle with its path for easy lookup
+#[derive(Clone)]
+pub struct MaterialHandleWithPath {
+    pub handle: Handle<StringAsset>,
+    pub path: String,
+}
+
+/// Resource to keep material handles alive for WASM.
+/// Stores individual StringAsset handles with their paths to prevent them from being unloaded.
+#[derive(Resource, Default)]
+pub struct PreloadedMaterialHandles {
+    pub materials: Vec<MaterialHandleWithPath>,
+}
+
+impl PreloadedMaterialHandles {
+    /// Add a single StringAsset handle with its path to keep it alive
+    pub fn add(&mut self, handle: Handle<StringAsset>, path: String) {
+        self.materials.push(MaterialHandleWithPath { handle, path });
+    }
+    
+    /// Preload a single material file and keep its handle with path
+    pub fn preload(&mut self, asset_server: &AssetServer, path: impl Into<String>) {
+        let path_string = path.into();
+        let handle = asset_server.load(path_string.clone());
+        self.materials.push(MaterialHandleWithPath { 
+            handle, 
+            path: path_string 
+        });
+    }
+    
+    /// Check if all preloaded material handles are loaded
+    pub fn are_all_loaded(&self, asset_server: &AssetServer) -> bool {
+        if self.materials.is_empty() {
+            return false;
+        }
+        
+        self.materials.iter().all(|mat| {
+            matches!(
+                asset_server.get_load_state(mat.handle.id()),
+                Some(LoadState::Loaded)
+            )
+        })
+    }
+}
+
 fn preload_fallback_material(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut available_materials: ResMut<AvailableEditableMaterials>,
@@ -91,6 +136,7 @@ impl Plugin for AssetPlugin {
             //
             .insert_resource(AvailableEditableMaterials::default())
             .insert_resource(PreloadedSceneHandles::default())
+            .insert_resource(PreloadedMaterialHandles::default())
             //
             // Schedule system
             //

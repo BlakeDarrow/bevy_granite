@@ -5,11 +5,10 @@ use crate::{
     GraniteType, TransformData,
 };
 use bevy::{
-    asset::Handle,
     ecs::{entity::Entity, system::ResMut, world::World},
     mesh::Mesh,
     pbr::StandardMaterial,
-    prelude::{AppTypeRegistry, AssetServer, Assets, Commands, Component, Reflect, Res},
+    prelude::{AppTypeRegistry, AssetServer, Assets, Commands, Component, Reflect, Res, Handle},
     transform::components::Transform,
 };
 use bevy_granite_logging::{
@@ -38,6 +37,8 @@ pub fn deserialize_entities(
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     meshes: &mut ResMut<Assets<Mesh>>,
     scene_assets: &Res<Assets<SceneAsset>>,
+    string_assets: &Res<Assets<crate::StringAsset>>,
+    preloaded_materials: &Res<crate::PreloadedMaterialHandles>,
     path: impl Into<Cow<'static, str>>, //absolute or rel
     save_settings: SaveSettings,
     transform_override: Option<Transform>,
@@ -53,7 +54,7 @@ pub fn deserialize_entities(
     let load_path = rel_asset_to_absolute(&input_path);
 
     // Build materials from the folder and load them into the scene
-    materials_from_folder_into_scene("materials", materials, available_materials, asset_server);
+    materials_from_folder_into_scene("materials", materials, available_materials, asset_server, string_assets, preloaded_materials);
 
     // Gather file contents into a Vec<EntitySaveReadyData>
     let deserialized_data = gather_file_contents(
@@ -61,6 +62,8 @@ pub fn deserialize_entities(
         materials,
         available_materials,
         scene_assets,
+        string_assets,
+        preloaded_materials,
         load_path.as_ref(),
     );
 
@@ -173,6 +176,8 @@ fn gather_file_contents(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     available_materials: &mut ResMut<AvailableEditableMaterials>,
     scene_assets: &Res<Assets<SceneAsset>>,
+    string_assets: &Res<Assets<crate::StringAsset>>,
+    preloaded_materials: &Res<crate::PreloadedMaterialHandles>,
     path: &str,
 ) -> Vec<EntitySaveReadyData> {
     log!(
@@ -307,6 +312,8 @@ fn gather_file_contents(
         asset_server,
         materials,
         available_materials,
+        string_assets,
+        preloaded_materials,
     )
 }
 
@@ -316,6 +323,8 @@ fn parse_scene_contents(
     asset_server: &Res<AssetServer>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     available_materials: &mut ResMut<AvailableEditableMaterials>,
+    string_assets: &Res<Assets<crate::StringAsset>>,
+    preloaded_materials: &Res<crate::PreloadedMaterialHandles>,
 ) -> Vec<EntitySaveReadyData> {
     // Handle empty file
     if file_contents.is_empty() {
@@ -352,7 +361,7 @@ fn parse_scene_contents(
             path
         );
         // Still create materials even if no entities to deserialize
-        materials_from_folder_into_scene("materials", materials, available_materials, asset_server);
+        materials_from_folder_into_scene("materials", materials, available_materials, asset_server, string_assets, preloaded_materials);
         return vec![];
     }
 
@@ -415,7 +424,7 @@ fn parse_scene_contents(
             path
         );
         // Still create materials even if no entities
-        materials_from_folder_into_scene("materials", materials, available_materials, asset_server);
+        materials_from_folder_into_scene("materials", materials, available_materials, asset_server, string_assets, preloaded_materials);
         return vec![];
     }
 
