@@ -140,9 +140,10 @@ pub mod prelude {
         bevy_granite_core,
         bevy_granite_core::{
             absolute_asset_to_rel, rel_asset_to_absolute, BridgeTag, MainCamera,
-            RequestDespawnBySource, RequestDespawnSerializableEntities, RequestLoadEvent,
-            RequestReloadEvent, RequestSaveEvent, SaveSettings, SpawnSource, TreeHiddenEntity,
-            UICamera, WorldLoadSuccessEvent, WorldSaveSuccessEvent, RequestLoadBatchEvent, WorldLoadBatchSuccessEvent
+            RequestDespawnBySource, RequestDespawnSerializableEntities, RequestLoadBatchEvent,
+            RequestLoadEvent, RequestReloadEvent, RequestSaveEvent, SaveSettings, SpawnSource,
+            StringAsset, StringAssetLoader, TreeHiddenEntity, UICamera, WorldLoadBatchSuccessEvent,
+            WorldLoadSuccessEvent, WorldSaveSuccessEvent, SceneAsset, SceneAssetLoader, PreloadedSceneHandles
         },
         bevy_granite_logging::{log, LogCategory, LogLevel, LogType},
         bevy_granite_macros::{granite_component, register_editor_components, ui_callable_events},
