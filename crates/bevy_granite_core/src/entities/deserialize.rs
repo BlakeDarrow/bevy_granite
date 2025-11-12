@@ -17,8 +17,7 @@ use bevy_granite_logging::{
 };
 use ron::de::from_str;
 use serde::{Deserialize, Serialize};
-use std::io::Read;
-use std::{borrow::Cow, fs::File};
+use std::borrow::Cow;
 use uuid::Uuid;
 
 // Main component to tag all of our custom entity class types
@@ -182,14 +181,14 @@ fn gather_file_contents(
         "--------------------"
     );
 
-    let mut file = match File::open(&path) {
-        Ok(file) => file,
+    let file_contents = match std::fs::read_to_string(&path) {
+        Ok(contents) => contents,
         Err(e) => {
             log!(
                 LogType::Game,
                 LogLevel::Error,
                 LogCategory::System,
-                "Failed to open file {}: {}. Are you sure it exists?",
+                "Failed to read file {}: {}. Are you sure it exists?",
                 path,
                 e
             );
@@ -197,19 +196,16 @@ fn gather_file_contents(
         }
     };
 
-    let mut file_contents = String::new();
-    if let Err(e) = file.read_to_string(&mut file_contents) {
-        log!(
-            LogType::Game,
-            LogLevel::Error,
-            LogCategory::System,
-            "Failed to read file {}: {}",
-            path,
-            e
-        );
-        return vec![];
-    }
+    parse_scene_contents(&file_contents, path, asset_server, materials, available_materials)
+}
 
+fn parse_scene_contents(
+    file_contents: &str,
+    path: &str,
+    asset_server: &Res<AssetServer>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    available_materials: &mut ResMut<AvailableEditableMaterials>,
+) -> Vec<EntitySaveReadyData> {
     // Handle empty file
     if file_contents.is_empty() {
         log!(

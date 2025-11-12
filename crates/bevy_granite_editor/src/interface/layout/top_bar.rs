@@ -25,7 +25,9 @@ use bevy_granite_core::{
     RequestDespawnSerializableEntities, RequestLoadEvent, RequestSaveEvent, UserInput,
 };
 use bevy_granite_gizmos::selection::events::EntityEvents;
-use native_dialog::FileDialog;
+
+#[cfg(not(target_arch = "wasm32"))]
+use rfd::FileDialog;
 
 pub fn top_bar_ui(
     side_dock: &mut ResMut<SideDockState>,
@@ -56,11 +58,11 @@ pub fn top_bar_ui(
         // MENUs
         ui.horizontal(|ui| {
             ui.menu_button("File", |ui| {
+                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Save as").clicked() {
                     if let Some(path) = FileDialog::new()
                         .add_filter("Granite Scene", &["scene"])
-                        .show_save_single_file()
-                        .unwrap()
+                        .save_file()
                     {
                         events
                             .save
@@ -79,11 +81,11 @@ pub fn top_bar_ui(
                     ui.close();
                 }
 
+                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Open (Ctrl + O)").clicked() {
                     if let Some(path) = FileDialog::new()
                         .add_filter("Granite Scene", &["scene"])
-                        .show_open_single_file()
-                        .unwrap()
+                        .pick_file()
                     {
                         events.load.write(RequestLoadEvent(
                             absolute_asset_to_rel(path.display().to_string()).to_string(),

@@ -1,11 +1,22 @@
+#[cfg(not(target_arch = "wasm32"))]
 use crate::{LogCategory, LogEntry};
+
+#[cfg(not(target_arch = "wasm32"))]
 use std::fs::OpenOptions;
+
+#[cfg(not(target_arch = "wasm32"))]
 use std::io::Write;
+
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
+
+#[cfg(not(target_arch = "wasm32"))]
 use std::sync::OnceLock;
 
+#[cfg(not(target_arch = "wasm32"))]
 static LOG_FILE_PATH: OnceLock<PathBuf> = OnceLock::new();
 
+#[cfg(not(target_arch = "wasm32"))]
 fn get_log_path() -> &'static PathBuf {
     LOG_FILE_PATH.get_or_init(|| {
         let path = dirs::config_dir()
@@ -23,6 +34,7 @@ fn get_log_path() -> &'static PathBuf {
     })
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn write_to_file(entry: &LogEntry) -> Result<(), std::io::Error> {
     if entry.category == LogCategory::Blank {
         return Ok(()); // Skip blank log entries
@@ -39,5 +51,11 @@ pub fn write_to_file(entry: &LogEntry) -> Result<(), std::io::Error> {
     );
 
     file.write_all(log_line.as_bytes())?;
+    Ok(())
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn write_to_file(_entry: &crate::LogEntry) -> Result<(), std::io::Error> {
+    // No-op on WASM - file system writes not supported
     Ok(())
 }

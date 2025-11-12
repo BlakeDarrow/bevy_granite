@@ -11,10 +11,8 @@ bevy_egui = { workspace = true }
 bevy_obj = { workspace = true }
 uuid = { workspace = true }
 serde = { workspace =  true}
-native-dialog = { workspace = true }
 ron = { workspace = true }
 lazy_static = { workspace = true }
-arboard = "3.4"
 
 bevy_granite_gizmos = { path = "../bevy_granite_gizmos"}
 bevy_granite_core = { path = "../bevy_granite_core"}
@@ -24,6 +22,10 @@ bevy_granite_macros = { path = "../bevy_granite_macros" }
 
 egui_dock = {version = "0.17.0", features = ["serde"]}
 webbrowser = "1.0.5"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+arboard = "3.4"
+rfd = { workspace = true }
 
 [lib]
 name = "bevy_granite_editor"

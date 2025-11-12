@@ -10,7 +10,7 @@ bevy_egui = "0.37.0"
 toml = "0.8.22"
 uuid = "1.17.0"
 serde = "1.0"
-native-dialog = "0.7.0"
+rfd = "0.15"
 ron = "0.8.1"
 lazy_static = "1.5.0"
 

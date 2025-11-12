@@ -3,8 +3,11 @@ use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
 };
-use native_dialog::FileDialog;
 
+#[cfg(not(target_arch = "wasm32"))]
+use rfd::FileDialog;
+
+#[cfg(not(target_arch = "wasm32"))]
 pub fn asset_file_browser(path: String, filter: Vec<&str>) -> Option<String> {
     let current_dir = std::env::current_dir().unwrap();
     let assets_dir = current_dir.join("assets");
@@ -42,10 +45,9 @@ pub fn asset_file_browser(path: String, filter: Vec<&str>) -> Option<String> {
     }
 
     if let Some(selected_path) = FileDialog::new()
-        .set_location(&location)
+        .set_directory(&location)
         .add_filter("Files", &filter)
-        .show_open_single_file()
-        .unwrap()
+        .pick_file()
     {
         if selected_path.starts_with(&assets_dir) {
             Some(selected_path.to_string_lossy().to_string())
@@ -63,6 +65,7 @@ pub fn asset_file_browser(path: String, filter: Vec<&str>) -> Option<String> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn asset_file_browser_multiple(path: String, filter: Vec<&str>) -> Option<Vec<String>> {
     let current_dir = std::env::current_dir().unwrap();
     let assets_dir = current_dir.join("assets");
@@ -100,14 +103,13 @@ pub fn asset_file_browser_multiple(path: String, filter: Vec<&str>) -> Option<Ve
     }
 
     let selected_paths = FileDialog::new()
-        .set_location(&location)
+        .set_directory(&location)
         .add_filter("Files", &filter)
-        .show_open_multiple_file()
-        .unwrap();
+        .pick_files();
 
-    if selected_paths.is_empty() {
+    let Some(selected_paths) = selected_paths else {
         return None;
-    }
+    };
 
     let mut valid_paths = Vec::new();
 
@@ -130,4 +132,27 @@ pub fn asset_file_browser_multiple(path: String, filter: Vec<&str>) -> Option<Ve
     } else {
         Some(valid_paths)
     }
+}
+
+// WASM stubs - file dialogs not supported on web
+#[cfg(target_arch = "wasm32")]
+pub fn asset_file_browser(_path: String, _filter: Vec<&str>) -> Option<String> {
+    log!(
+        LogType::Editor,
+        LogLevel::Warning,
+        LogCategory::System,
+        "File browser not supported on WASM"
+    );
+    None
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn asset_file_browser_multiple(_path: String, _filter: Vec<&str>) -> Option<Vec<String>> {
+    log!(
+        LogType::Editor,
+        LogLevel::Warning,
+        LogCategory::System,
+        "File browser not supported on WASM"
+    );
+    None
 }

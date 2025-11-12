@@ -3,7 +3,11 @@ use crate::{
         BottomDockState, EditorSettingsTabData, SideDockState, SideTab
     }
 };
-use bevy::{asset::io::file::FileAssetReader, prelude::{MessageReader, Res, ResMut, Resource}};
+use bevy::prelude::{MessageReader, Res, ResMut, Resource};
+
+#[cfg(not(target_arch = "wasm32"))]
+use bevy::asset::io::file::FileAssetReader;
+
 use bevy::window::WindowClosing;
 use bevy::time::Time;
 use crate::utils::{load_from_toml_file, save_to_toml_file};
@@ -144,8 +148,13 @@ fn save_dock_layout_toml(
         return;
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     let config_path_buf =
         FileAssetReader::get_base_path().join("assets/".to_string() + &editor_state.config_path);
+    
+    #[cfg(target_arch = "wasm32")]
+    let config_path_buf = std::path::PathBuf::from("assets/".to_string() + &editor_state.config_path);
+    
     let dock_layout = get_dock_state_str(right_dock, bottom_dock);
 
     if let Some(config_path_str) = config_path_buf.to_str() {
