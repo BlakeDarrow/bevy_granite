@@ -55,16 +55,19 @@ pub fn update_obj_system(
 
         if *reload_mesh {
             if let Ok(_mesh3d) = mesh_query.get(*requested_entity) {
-                // Force reload the asset by path
-                let path = new_obj_data.mesh_path.to_string();
-                asset_server.reload(path);
-                commands.entity(*requested_entity).insert(NeedsTangents);
+                // Load the new mesh and replace the existing one
+                let path_string = new_obj_data.mesh_path.to_string();
+                let mesh_handle = asset_server.load(path_string);
+                commands
+                    .entity(*requested_entity)
+                    .insert(Mesh3d(mesh_handle))
+                    .insert(NeedsTangents);
 
                 log!(
                     LogType::Editor,
                     LogLevel::Info,
                     LogCategory::Asset,
-                    "Successfully triggered reload for OBJ mesh entity {}: {}",
+                    "Successfully reloaded OBJ mesh entity {}: {}",
                     requested_entity,
                     new_obj_data.mesh_path
                 );
