@@ -54,7 +54,12 @@ pub fn deserialize_entities(
     let load_path = rel_asset_to_absolute(&input_path);
 
     // Build materials from the folder and load them into the scene
+    #[cfg(all(not(target_arch = "wasm32"), not(feature = "bundler")))]
     materials_from_folder_into_scene("materials", materials, available_materials, asset_server, string_assets, preloaded_materials);
+
+    // With bundler or WASM, use preloaded materials
+    #[cfg(any(target_arch = "wasm32", feature = "bundler"))]
+    crate::materials_from_preloaded(materials, available_materials, asset_server, string_assets, preloaded_materials);
 
     // Gather file contents into a Vec<EntitySaveReadyData>
     let deserialized_data = gather_file_contents(
@@ -285,8 +290,70 @@ fn gather_file_contents(
             }
         }
 
-        // For native, use filesystem
-        #[cfg(not(target_arch = "wasm32"))]
+        // For native with bundler, use AssetServer like WASM
+        #[cfg(all(not(target_arch = "wasm32"), feature = "bundler"))]
+        {
+            use bevy::asset::LoadState;
+
+            log!(
+                LogType::Game,
+                LogLevel::Info,
+                LogCategory::System,
+                "BUNDLER: Loading scene from path: {}",
+                path
+            );
+
+            let scene_handle: Handle<SceneAsset> = asset_server.load(path.to_string());
+            
+            let load_state = asset_server.load_state(&scene_handle);
+            log!(
+                LogType::Game,
+                LogLevel::Info,
+                LogCategory::System,
+                "BUNDLER: Asset load state for {}: {:?}",
+                path,
+                load_state
+            );
+
+            match scene_assets.get(&scene_handle) {
+                Some(scene_asset) => {
+                    log!(
+                        LogType::Game,
+                        LogLevel::OK,
+                        LogCategory::System,
+                        "BUNDLER: Successfully loaded scene asset: {}, raw_contents length: {}",
+                        path,
+                        scene_asset.raw_contents.len()
+                    );
+                    
+                    if scene_asset.raw_contents.is_empty() {
+                        log!(
+                            LogType::Game,
+                            LogLevel::Error,
+                            LogCategory::System,
+                            "BUNDLER: raw_contents is EMPTY for: {}",
+                            path,
+                        );
+                        return vec![];
+                    }
+                    
+                    scene_asset.raw_contents.clone()
+                },
+                None => {
+                    log!(
+                        LogType::Game,
+                        LogLevel::Error,
+                        LogCategory::System,
+                        "BUNDLER: Scene asset not loaded: {}. Make sure to preload and wait for LoadState::Loaded",
+                        path,
+                    );
+                    return vec![];
+                }
+            }
+        }
+
+        // For native without bundler, use filesystem
+        #[cfg(all(not(target_arch = "wasm32"), not(feature = "bundler")))]
         {
             // Fallback to direct file system read
             match std::fs::read_to_string(path) {
@@ -361,7 +428,10 @@ fn parse_scene_contents(
             path
         );
         // Still create materials even if no entities to deserialize
+        #[cfg(all(not(target_arch = "wasm32"), not(feature = "bundler")))]
         materials_from_folder_into_scene("materials", materials, available_materials, asset_server, string_assets, preloaded_materials);
+        #[cfg(any(target_arch = "wasm32", feature = "bundler"))]
+        crate::materials_from_preloaded(materials, available_materials, asset_server, string_assets, preloaded_materials);
         return vec![];
     }
 
@@ -424,7 +494,10 @@ fn parse_scene_contents(
             path
         );
         // Still create materials even if no entities
+        #[cfg(all(not(target_arch = "wasm32"), not(feature = "bundler")))]
         materials_from_folder_into_scene("materials", materials, available_materials, asset_server, string_assets, preloaded_materials);
+        #[cfg(any(target_arch = "wasm32", feature = "bundler"))]
+        crate::materials_from_preloaded(materials, available_materials, asset_server, string_assets, preloaded_materials);
         return vec![];
     }
 

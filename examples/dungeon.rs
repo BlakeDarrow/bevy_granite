@@ -30,6 +30,7 @@ fn main() {
     // Configure AssetPlugin for bundled assets when bundler feature is enabled
     #[cfg(feature = "bundler")]
     {
+        println!("Dungeon example using bundler");
         use bevy_assets_bundler::{AssetBundlingOptions, BundledAssetIoPlugin};
         
         let options = AssetBundlingOptions::default();

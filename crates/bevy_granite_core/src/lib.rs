@@ -25,7 +25,7 @@ use crate::world::WorldPlugin;
 // Re-exports
 pub use assets::{
     get_material_from_path, load_texture_with_repeat, material_from_path_into_scene,
-    materials_from_folder_into_scene, AvailableEditableMaterials, EditableMaterial,
+    materials_from_folder_into_scene, materials_from_preloaded, AvailableEditableMaterials, EditableMaterial,
     EditableMaterialError, EditableMaterialField, MaterialData, NewEditableMaterial,
     RequiredMaterialData, RequiredMaterialDataMut, StandardMaterialDef,
     StringAsset, StringAssetLoader, SceneAsset, SceneAssetLoader, 

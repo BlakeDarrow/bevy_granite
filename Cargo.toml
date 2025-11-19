@@ -8,7 +8,7 @@ bevy_reflect = { version = "0.17", features = ["documentation"] }
 bevy-inspector-egui = "0.34.0"
 bevy_obj = "0.17.0"
 bevy_egui = "0.37.0"
-bevy_assets_bundler = { git = "https://github.com/BlakeDarrow/bevy_assets_bundler", branch = "bevy-0.17" }
+bevy_assets_bundler = { git = "https://github.com/BlakeDarrow/bevy_assets_bundler", branch = "bevy-0.17", features = ["encryption", "compression-zstd"]  }
 toml = "0.9.8"
 uuid = "1.17.0"
 serde = "1.0"
@@ -27,7 +27,7 @@ default = ["core", "editor", "gizmos"]
 core = ["bevy_granite_core", "bevy_granite_logging", "bevy_granite_macros"]
 editor = ["core", "gizmos", "bevy_granite_editor"]
 gizmos = ["core", "bevy_granite_gizmos"]
-bundler = ["dep:bevy_assets_bundler"]
+bundler = ["dep:bevy_assets_bundler", "bevy_granite_core/bundler"]
 
 [dependencies]
 bevy = { workspace = true }

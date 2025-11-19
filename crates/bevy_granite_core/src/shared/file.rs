@@ -1,4 +1,4 @@
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), not(feature = "bundler")))]
 use bevy::asset::io::file::FileAssetReader;
 
 use std::{
@@ -6,7 +6,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-#[cfg(not(target_arch = "wasm32"))]
+// With bundler, just return relative paths as-is since assets are embedded
+#[cfg(all(not(target_arch = "wasm32"), feature = "bundler"))]
+pub fn rel_asset_to_absolute(rel_string: &str) -> Cow<'static, str> {
+    let normalized_rel = rel_string.replace('\\', "/");
+    normalized_rel.into()
+}
+
+#[cfg(all(not(target_arch = "wasm32"), not(feature = "bundler")))]
 pub fn rel_asset_to_absolute(rel_string: &str) -> Cow<'static, str> {
     let normalized_rel = rel_string.replace('\\', "/");
     
@@ -34,7 +41,20 @@ pub fn rel_asset_to_absolute(rel_string: &str) -> Cow<'static, str> {
     abs_path.to_string_lossy().replace('\\', "/").into()
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+// With bundler, just normalize and return the path as-is
+#[cfg(all(not(target_arch = "wasm32"), feature = "bundler"))]
+pub fn absolute_asset_to_rel(abs_string: String) -> Cow<'static, str> {
+    let normalized = abs_string.replace('\\', "/");
+    
+    // Strip "assets/" prefix if present
+    if let Some(stripped) = normalized.strip_prefix("assets/") {
+        stripped.to_string().into()
+    } else {
+        normalized.into()
+    }
+}
+
+#[cfg(all(not(target_arch = "wasm32"), not(feature = "bundler")))]
 pub fn absolute_asset_to_rel(abs_string: String) -> Cow<'static, str> {
     let abs_path = Path::new(&abs_string).canonicalize().unwrap_or_else(|_| PathBuf::from(&abs_string));
 

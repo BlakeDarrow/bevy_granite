@@ -820,38 +820,55 @@ impl EditableMaterial {
             self.update_name(fallback_name.to_lowercase());
             self.update_path(fallback_path.to_lowercase());
             
-            // Try to load the material file directly
-            let ron_path = "assets/".to_string() + &self.path;
-            if let Ok(ron) = std::fs::read_to_string(&ron_path) {
-                if let Ok(_mat_def) = ron::from_str::<StandardMaterialDef>(&ron) {
-                    // Successfully loaded - now create the material
-                    use super::load::material_from_path_into_scene;
-                    use crate::StringAsset;
-                    
-                    // Create dummy string_assets for the function call (won't be used on native)
-                    let dummy_string_assets = Assets::<StringAsset>::default();
-                    let string_assets_res = unsafe {
-                        // SAFETY: We're on native, material_from_path_into_scene won't use string_assets
-                        // because it has a cfg guard that uses std::fs::read_to_string instead
-                        std::mem::transmute::<&Assets<StringAsset>, &Res<Assets<StringAsset>>>(&dummy_string_assets)
-                    };
-                    
-                    if let Some(loaded_material) = material_from_path_into_scene(
-                        &self.path,
-                        materials,
-                        available_materials,
-                        asset_server,
-                        string_assets_res,
-                    ) {
-                        *self = loaded_material;
-                        return true;
+            // With bundler, materials must be preloaded - cannot read filesystem
+            #[cfg(feature = "bundler")]
+            {
+                log!(
+                    LogType::Game,
+                    LogLevel::Warning,
+                    LogCategory::Asset,
+                    "Bundler mode: Cannot load material {} on-demand. Materials must be preloaded.",
+                    fallback_path
+                );
+                self.save_to_file();
+                return true;
+            }
+
+            // Without bundler: Try to load the material file directly from filesystem
+            #[cfg(not(feature = "bundler"))]
+            {
+                let ron_path = "assets/".to_string() + &self.path;
+                if let Ok(ron) = std::fs::read_to_string(&ron_path) {
+                    if let Ok(_mat_def) = ron::from_str::<StandardMaterialDef>(&ron) {
+                        // Successfully loaded - now create the material
+                        use super::load::material_from_path_into_scene;
+                        use crate::StringAsset;
+                        
+                        // Create dummy string_assets for the function call (won't be used on native)
+                        let dummy_string_assets = Assets::<StringAsset>::default();
+                        let string_assets_res = unsafe {
+                            // SAFETY: We're on native, material_from_path_into_scene won't use string_assets
+                            // because it has a cfg guard that uses std::fs::read_to_string instead
+                            std::mem::transmute::<&Assets<StringAsset>, &Res<Assets<StringAsset>>>(&dummy_string_assets)
+                        };
+                        
+                        if let Some(loaded_material) = material_from_path_into_scene(
+                            &self.path,
+                            materials,
+                            available_materials,
+                            asset_server,
+                            string_assets_res,
+                        ) {
+                            *self = loaded_material;
+                            return true;
+                        }
                     }
                 }
+                
+                // Material file doesn't exist or failed to parse, create it
+                self.save_to_file();
+                saved_new_material = true;
             }
-            
-            // Material file doesn't exist or failed to parse, create it
-            self.save_to_file();
-            saved_new_material = true;
         }
 
         #[cfg(target_arch = "wasm32")]

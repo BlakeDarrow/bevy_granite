@@ -84,9 +84,17 @@ pub fn material_from_path_into_scene(
 
     // Load the material file contents
     let ron = {
-        #[cfg(not(target_arch = "wasm32"))]
+        // Native with bundler: Use AssetServer like WASM
+        #[cfg(all(not(target_arch = "wasm32"), feature = "bundler"))]
         {
-            // Native: Use synchronous file system access
+            let string_handle: Handle<StringAsset> = asset_server.load(path.to_string());
+            let string_asset = string_assets.get(&string_handle)?;
+            string_asset.contents.clone()
+        }
+
+        // Native without bundler: Use synchronous file system access
+        #[cfg(all(not(target_arch = "wasm32"), not(feature = "bundler")))]
+        {
             let ron_path = "assets/".to_string() + path;
             match std::fs::read_to_string(&ron_path) {
                 Ok(content) => content,
@@ -389,6 +397,7 @@ pub fn materials_from_preloaded(
 
 /// Creates a vector of EditableMaterial from the given folder path
 /// On native: Uses std::fs to read the folder directly
+/// On native with bundler: Returns empty vec (materials must be preloaded)
 /// On WASM: Uses PreloadedMaterialHandles (must be preloaded before calling)
 #[cfg(not(target_arch = "wasm32"))]
 pub fn materials_from_folder_into_scene(
@@ -401,45 +410,61 @@ pub fn materials_from_folder_into_scene(
 ) -> Vec<EditableMaterial> {
     let mut created_materials = Vec::new();
 
-    // Native: Use std::fs to read folder directly
-    let full_path = format!("assets/{}", folder_path);
-    let Ok(entries) = std::fs::read_dir(&full_path) else {
+    // With bundler: Cannot read directories, materials must be preloaded
+    #[cfg(feature = "bundler")]
+    {
         log!(
             LogType::Editor,
-            LogLevel::Error,
+            LogLevel::Warning,
             LogCategory::Asset,
-            "Failed to read folder: {}",
-            full_path
+            "Bundler mode: Cannot read folder {}. Materials must be preloaded.",
+            folder_path
         );
         return created_materials;
-    };
+    }
 
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|s| s.to_str()) == Some("mat") {
-            if let Some(relative_path) = path.strip_prefix("assets/").ok() {
-                let path_str = relative_path.to_string_lossy().to_string();
-                if let Some(obj_material) = material_from_path_into_scene(
-                    &path_str,
-                    materials,
-                    available_materials,
-                    asset_server,
-                    string_assets,
-                ) {
-                    created_materials.push(obj_material);
+    // Native without bundler: Use std::fs to read folder directly
+    #[cfg(not(feature = "bundler"))]
+    {
+        let full_path = format!("assets/{}", folder_path);
+        let Ok(entries) = std::fs::read_dir(&full_path) else {
+            log!(
+                LogType::Editor,
+                LogLevel::Error,
+                LogCategory::Asset,
+                "Failed to read folder: {}",
+                full_path
+            );
+            return created_materials;
+        };
+
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) == Some("mat") {
+                if let Some(relative_path) = path.strip_prefix("assets/").ok() {
+                    let path_str = relative_path.to_string_lossy().to_string();
+                    if let Some(obj_material) = material_from_path_into_scene(
+                        &path_str,
+                        materials,
+                        available_materials,
+                        asset_server,
+                        string_assets,
+                    ) {
+                        created_materials.push(obj_material);
+                    }
                 }
             }
         }
-    }
 
-    log!(
-        LogType::Editor,
-        LogLevel::OK,
-        LogCategory::Asset,
-        "Successfully loaded {} materials from: {}",
-        created_materials.len(),
-        folder_path
-    );
+        log!(
+            LogType::Editor,
+            LogLevel::OK,
+            LogCategory::Asset,
+            "Successfully loaded {} materials from: {}",
+            created_materials.len(),
+            folder_path
+        );
+    }
 
     created_materials
 }

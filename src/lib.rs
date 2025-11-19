@@ -95,6 +95,11 @@ impl PluginGroup for BevyGranite {
     /// This method assembles all the individual plugins in the correct order utilizing feature sets
     ///
     fn build(self) -> PluginGroupBuilder {
+        #[cfg(feature = "bundler")]
+        {
+            println!("bevy_granite bundled feature flag ENABLED");
+        }
+
         let mut builder = PluginGroupBuilder::start::<Self>()
             // Required plugins
             .add(bevy_inspector_egui::DefaultInspectorConfigPlugin);
@@ -140,10 +145,11 @@ pub mod prelude {
         bevy_granite_core,
         bevy_granite_core::{
             absolute_asset_to_rel, rel_asset_to_absolute, BridgeTag, MainCamera,
-            RequestDespawnBySource, RequestDespawnSerializableEntities, RequestLoadBatchEvent,
-            RequestLoadEvent, RequestReloadEvent, RequestSaveEvent, SaveSettings, SpawnSource,
-            StringAsset, StringAssetLoader, TreeHiddenEntity, UICamera, WorldLoadBatchSuccessEvent,
-            WorldLoadSuccessEvent, WorldSaveSuccessEvent, SceneAsset, SceneAssetLoader, PreloadedSceneHandles, PreloadedMaterialHandles
+            PreloadedMaterialHandles, PreloadedSceneHandles, RequestDespawnBySource,
+            RequestDespawnSerializableEntities, RequestLoadBatchEvent, RequestLoadEvent,
+            RequestReloadEvent, RequestSaveEvent, SaveSettings, SceneAsset, SceneAssetLoader,
+            SpawnSource, StringAsset, StringAssetLoader, TreeHiddenEntity, UICamera,
+            WorldLoadBatchSuccessEvent, WorldLoadSuccessEvent, WorldSaveSuccessEvent,
         },
         bevy_granite_logging::{log, LogCategory, LogLevel, LogType},
         bevy_granite_macros::{granite_component, register_editor_components, ui_callable_events},

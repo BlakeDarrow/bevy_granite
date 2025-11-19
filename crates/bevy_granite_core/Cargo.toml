@@ -3,6 +3,10 @@ edition = "2021"
 name = "bevy_granite_core"
 version = "0.3.0"
 
+[features]
+default = []
+bundler = []
+
 [dependencies]
 bevy = {workspace = true, features = ["bevy_pbr", "bevy_post_process", "bevy_core_pipeline", "png", "jpeg", "tga", "reflect_auto_register"]}
 bevy-inspector-egui = {workspace = true}
