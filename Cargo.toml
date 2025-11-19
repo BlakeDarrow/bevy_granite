@@ -3,15 +3,17 @@ members = ["crates/*"]
 resolver = "2"
 
 [workspace.dependencies]
-bevy = { version = "0.17.2", default-features = false }
+bevy = { version = "0.17", default-features = false }
+bevy_reflect = { version = "0.17", features = ["documentation"] }
 bevy-inspector-egui = "0.34.0"
 bevy_obj = "0.17.0"
 bevy_egui = "0.37.0"
-toml = "0.8.22"
+bevy_assets_bundler = { git = "https://github.com/BlakeDarrow/bevy_assets_bundler", branch = "bevy-0.17" }
+toml = "0.9.8"
 uuid = "1.17.0"
 serde = "1.0"
 rfd = "0.15"
-ron = "0.8.1"
+ron = "0.12.0"
 lazy_static = "1.5.0"
 
 [package]
@@ -25,11 +27,13 @@ default = ["core", "editor", "gizmos"]
 core = ["bevy_granite_core", "bevy_granite_logging", "bevy_granite_macros"]
 editor = ["core", "gizmos", "bevy_granite_editor"]
 gizmos = ["core", "bevy_granite_gizmos"]
+bundler = ["dep:bevy_assets_bundler"]
 
 [dependencies]
 bevy = { workspace = true }
 bevy-inspector-egui = { workspace = true }
 bevy_obj = { workspace = true }
+bevy_assets_bundler = { workspace = true, optional = true }
 
 bevy_granite_core = { path = "crates/bevy_granite_core", optional = true }
 bevy_granite_editor = { path = "crates/bevy_granite_editor", optional = true }

@@ -27,7 +27,23 @@ fn main() {
     let mut app = App::new();
     register_editor_components!();
 
-    app.add_plugins(DefaultPlugins)
+    // Configure AssetPlugin for bundled assets when bundler feature is enabled
+    #[cfg(feature = "bundler")]
+    {
+        use bevy_assets_bundler::{AssetBundlingOptions, BundledAssetIoPlugin};
+        
+        let options = AssetBundlingOptions::default();
+        
+        app.register_asset_source(
+            bevy::asset::io::AssetSourceId::Default,
+            BundledAssetIoPlugin::create_source_builder_or_default(options),
+        );
+    }
+
+    app.add_plugins(DefaultPlugins.set(bevy::asset::AssetPlugin {
+        meta_check: bevy::asset::AssetMetaCheck::Never,
+        ..Default::default()
+    }))
         .add_plugins(bevy_granite::BevyGranite {
             default_world: STARTING_WORLD.to_string(),
             ..Default::default()
