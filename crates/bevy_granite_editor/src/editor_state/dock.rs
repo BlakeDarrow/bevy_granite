@@ -1,12 +1,14 @@
-use crate::{
-    editor_state::EditorState, interface::{
-        BottomDockState, EditorSettingsTabData, SideDockState, SideTab
-    }
-};
-use bevy::{asset::io::file::FileAssetReader, prelude::{MessageReader, Res, ResMut, Resource}};
-use bevy::window::WindowClosing;
-use bevy::time::Time;
 use crate::utils::{load_from_toml_file, save_to_toml_file};
+use crate::{
+    editor_state::EditorState,
+    interface::{BottomDockState, EditorSettingsTabData, SideDockState, SideTab},
+};
+use bevy::time::Time;
+use bevy::window::WindowClosing;
+use bevy::{
+    asset::io::file::FileAssetReader,
+    prelude::{MessageReader, Res, ResMut, Resource},
+};
 use bevy_granite_logging::{
     config::{LogCategory, LogLevel, LogType},
     log,
@@ -39,7 +41,7 @@ impl Default for DockLayoutTracker {
     fn default() -> Self {
         Self {
             time_since_last_save: 0.0,
-            save_interval: 60.0, 
+            save_interval: 60.0,
         }
     }
 }
@@ -68,15 +70,17 @@ pub fn auto_save_dock_layout_system(
     mut tracker: ResMut<DockLayoutTracker>,
 ) {
     tracker.time_since_last_save += time.delta_secs();
-    
-    // Save every x seconds
-    if tracker.time_since_last_save >= tracker.save_interval {
-        save_dock_layout_toml(
-            editor_state.deref().clone(),
-            side_dock_res.clone(),
-            bottom_dock_res.clone(),
-        );
-        tracker.time_since_last_save = 0.0;
+
+    if editor_state.active {
+        // Save every x seconds if active
+        if tracker.time_since_last_save >= tracker.save_interval {
+            save_dock_layout_toml(
+                editor_state.deref().clone(),
+                side_dock_res.clone(),
+                bottom_dock_res.clone(),
+            );
+            tracker.time_since_last_save = 0.0;
+        }
     }
 }
 
