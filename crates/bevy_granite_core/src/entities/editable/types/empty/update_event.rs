@@ -3,6 +3,8 @@ use crate::entities::editable::UserUpdatedEmptyEvent;
 use crate::entities::Empty;
 use bevy::ecs::entity::Entity;
 use bevy::ecs::message::MessageReader;
+use bevy::ecs::system::Commands;
+use bevy::prelude::{Children, Query, Visibility};
 use bevy_granite_logging::{log, LogCategory, LogLevel, LogType};
 
 impl Empty {
@@ -26,20 +28,37 @@ impl Empty {
 }
 
 /// Actually update the specific entity with the class data
-/// In the future im sure we will have FOV and what not
-pub fn update_empty_system(mut reader: MessageReader<UserUpdatedEmptyEvent>) {
+/// Handles hiding/showing children based on hide_children flag
+pub fn update_empty_system(
+    mut reader: MessageReader<UserUpdatedEmptyEvent>,
+    children_query: Query<&Children>,
+    mut commands: Commands,
+) {
     for UserUpdatedEmptyEvent {
         entity: requested_entity,
-        data: _new,
+        data: new,
     } in reader.read()
     {
         log!(
             LogType::Editor,
             LogLevel::Info,
             LogCategory::Entity,
-            "Heard empty update event: {}",
-            requested_entity
+            "Heard empty update event: {} with hide_children={}",
+            requested_entity,
+            new.hide_children
         );
-        // Nothing to do here yet
+        
+        // Update visibility of all children
+        if let Ok(children) = children_query.get(*requested_entity) {
+            let visibility = if new.hide_children {
+                Visibility::Hidden
+            } else {
+                Visibility::Inherited
+            };
+            
+            for &child in children.iter() {
+                commands.entity(child).insert(visibility);
+            }
+        }
     }
 }

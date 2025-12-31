@@ -14,6 +14,16 @@ impl Empty {
         let large_spacing = spacing.1;
         ui.label(egui::RichText::new(self.type_name()).italics());
         ui.add_space(large_spacing);
-        false
+        
+        let mut changed = false;
+        
+        ui.horizontal(|ui| {
+            if ui.checkbox(&mut self.hide_children, "Hide Children").changed() {
+                changed = true;
+            }
+        });
+        
+        ui.add_space(large_spacing);
+        changed
     }
 }

@@ -38,9 +38,20 @@ pub struct UserUpdatedEmptyEvent {
 
 /// Actual serialized class data thats stored inside IdentityData
 /// In this case its a unit struct as Empty - Spatial Bundle needs nothing
-#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq, Reflect)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Reflect)]
 pub struct Empty {
-    // Empty
+    /// Non-serialized option to hide/show all children of this Empty entity
+    #[serde(skip)]
+    #[reflect(ignore)]
+    pub hide_children: bool,
+}
+
+impl Default for Empty {
+    fn default() -> Self {
+        Self {
+            hide_children: true,
+        }
+    }
 }
 
 impl GraniteType for Empty {
