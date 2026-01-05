@@ -304,7 +304,7 @@ impl EditableMaterial {
         if let Some(def) = &mut self.def {
             let current_dir = std::env::current_dir().expect("Failed to get current directory");
 
-            if !self.path.starts_with("materials/") {
+            if !self.path.replace('\\', "/").starts_with("materials/") {
                 log!(
                     LogType::Editor,
                     LogLevel::Error,
