@@ -1,11 +1,13 @@
 use crate::buffer::push_log;
 use crate::config::{
     LogCategory, LogLevel, LogType, ENABLED_LOG_CATEGORIES, ENABLED_LOG_LEVELS, ENABLED_LOG_TYPES,
+    LOGGING_ENABLED,
 };
 use crate::entry::LogEntry;
 use crate::file::write_to_file;
 use chrono::Local;
 use colored::*;
+use std::sync::atomic::Ordering;
 use textwrap::wrap;
 
 // std out line width
@@ -58,6 +60,11 @@ fn get_colored_category(category: LogCategory) -> ColoredString {
 
 // Handles both buffer and stdout
 pub fn log(r#type: LogType, level: LogLevel, category: LogCategory, message: String) {
+    // Early return if logging is completely disabled
+    if !LOGGING_ENABLED.load(Ordering::Relaxed) {
+        return;
+    }
+    
     let timestamp = Local::now().format("%m/%d/%Y-%H:%M:%S ").to_string();
     let type_prefix = get_colored_type(r#type);
     let level_prefix = get_colored_level(level);

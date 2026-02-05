@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
 use std::collections::HashSet;
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::log;
 
@@ -115,6 +116,21 @@ impl LogLevel {
     }
 }
 
+// Global logging enable/disable
+// -----------------------------------------------------------------------------------------------------------------------
+
+lazy_static! {
+    pub static ref LOGGING_ENABLED: AtomicBool = AtomicBool::new(false);
+}
+
+pub fn enable_logging() {
+    LOGGING_ENABLED.store(true, Ordering::Relaxed);
+}
+
+pub fn disable_logging() {
+    LOGGING_ENABLED.store(false, Ordering::Relaxed);
+}
+
 // std out config, irrelevant for buffer
 // -----------------------------------------------------------------------------------------------------------------------
 
@@ -146,6 +162,8 @@ pub fn disable_log_type(r#type: LogType) {
 }
 
 pub fn setup_logging() {
+    enable_logging();
+    
     let categories = LogCategory::all();
     let levels = LogLevel::all();
     let types = LogType::all();
