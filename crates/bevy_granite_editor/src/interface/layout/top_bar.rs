@@ -75,7 +75,10 @@ pub fn top_bar_ui(
                     let loaded = &editor_state.loaded_sources;
                     if !loaded.is_empty() {
                         for source in loaded.iter() {
-                            events.save.write(RequestSaveEvent(source.to_string()));
+                            // Skip empty strings to prevent crashes
+                            if !source.is_empty() {
+                                events.save.write(RequestSaveEvent(source.to_string()));
+                            }
                         }
                     }
                     ui.close();

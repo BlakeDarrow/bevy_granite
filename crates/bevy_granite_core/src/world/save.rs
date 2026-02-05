@@ -58,7 +58,12 @@ pub fn save_request_system(
 ) {
     // Process only one save request per frame to avoid conflicts
     if let Some(RequestSaveEvent(path)) = event_reader.read().next() {
-        let spawn_source = absolute_asset_to_rel(path.clone());
+        let path = path.clone(); 
+        let spawn_source = if std::path::Path::new(path.as_str()).is_absolute() {
+            absolute_asset_to_rel(path.clone())
+        } else {
+            Cow::Owned(path.clone())
+        };
 
         log!(
             LogType::Editor,

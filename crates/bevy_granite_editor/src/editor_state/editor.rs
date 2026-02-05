@@ -68,43 +68,55 @@ pub fn update_active_world_system(
 
     for WorldLoadSuccessEvent(path) in open_success_reader.read() {
         let rel_path = absolute_asset_to_rel(path.to_string());
-        editor_state.current_file = Some(rel_path.to_string());
-        editor_state.loaded_sources.insert(rel_path.to_string());
-        log!(
-            LogType::Editor,
-            LogLevel::Info,
-            LogCategory::System,
-            "Added source '{}' to loaded sources list (total: {})",
-            rel_path,
-            editor_state.loaded_sources.len()
-        );
+        
+        // Only add non-empty paths to prevent crashes
+        if !rel_path.is_empty() {
+            editor_state.current_file = Some(rel_path.to_string());
+            editor_state.loaded_sources.insert(rel_path.to_string());
+            log!(
+                LogType::Editor,
+                LogLevel::Info,
+                LogCategory::System,
+                "Added source '{}' to loaded sources list (total: {})",
+                rel_path,
+                editor_state.loaded_sources.len()
+            );
+        }
     }
 
     for WorldSaveSuccessEvent(path) in world_save_success_reader.read() {
         let rel_path = absolute_asset_to_rel(path.to_string());
-        editor_state.loaded_sources.insert(rel_path.to_string());
-        log!(
-            LogType::Editor,
-            LogLevel::Info,
-            LogCategory::System,
-            "World saved '{}'. Loaded sources list (total: {})",
-            rel_path,
-            editor_state.loaded_sources.len()
-        );
+        
+        // Only add non-empty paths to prevent crashes
+        if !rel_path.is_empty() {
+            editor_state.loaded_sources.insert(rel_path.to_string());
+            log!(
+                LogType::Editor,
+                LogLevel::Info,
+                LogCategory::System,
+                "World saved '{}'. Loaded sources list (total: {})",
+                rel_path,
+                editor_state.loaded_sources.len()
+            );
+        }
     }
 
     for SetActiveWorld(path) in set_active_world_reader.read() {
         let rel_path = absolute_asset_to_rel(path.to_string());
-        editor_state.current_file = Some(rel_path.to_string());
-        editor_state.loaded_sources.insert(rel_path.to_string());
-        log!(
-            LogType::Editor,
-            LogLevel::Info,
-            LogCategory::System,
-            "World '{}' set as active. Loaded sources list (total: {})",
-            rel_path,
-            editor_state.loaded_sources.len()
-        );
+        
+        // Only add non-empty paths to prevent crashes
+        if !rel_path.is_empty() {
+            editor_state.current_file = Some(rel_path.to_string());
+            editor_state.loaded_sources.insert(rel_path.to_string());
+            log!(
+                LogType::Editor,
+                LogLevel::Info,
+                LogCategory::System,
+                "World '{}' set as active. Loaded sources list (total: {})",
+                rel_path,
+                editor_state.loaded_sources.len()
+            );
+        }
     }
 }
 
